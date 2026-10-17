@@ -1222,26 +1222,53 @@ jobs:
               return str(value or "No disponible").strip()
 
           def telegram_api(method, payload):
+              # Reintentos acotados ante límites de Telegram y errores transitorios.
+              # En sendMessage, un timeout puede ocurrir después de que Telegram acepte
+              # el mensaje; el reintento prioriza no perder alertas y podría duplicar ese caso raro.
               endpoint = "https://api.telegram.org/bot" + token + "/" + method
-              request = urllib.request.Request(
-                  endpoint,
-                  data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-                  headers={"Content-Type": "application/json"},
-                  method="POST",
-              )
-              try:
-                  with urllib.request.urlopen(request, timeout=15) as response:
-                      raw = response.read().decode("utf-8")
-              except urllib.error.HTTPError as exc:
+              last_error = None
+              for attempt in range(4):
+                  request = urllib.request.Request(
+                      endpoint,
+                      data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                      headers={"Content-Type": "application/json"},
+                      method="POST",
+                  )
                   try:
-                      detail = json.loads(exc.read().decode("utf-8")).get("description", "")
-                  except Exception:
-                      detail = ""
-                  raise RuntimeError(method + " devolvió HTTP " + str(exc.code) + (": " + detail if detail else ""))
-              result = json.loads(raw)
-              if not result.get("ok"):
-                  raise RuntimeError(method + ": " + safe(result.get("description")))
-              return result.get("result", {})
+                      with urllib.request.urlopen(request, timeout=20) as response:
+                          raw = response.read().decode("utf-8")
+                      result = json.loads(raw)
+                      if not result.get("ok"):
+                          description = safe(result.get("description"))
+                          retry_after = (result.get("parameters") or {}).get("retry_after")
+                          if retry_after and attempt < 3:
+                              wait_seconds = min(60, max(1, int(retry_after)))
+                              print(method + ": Telegram solicita esperar " + str(wait_seconds) + " s.")
+                              time.sleep(wait_seconds)
+                              continue
+                          raise RuntimeError(method + ": " + description)
+                      return result.get("result", {})
+                  except urllib.error.HTTPError as exc:
+                      try:
+                          body = json.loads(exc.read().decode("utf-8"))
+                          detail = body.get("description", "")
+                          retry_after = (body.get("parameters") or {}).get("retry_after")
+                      except Exception:
+                          detail = ""
+                          retry_after = None
+                      last_error = RuntimeError(method + " devolvió HTTP " + str(exc.code) + (": " + detail if detail else ""))
+                      retryable = exc.code == 429 or 500 <= exc.code <= 599
+                      if not retryable or attempt >= 3:
+                          raise last_error
+                      wait_seconds = min(60, max(1, int(retry_after))) if retry_after else min(8, 2 ** attempt)
+                  except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+                      last_error = exc
+                      if attempt >= 3:
+                          raise RuntimeError(method + " falló tras varios intentos: " + str(exc))
+                      wait_seconds = min(8, 2 ** attempt)
+                  print(method + ": error transitorio; reintento " + str(attempt + 2) + "/4 en " + str(wait_seconds) + " s.")
+                  time.sleep(wait_seconds)
+              raise RuntimeError(method + " falló: " + str(last_error))
 
           try:
               bot_info = telegram_api("getMe", {})
