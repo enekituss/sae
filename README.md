@@ -1,27 +1,34 @@
 # Bizkaibus SAE · Spotter
 
-Web de consulta de las líneas y vehículos Bizkaibus detectados por el feed público SIRI de Open Data Bizkaia. Incluye un listado de vehículos agrupado por línea y un directorio de paradas que relaciona IDs SIRI con nombres.
+Web de consulta de líneas y vehículos Bizkaibus detectados por SIRI, con destinos, directorio de paradas, datos de bloque de vehículo y próximos horarios.
 
 ## Funciones
-- Agrupación por línea con identificador del vehículo y búsqueda por línea, vehículo, destino o parada.
-- Muestra el destino previsto cuando se puede asociar el viaje en curso con los horarios GTFS.
-- Relaciona el campo SIRI `MonitoredCall/StopPointRef` con el directorio de paradas GTFS, mostrando nombre e ID.
-- Cada ID de parada enlaza a `paradas.html?id=...`; allí se abre el directorio con ese ID ya buscado.
-- El directorio contiene nombre e ID de cada parada y permite abrirla en OpenStreetMap si hay coordenadas.
-- GitHub Actions consulta las posiciones SIRI, enriquece la información y publica `vehicles.json` y `vehicles-data.js` aproximadamente cada cinco minutos. Los directorios estáticos se guardan en caché y se renuevan periódicamente.
+- Agrupación de vehículos por línea, búsqueda y consulta de ID.
+- Relación de la parada SIRI actual con un nombre del directorio GTFS.
+- Destino previsto cruzado con `trip_headsign` del GTFS.
+- Directorio de paradas (`paradas.html`) con búsqueda por ID y nombre.
+- **Bloque de vehículo y número corto del viaje** cuando estén publicados en `trips.txt`.
+- **Próximas cinco paradas previstas** usando `stop_times.txt` del GTFS estático, asociadas con el viaje actual de cada vehículo.
+- Si GTFS-Realtime proporciona predicciones para esas paradas, se usan sus horas estimadas; si no, se conserva el horario publicado y se marca como tal.
 
-## Cómo se averiguan las paradas y los destinos
-- **Paradas:** el `StopPointRef` de cada vehículo se cruza por ID con `stops.txt` del GTFS de producción. Se publican unos 2.300 registros de paradas y la última ejecución enlazó las 192 actividades de vehículo con un nombre de parada. Si un ID no se encuentra, la web conserva el identificador sin inventar un nombre.
-- **Destino previsto:** primero se priorizan nombres explícitos de SIRI, luego datos de actualizaciones de viaje SIRI. Si el feed no ofrece un destino legible, se cruza `VehicleJourneyRef` con `trip_id` del GTFS y se toma `trip_headsign`. En la ejecución de validación con el GTFS de producción se encontraron destinos para los 192 vehículos detectados. Se muestra como **destino previsto** porque procede del horario publicado, no necesariamente de la lectura de un letrero frontal en tiempo real.
-- El identificador de viaje contiene códigos técnicos útiles para el cruce, pero la web no intenta traducir arbitrariamente cada fragmento; cuando no hay una correspondencia fiable, deja el destino sin identificar.
+## Servicio, viaje y bloque: qué significa cada campo
+- `trip_short_name`: nombre corto público del viaje si el feed lo ofrece.
+- `block_id`: identifica en GTFS un bloque de viajes consecutivos asignados al mismo vehículo. Es el campo público más próximo a un número de servicio de vehículo, pero no garantiza que sea exactamente el “Servicio 1/2/3” usado internamente por el operador.
+- `service_id`: identifica un calendario de servicio (qué días funciona), no un número de servicio del autobús.
+- `trip_id` / SIRI `VehicleJourneyRef`: identifican el viaje concreto del autobús.
 
-## Fuentes
+## Horarios de próximas paradas
+El flujo busca el viaje del vehículo en el GTFS de producción y cruza su secuencia con `stop_times.txt`. Las predicciones reales se leen del recurso oficial GTFS-Realtime Trip Updates (`FeedTripUpdates.pb`): sus actualizaciones `StopTimeUpdate` pueden incluir una hora absoluta de llegada/salida o un retraso respecto al horario. Si no hay una predicción actual, la web muestra el horario estático y lo diferencia visualmente. Esto evita presentar como tiempo real un horario que solo es planificado.
+
+El archivo GTFS estático se mantiene en caché dentro de GitHub Actions, por lo que no se descarga el ZIP de producción cada cinco minutos.
+
+## Fuentes públicas
 - Posiciones SIRI: https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml
 - Actualizaciones SIRI: https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-trip-updates.xml
-- GTFS de producción, que incluye `stops.txt` y `trips.txt`: https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip
+- Actualizaciones de viaje GTFS-RT: https://baliabideak.bizkaia.eus/Bizkaibus/GTFSRealTime/FeedTripUpdates.pb
+- GTFS de producción (incluye `trips.txt`, `stops.txt` y `stop_times.txt`): https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip
 - API alternativa de paradas: https://apps.bizkaia.eus/BBOA000M/rest/BBOA/GetParadas
 
-Open Data Bizkaia publica información de posiciones GPS, paradas, líneas y horarios de Bizkaibus. La información GTFS se actualiza antes que el directorio de horarios estáticos de pruebas; por eso se usa el ZIP de producción para cruzar viajes y destinos.
-
-## Publicación
-GitHub Pages se publica desde `main`, carpeta raíz. El flujo está en `.github/workflows/update-siri.yml`. Estado y ejecución manual: https://github.com/enekituss/sae/actions
+## Actualización
+GitHub Actions refresca la copia de posiciones aproximadamente cada cinco minutos y genera `vehicles.json` y `vehicles-data.js`. El navegador lee la copia del mismo dominio para evitar bloqueos CORS.
+Flujo y ejecución manual: https://github.com/enekituss/sae/actions
