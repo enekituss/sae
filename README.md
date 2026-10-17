@@ -19,7 +19,14 @@ Web de consulta de líneas y vehículos Bizkaibus detectados por SIRI, con desti
 
 ## Alertas de cambios de ruta por Telegram
 
-La actualización automática compara dos snapshots consecutivos recientes para cada ID de vehículo SIRI. Si el mismo vehículo cambia de línea, destino o sentido, prepara una notificación individual de Telegram. Se ignoran altas/bajas de vehículos y cambios de campos vacíos, y no se generan alertas si el snapshot anterior tiene más de 20 minutos para evitar falsos avisos tras una interrupción del feed.
+La actualización automática compara snapshots consecutivos de SIRI y mantiene una cola persistente de avisos de Telegram:
+
+- **Entrada en el feed:** un vehículo con ID publicado que no estaba en el snapshot anterior debe aparecer en dos consultas válidas consecutivas separadas al menos dos minutos. La primera ejecución establece la referencia y no anuncia toda la flota como nueva.
+- **Salida del feed:** si un vehículo deja de aparecer mientras otros siguen comunicándose, se confirma tras varias observaciones válidas y un tiempo mínimo. Una reducción brusca de la flota exige una confirmación reforzada.
+- **Feed completamente vacío:** para no confundir una lectura vacía aislada con el fin del servicio, se esperan cuatro consultas vacías consecutivas durante al menos seis minutos; entonces se preparan los avisos de los vehículos que estaban activos.
+- **Reapariciones y cambios de ruta:** se notifican por separado y se evita interpretar un cambio observado después de una interrupción prolongada como un cambio de línea seguro.
+
+Los mensajes describen altas y bajas **del feed publicado**, que es la evidencia disponible en SIRI; no prueban una baja administrativa ni el estado físico del vehículo si el operador deja de publicar datos. Las notificaciones quedan en una cola persistente hasta que la API de Telegram acepta el envío.
 
 **Importante:** esta alerta detecta cambios de línea/destino/sentido asignados en los datos SIRI. No detecta todavía una desviación geográfica del autobús respecto al trazado de su línea; para eso habría que comparar su posición GPS con los shapes del GTFS y aplicar un margen de tolerancia.
 
@@ -44,8 +51,8 @@ El archivo GTFS estático se mantiene en caché dentro de GitHub Actions, por lo
 - API alternativa de paradas: https://apps.bizkaia.eus/BBOA000M/rest/BBOA/GetParadas
 
 ## Actualización
-GitHub Actions refresca la copia de posiciones aproximadamente cada cinco minutos y genera `vehicles.json` y `vehicles-data.js`. El navegador lee la copia del mismo dominio para evitar bloqueos CORS.
-Flujo y ejecución manual: https://github.com/enekituss/sae/actions
+El Cloudflare Worker solicita una comprobación del feed aproximadamente cada dos minutos y GitHub Actions conserva además una programación de respaldo cada cinco minutos. Como el feed público SIRI se consulta por HTTP y no hay configurada una suscripción de eventos del proveedor, la detección ocurre en la siguiente consulta; no es una notificación instantánea emitida por CTB. Cada comprobación válida actualiza `vehicles.json` y `vehicles-data.js`, y la lógica de alertas compara los snapshots para notificar cambios confirmados.
+Flujo y ejecuciones: https://github.com/enekituss/sae/actions
 
 
 ## Selección de ciudad e instalación como aplicación
