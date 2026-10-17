@@ -3,53 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f28c00">
   <title>Bizkaibus SAE · Spotter</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <meta name="description" content="Listado de líneas y vehículos Bizkaibus que están comunicando posición en el feed SIRI.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
-    <div>
+    <div class="brand">
       <div class="eyebrow">SAE · BIZKAIBUS</div>
-      <h1>Bizkaibus Spotter</h1>
-      <p>Vehículos detectados en servicio a partir del feed SIRI.</p>
+      <h1>Bizkaibus <span>Spotter</span></h1>
+      <p>Líneas y vehículos activos detectados por el SAE.</p>
     </div>
-    <div class="status"><span id="dot"></span><span id="statusText">Conectando…</span></div>
+    <div class="status" aria-live="polite">
+      <span id="dot" class="status-dot"></span>
+      <span id="statusText">Conectando con SIRI…</span>
+    </div>
   </header>
 
-  <main class="layout">
-    <aside class="panel">
-      <div class="toolbar">
-        <input id="search" type="search" placeholder="Buscar línea o vehículo…" autocomplete="off">
-        <button id="refresh" title="Actualizar ahora">↻</button>
+  <main class="page">
+    <section class="summary" aria-label="Resumen">
+      <div class="summary-copy">
+        <h2>Vehículos en servicio</h2>
+        <p>Se muestran los vehículos que están apareciendo en el feed público en tiempo real.</p>
       </div>
       <div class="stats">
-        <div><strong id="vehicleCount">0</strong><span>vehículos</span></div>
-        <div><strong id="lineCount">0</strong><span>líneas</span></div>
+        <div class="stat"><strong id="vehicleCount">—</strong><span>vehículos activos</span></div>
+        <div class="stat"><strong id="lineCount">—</strong><span>líneas detectadas</span></div>
       </div>
-      <div id="lines" class="lines"><div class="empty">Cargando datos…</div></div>
-    </aside>
-    <section class="mapwrap">
-      <div id="map"></div>
-      <div class="mapinfo">Actualización automática cada 30 s · Fuente: Open Data Bizkaia / SIRI</div>
     </section>
+
+    <section class="list-panel">
+      <div class="toolbar">
+        <label class="searchbox">
+          <span aria-hidden="true">⌕</span>
+          <input id="search" type="search" placeholder="Buscar línea, vehículo o destino…" autocomplete="off">
+        </label>
+        <button id="refresh" type="button"><span aria-hidden="true">↻</span> Actualizar</button>
+      </div>
+      <div class="list-heading">
+        <span>LÍNEAS Y VEHÍCULOS</span>
+        <span id="lastUpdated">Esperando primera actualización</span>
+      </div>
+      <div id="lines" class="lines" aria-live="polite">
+        <div class="message"><span class="spinner"></span> Cargando datos del SAE…</div>
+      </div>
+    </section>
+
+    <footer>
+      <span>Fuente: Open Data Bizkaia · Feed SIRI de posiciones de vehículos.</span>
+      <span>El contador recoge únicamente los vehículos presentes en el feed; no es el total de la flota.</span>
+    </footer>
   </main>
 
-  <div id="vehicleModal" class="modal hidden">
-    <div class="modal-card">
-      <button id="closeModal" class="close">×</button>
-      <div class="eyebrow">VEHÍCULO</div>
-      <h2 id="modalVehicle">—</h2>
-      <dl>
-        <dt>Línea</dt><dd id="modalLine">—</dd>
-        <dt>Sentido</dt><dd id="modalDirection">—</dd>
-        <dt>Última posición</dt><dd id="modalTime">—</dd>
-        <dt>Parada próxima</dt><dd id="modalStop">—</dd>
-      </dl>
-    </div>
-  </div>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
