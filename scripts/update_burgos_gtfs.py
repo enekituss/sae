@@ -21,6 +21,10 @@ def download_feed():
     sources = [
         SOURCE_URL,
         "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-castile-and-leon-autobuses-urbanos-de-burgos-gtfs-3145.zip?alt=media",
+        # Última copia versionada conocida del espejo. Se usa sólo si los
+        # dos endpoints anteriores no responden; la vigencia se valida
+        # con las fechas del calendario que vienen dentro del propio GTFS.
+        "https://files.mobilitydatabase.org/mdb-3145/mdb-3145-202605191439/mdb-3145-202605191439.zip",
     ]
     errors = []
     for url in sources:
