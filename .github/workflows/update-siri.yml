@@ -817,8 +817,18 @@ jobs:
                           "new": new_value,
                       })
 
+              # Compare routes only across a recent tracking window. If Actions or the feed
+              # was unavailable for a long time, a later trip can have a different destination
+              # for ordinary timetable reasons, so do not infer a route change from stale data.
+              first_missing_dt = parse_time(candidate.get("firstMissingAt"))
+              candidate_age_seconds = (
+                  (NOW - first_missing_dt.astimezone(timezone.utc)).total_seconds()
+                  if first_missing_dt else 999999
+              )
+              route_comparison_is_recent = previous_snapshot_fresh and candidate_age_seconds <= 15 * 60
+
               # Replace an undelivered absence notice with the more useful route-change alert.
-              if changed_fields:
+              if changed_fields and route_comparison_is_recent:
                   event_payload = {
                       "vehicleId": vehicle_id,
                       "firstMissingAt": candidate.get("firstMissingAt", ""),
