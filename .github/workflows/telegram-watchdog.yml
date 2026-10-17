@@ -1,6 +1,7 @@
 name: Vigilar SAE y Telegram
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: "*/10 * * * *"
   workflow_run:
