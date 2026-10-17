@@ -71,7 +71,7 @@ function parse(xml) {
       lineRef,
       direction: firstText(journey, ['DestinationName', 'DestinationDisplay', 'DirectionName']),
       time: recordedTime,
-      stop: firstText(journey, ['StopPointRef', 'MonitoredCall']),
+      stop: firstText(journey, ['StopPointRef', 'StopPointName']),
       journeyRef,
       lat: firstText(journey, ['Latitude']),
       lon: firstText(journey, ['Longitude'])
