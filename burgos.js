@@ -283,7 +283,8 @@
       const dist = haversine(points[i], stop);
       if (dist < nearestDistance) { nearestDistance = dist; nearestIndex = i; }
     }
-    if (nearestIndex < 1 || nearestDistance > 250) return null;
+    if (nearestIndex < 0 || nearestDistance > 250) return null;
+    if (nearestIndex === 0) return meters <= 30 ? { ...points[0], source: 'Estimación junto a la primera parada' } : null;
 
     let remaining = Math.max(0, Number(meters) || 0);
     if (remaining === 0) return { ...points[nearestIndex], source: 'Parada indicada por ISAENEXT' };
@@ -326,6 +327,7 @@
     }
     if (!Number.isFinite(observation.stopLat) || !Number.isFinite(observation.stopLon)) return null;
     if (!Number.isFinite(observation.meters) || observation.meters < 0 || observation.meters > 12000) return null;
+    if (observation.meters === 0 && (!Number.isFinite(observation.seconds) || observation.seconds > 15)) return null;
     if (!data || !data.stopById) return null;
 
     const stop = data.stopById.get(String(observation.stopId));
