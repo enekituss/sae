@@ -1,0 +1,156 @@
+name: Actualizar posiciones Bizkaibus
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/update-siri.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-feed-bizkaibus
+  cancel-in-progress: true
+
+jobs:
+  refresh-feed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Descargar SIRI y generar vehicles.json
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          import urllib.request
+          import xml.etree.ElementTree as ET
+          from datetime import datetime, timezone
+
+          URL = "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml"
+          request = urllib.request.Request(
+              URL,
+              headers={
+                  "User-Agent": "Bizkaibus-Spotter/1.0 (+https://github.com/enekituss/sae)",
+                  "Accept": "application/xml, text/xml, */*",
+              },
+          )
+          with urllib.request.urlopen(request, timeout=20) as response:
+              raw = response.read()
+
+          root = ET.fromstring(raw)
+
+          def local(tag):
+              return tag.rsplit("}", 1)[-1]
+
+          def descendants(node, name):
+              return [element for element in node.iter() if local(element.tag) == name]
+
+          def value(node, *names):
+              if node is None:
+                  return ""
+              for name in names:
+                  for element in descendants(node, name):
+                      text = (element.text or "").strip()
+                      if text:
+                          return text
+              return ""
+
+          activities = descendants(root, "VehicleActivity")
+          has_delivery = bool(descendants(root, "VehicleMonitoringDelivery"))
+          if local(root.tag).lower() != "siri" and not has_delivery:
+              raise RuntimeError("La URL respondió, pero el contenido no parece ser una respuesta SIRI.")
+          if not activities and not has_delivery:
+              raise RuntimeError("No se encontró VehicleMonitoringDelivery en el XML.")
+
+          vehicles = []
+          seen = set()
+          for index, activity in enumerate(activities, 1):
+              journey_list = descendants(activity, "MonitoredVehicleJourney")
+              if not journey_list:
+                  continue
+              journey = journey_list[0]
+
+              vehicle_id = value(journey, "VehicleRef", "VehicleIdentifier", "VehicleId", "FleetNumber")
+              if not vehicle_id:
+                  vehicle_id = value(activity, "VehicleRef", "VehicleIdentifier", "VehicleId", "FleetNumber")
+
+              journey_ref = value(journey, "VehicleJourneyRef", "DatedVehicleJourneyRef")
+              if not journey_ref:
+                  journey_ref = value(activity, "VehicleJourneyRef", "DatedVehicleJourneyRef")
+
+              line_name = value(journey, "PublishedLineName", "LineName", "PublicLineCode", "LinePublicNumber")
+              line_ref = value(journey, "LineRef", "LineReference")
+              if not line_ref:
+                  line_ref = value(activity, "LineRef", "LineReference")
+              line = line_name or line_ref
+
+              # En algunas actividades SIRI la línea no viene en LineRef,
+              # pero sí aparece codificada al principio de VehicleJourneyRef (p. ej. trp_A3136_...).
+              if not line and journey_ref:
+                  match = re.search(r"(?:^|_)([A-Z]\\d{3,4})(?:_|$)", journey_ref.upper())
+                  if match:
+                      line = match.group(1)
+              if not line:
+                  line = "Sin línea identificada"
+
+              id_value = vehicle_id or journey_ref or f"Registro {index}"
+              id_type = "ID de vehículo" if vehicle_id else (
+                  "Referencia de viaje (sin ID de vehículo)" if journey_ref else "Identificador no publicado"
+              )
+
+              location = next((e for e in descendants(journey, "VehicleLocation")), None)
+              lat = value(location, "Latitude")
+              lon = value(location, "Longitude")
+              stop = value(journey, "StopPointRef", "StopPointName")
+              recorded = value(journey, "LocationRecordedAtTime", "RecordedAtTime") or value(activity, "RecordedAtTime", "ValidUntilTime")
+
+              item = {
+                  "id": id_value,
+                  "idType": id_type,
+                  "line": line,
+                  "lineRef": line_ref,
+                  "direction": value(journey, "DestinationName", "DestinationDisplay", "DirectionName"),
+                  "time": recorded,
+                  "stop": stop,
+                  "journeyRef": journey_ref,
+                  "lat": lat,
+                  "lon": lon,
+              }
+              key = (item["id"], item["line"], item["journeyRef"])
+              if key not in seen:
+                  seen.add(key)
+                  vehicles.append(item)
+
+          snapshot = {
+              "sourceUrl": URL,
+              "fetchedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+              "vehicleCount": len(vehicles),
+              "vehicles": vehicles,
+          }
+          with open("vehicles.json", "w", encoding="utf-8") as handle:
+              json.dump(snapshot, handle, ensure_ascii=False, indent=2)
+              handle.write("\\n")
+
+          print(f"Respuesta SIRI válida: {len(activities)} actividades; {len(vehicles)} registros procesados.")
+          PY
+
+      - name: Guardar la copia pública si ha cambiado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vehicles.json
+          if git diff --cached --quiet; then
+            echo "Los datos no han cambiado; no hay commit que crear."
+          else
+            git commit -m "Actualizar posiciones SIRI de Bizkaibus"
+            git push
+          fi
