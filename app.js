@@ -57,7 +57,7 @@ function render() {
   const matchingLines = allLines.filter(line => {
     const lineMatches = line.toLocaleLowerCase('es').includes(query);
     return !query || lineMatches || groups.get(line).some(v =>
-      [v.id, v.idType, v.lineRef, v.direction, v.stop, v.journeyRef]
+      [v.id, v.idType, v.lineRef, v.direction, v.destination, v.destinationRef, v.stop, v.stopName, v.journeyRef]
         .some(value => String(value || '').toLocaleLowerCase('es').includes(query))
     );
   });
@@ -83,7 +83,7 @@ function render() {
     const allVehicles = groups.get(line);
     const matchingVehicles = allVehicles.filter(v => !query ||
       line.toLocaleLowerCase('es').includes(query) ||
-      [v.id, v.idType, v.lineRef, v.direction, v.stop, v.journeyRef]
+      [v.id, v.idType, v.lineRef, v.direction, v.destination, v.destinationRef, v.stop, v.stopName, v.journeyRef]
         .some(value => String(value || '').toLocaleLowerCase('es').includes(query))
     );
     const isOpen = expandedLines.has(line) || Boolean(query);
@@ -105,13 +105,14 @@ function render() {
           <article class="vehicle">
             <div class="vehicle-main">
               <div class="vehicle-id"><span class="bus-icon" aria-hidden="true">🚌</span><span>${escapeHTML(vehicle.id)}</span></div>
-              <div class="vehicle-direction">${escapeHTML(vehicle.direction || 'Sentido/destino no indicado')}</div>
+              <div class="vehicle-direction"><strong>Destino:</strong> ${escapeHTML(vehicle.destination || 'No identificado en los datos disponibles')}</div>
+              ${vehicle.direction ? `<div class="vehicle-direction"><strong>Sentido:</strong> ${escapeHTML(vehicle.direction)}</div>` : ''}
             </div>
             <div class="vehicle-meta">
               <div><strong>${escapeHTML(vehicle.idType || 'ID de vehículo')}</strong><br>${escapeHTML(vehicle.id)}</div>
               <div><strong>Línea</strong><br>${escapeHTML(vehicle.line || line)}${vehicle.lineRef && vehicle.lineRef !== vehicle.line ? ' · ref. ' + escapeHTML(vehicle.lineRef) : ''}</div>
               <div><strong>Última posición comunicada</strong><br>${escapeHTML(formatTime(vehicle.time))}</div>
-              ${vehicle.stop ? `<div><strong>Referencia de parada</strong><br>${escapeHTML(vehicle.stop)}</div>` : ''}
+              ${vehicle.stop ? `<div><strong>Parada SIRI</strong><br>${escapeHTML(vehicle.stopName || 'Nombre no encontrado en el directorio')} · ID ${escapeHTML(vehicle.stop)}</div>` : ''}
             </div>
           </article>`).join('')}
       </div>`;
@@ -138,6 +139,8 @@ function applySnapshot(snapshot) {
     direction: String(v.direction || ''),
     time: String(v.time || ''),
     stop: String(v.stop || ''),
+      stopName: String(v.stopName || ''),
+      destinationRef: String(v.destinationRef || ''),
     journeyRef: String(v.journeyRef || ''),
     lat: v.lat ?? '',
     lon: v.lon ?? ''
