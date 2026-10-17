@@ -318,6 +318,10 @@
     }
     if (!candidates.length) return null;
     candidates.sort((a, b) => b.score - a.score);
+    if (candidates[0].score === 0) {
+      const possibleShapes = new Set(candidates.map(candidate => String(candidate.trip.shapeId || '')));
+      if (possibleShapes.size > 1) return null;
+    }
     return candidates[0];
   }
 
