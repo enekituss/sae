@@ -765,9 +765,20 @@ jobs:
               alert_state["pendingVehicles"] = {}
           if not isinstance(alert_state.get("outbox"), dict):
               alert_state["outbox"] = {}
+          if not isinstance(alert_state.get("pendingArrivals"), dict):
+              alert_state["pendingArrivals"] = {}
+          if not isinstance(alert_state.get("lastNonEmptyVehicles"), dict):
+              alert_state["lastNonEmptyVehicles"] = {}
+          if not isinstance(alert_state.get("emptyFeedState"), dict):
+              alert_state["emptyFeedState"] = {"consecutiveChecks": 0, "firstObservedAt": ""}
 
           pending_vehicles = alert_state["pendingVehicles"]
+          pending_arrivals = alert_state["pendingArrivals"]
           outbox = alert_state["outbox"]
+          last_non_empty_vehicles = alert_state["lastNonEmptyVehicles"]
+          empty_feed_state = alert_state["emptyFeedState"]
+          empty_feed_state.setdefault("consecutiveChecks", 0)
+          empty_feed_state.setdefault("firstObservedAt", "")
           previous_by_id = {}
           if previous_snapshot_fresh:
               for previous_id, previous_vehicle in previous_vehicles.items():
@@ -786,6 +797,64 @@ jobs:
               previous_score = sum(1 for field in ("line", "destination", "direction", "lineRef") if previous_choice and previous_choice.get(field))
               if previous_choice is None or score > previous_score:
                   current_by_id[current_id] = current_vehicle
+
+          # Keep the most recent non-empty fleet separately: vehicles.json may legitimately
+          # contain an empty snapshot overnight, but we still need to know which vehicles left.
+          if previous_snapshot_fresh and previous_by_id:
+              last_non_empty_vehicles = dict(previous_by_id)
+
+          # Confirm newly appearing vehicles across two successful observations. The feed is
+          # pull-based, so this is the earliest reliable signal available to this workflow.
+          confirmed_entry_count = 0
+          if previous_snapshot_fresh:
+              for vehicle_id, candidate in list(pending_arrivals.items()):
+                  first_observed_dt = parse_time(candidate.get("firstObservedAt"))
+                  if first_observed_dt and (NOW - first_observed_dt.astimezone(timezone.utc)).total_seconds() > 60 * 60:
+                      pending_arrivals.pop(vehicle_id, None)
+                      continue
+                  current_vehicle = current_by_id.get(vehicle_id)
+                  if current_vehicle is None or vehicle_id in pending_vehicles:
+                      pending_arrivals.pop(vehicle_id, None)
+                      continue
+                  candidate["consecutiveChecks"] = int(candidate.get("consecutiveChecks", 1)) + 1
+                  if first_observed_dt is None:
+                      candidate["firstObservedAt"] = LOCAL_NOW.isoformat(timespec="seconds")
+                      first_observed_dt = LOCAL_NOW
+                  elapsed_seconds = (NOW - first_observed_dt.astimezone(timezone.utc)).total_seconds()
+                  if candidate["consecutiveChecks"] < 2 or elapsed_seconds < 2 * 60:
+                      continue
+                  event_payload = {
+                      "vehicleId": vehicle_id,
+                      "firstObservedAt": candidate.get("firstObservedAt", ""),
+                  }
+                  event_id = stable_event_id("entered", event_payload)
+                  outbox.setdefault(event_id, {
+                      "eventId": event_id,
+                      "type": "vehicle_entered",
+                      "vehicleId": vehicle_id,
+                      "line": str(current_vehicle.get("line") or ""),
+                      "destination": str(current_vehicle.get("destination") or ""),
+                      "direction": str(current_vehicle.get("direction") or ""),
+                      "firstObservedAt": candidate.get("firstObservedAt", ""),
+                      "detectedAt": LOCAL_NOW.isoformat(timespec="minutes"),
+                      "queuedAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                  })
+                  pending_arrivals.pop(vehicle_id, None)
+                  confirmed_entry_count += 1
+
+              # Start candidates only after a valid previous snapshot exists. This avoids
+              # announcing the whole fleet as "new" when the workflow is first installed.
+              for current_id, current_vehicle in current_by_id.items():
+                  if current_id in previous_by_id or current_id in pending_vehicles or current_id in pending_arrivals:
+                      continue
+                  pending_arrivals[current_id] = {
+                      "vehicleId": current_id,
+                      "firstObservedAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                      "consecutiveChecks": 1,
+                      "line": str(current_vehicle.get("line") or ""),
+                      "destination": str(current_vehicle.get("destination") or ""),
+                      "direction": str(current_vehicle.get("direction") or ""),
+                  }
 
           # If a missing vehicle returns, compare the last route before clearing its state.
           # This identifies a bus that disappears on one line and then reappears on another.
@@ -1114,6 +1183,84 @@ jobs:
                           "alerted": False,
                       }
 
+          # A valid SIRI response with zero vehicles is ambiguous: it can mean the end of
+          # service or a temporary upstream publication issue. Confirm it only after four
+          # consecutive empty responses spanning at least six minutes.
+          if current_count == 0 and previous_snapshot_fresh:
+              empty_feed_state["consecutiveChecks"] = int(empty_feed_state.get("consecutiveChecks", 0)) + 1
+              if not empty_feed_state.get("firstObservedAt"):
+                  empty_feed_state["firstObservedAt"] = LOCAL_NOW.isoformat(timespec="seconds")
+              first_empty_dt = parse_time(empty_feed_state.get("firstObservedAt"))
+              empty_elapsed_seconds = (
+                  (NOW - first_empty_dt.astimezone(timezone.utc)).total_seconds()
+                  if first_empty_dt else 0
+              )
+
+              # Seed the missing-vehicle candidates from the last non-empty fleet, even if
+              # vehicles.json has already been replaced by an empty snapshot.
+              for vehicle_id, old_vehicle in list(last_non_empty_vehicles.items()):
+                  if vehicle_id in pending_vehicles:
+                      continue
+                  pending_vehicles[vehicle_id] = {
+                      "lastKnown": {
+                          "id": vehicle_id,
+                          "line": old_vehicle.get("line", ""),
+                          "destination": old_vehicle.get("destination", ""),
+                          "direction": old_vehicle.get("direction", ""),
+                      },
+                      "lastSeenAt": str(old_vehicle.get("time") or ""),
+                      "firstMissingAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                      "consecutiveMissing": 0,
+                      "requiredMissing": 4,
+                      "notificationQueued": False,
+                      "alerted": False,
+                  }
+
+              if int(empty_feed_state.get("consecutiveChecks", 0)) >= 4 and empty_elapsed_seconds >= 6 * 60:
+                  for vehicle_id, candidate in list(pending_vehicles.items()):
+                      if candidate.get("alerted") or candidate.get("notificationQueued"):
+                          continue
+                      last_known = candidate.get("lastKnown", {})
+                      first_missing = candidate.get("firstMissingAt") or empty_feed_state.get("firstObservedAt", "")
+                      event_payload = {
+                          "vehicleId": vehicle_id,
+                          "firstMissingAt": first_missing,
+                      }
+                      event_id = stable_event_id("missing", event_payload)
+                      checks = max(
+                          int(candidate.get("consecutiveMissing", 0)),
+                          int(empty_feed_state.get("consecutiveChecks", 0)),
+                      )
+                      outbox.setdefault(event_id, {
+                          "eventId": event_id,
+                          "type": "vehicle_missing",
+                          "vehicleId": vehicle_id,
+                          "line": last_known.get("line", ""),
+                          "destination": last_known.get("destination", ""),
+                          "direction": last_known.get("direction", ""),
+                          "lastSeenAt": candidate.get("lastSeenAt", ""),
+                          "firstMissingAt": first_missing,
+                          "detectedAt": LOCAL_NOW.isoformat(timespec="minutes"),
+                          "missingChecks": checks,
+                          "queuedAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                      })
+                      candidate["eventId"] = event_id
+                      candidate["notificationQueued"] = True
+                      candidate["consecutiveMissing"] = checks
+                      candidate["requiredMissing"] = max(4, int(candidate.get("requiredMissing", 4)))
+                      missing_confirmed_count += 1
+                  last_non_empty_vehicles = {}
+                  empty_feed_state["departuresConfirmed"] = True
+                  print("Feed vacío confirmado durante al menos seis minutos; se han puesto en cola los vehículos que dejaron de aparecer.")
+          else:
+              empty_feed_state = {
+                  "consecutiveChecks": 0,
+                  "firstObservedAt": "",
+                  "departuresConfirmed": False,
+              }
+              if current_count > 0:
+                  last_non_empty_vehicles = dict(current_by_id)
+
           # Reappearance above resets tracking. Expired pending candidates are pruned,
           # but queued alerts survive until Telegram accepts them.
           for vehicle_id, candidate in list(pending_vehicles.items()):
@@ -1123,6 +1270,9 @@ jobs:
 
           alert_state["schemaVersion"] = 1
           alert_state["pendingVehicles"] = pending_vehicles
+          alert_state["pendingArrivals"] = pending_arrivals
+          alert_state["lastNonEmptyVehicles"] = last_non_empty_vehicles
+          alert_state["emptyFeedState"] = empty_feed_state
           alert_state["outbox"] = outbox
           with open(STATE_PATH, "w", encoding="utf-8") as handle:
               json.dump(alert_state, handle, ensure_ascii=False, indent=2, sort_keys=True)
@@ -1130,6 +1280,7 @@ jobs:
 
           print("Vehículos con variaciones de ruta pendientes de confirmar: " + str(route_change_count) + ".")
           print("Cambios de ruta confirmados para aviso: " + str(confirmed_route_count) + ".")
+          print("Entradas en servicio confirmadas para aviso: " + str(confirmed_entry_count) + ".")
           print("Desapariciones confirmadas para aviso: " + str(missing_confirmed_count) + ".")
           print("Avisos pendientes en cola duradera: " + str(len(outbox)) + ".")
           # Save stops as a compact public dictionary as well as enriching every vehicle.
@@ -1368,6 +1519,29 @@ jobs:
                       "Última detección en el SAE: " + last_seen,
                       "Confirmación: " + safe(event.get("missingChecks")) + " consultas consecutivas válidas.",
                       "Importante: esto confirma que ha dejado de aparecer en el feed, no una baja administrativa; también puede ser fin de servicio o un fallo de publicación.",
+                      "Hora del aviso: " + safe(event.get("detectedAt")),
+                  ]
+              elif event.get("type") == "vehicle_entered":
+                  first_seen = safe(event.get("firstObservedAt"))
+                  if first_seen != "No disponible":
+                      try:
+                          from datetime import datetime
+                          from zoneinfo import ZoneInfo
+                          first_seen_dt = datetime.fromisoformat(first_seen.replace("Z", "+00:00"))
+                          if first_seen_dt.tzinfo is None:
+                              first_seen_dt = first_seen_dt.replace(tzinfo=ZoneInfo("UTC"))
+                          first_seen = first_seen_dt.astimezone(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y %H:%M:%S")
+                      except Exception:
+                          pass
+                  lines = [
+                      "🟢 AUTOBÚS DETECTADO ENTRANDO EN SERVICIO",
+                      "Vehículo: " + vehicle_id,
+                      "Línea actual: " + safe(event.get("line")),
+                      "Destino actual: " + safe(event.get("destination")),
+                      "Sentido actual: " + safe(event.get("direction")),
+                      "Primera detección: " + first_seen,
+                      "Confirmación: aparece en dos actualizaciones SIRI consecutivas separadas al menos dos minutos.",
+                      "Nota: el aviso confirma su aparición en el feed; no es una señal administrativa de alta del operador.",
                       "Hora del aviso: " + safe(event.get("detectedAt")),
                   ]
               elif event.get("type") == "vehicle_returned":
