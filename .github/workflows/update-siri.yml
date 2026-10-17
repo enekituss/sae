@@ -484,7 +484,7 @@ jobs:
                       schedule_by_trip.setdefault(trip_id, []).append({
                           "stopId": stop_id,
                           "stopSequence": sequence,
-                          "name": (row.get("stop_headsign") or "").strip() or (stop_obj or {}).get("name", ""),
+                          "name": (stop_obj or {}).get("name", "") or stop_id,
                           "arrivalDt": arrival_dt,
                           "departureDt": departure_dt,
                       })
