@@ -15,6 +15,7 @@ async function githubRequest(path, env, options = {}) {
   const headers = new Headers(options.headers || {});
   headers.set("Accept", "application/vnd.github+json");
   headers.set("X-GitHub-Api-Version", "2022-11-28");
+  headers.set("User-Agent", "SAE-Spotter-Cloudflare-Worker/1.0");
   headers.set("Authorization", "Bearer " + token);
 
   const response = await fetch(GITHUB_API + path, {
