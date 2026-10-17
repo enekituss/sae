@@ -1,6 +1,6 @@
 const DATA_FILE = './vehicles.json';
 const FEED = 'https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml';
-const REFRESH_MS = 30000;
+const REFRESH_MS = 15000;
 const REQUEST_TIMEOUT_MS = 8000;
 const $ = id => document.getElementById(id);
 
