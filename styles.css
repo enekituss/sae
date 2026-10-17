@@ -131,3 +131,24 @@ footer span:last-child { max-width: 48%; text-align: right; }
 }
 
 .destination-source { color: var(--muted); font-size: 10px; font-weight: 550; }
+
+
+/* Bloque/servicio GTFS y horario de próximas paradas. */
+.vehicle { flex-wrap: wrap; }
+.vehicle-upcoming { flex: 1 0 100%; min-width: 0; padding: 7px 0 0 35px; border-top: 1px solid var(--line); margin-top: 3px; }
+.upcoming-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.upcoming-heading strong { color: var(--ink); font-size: 12px; }
+.upcoming-heading span { color: var(--muted); font-size: 10px; }
+.vehicle-upcoming ol { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; }
+.vehicle-upcoming li { min-width: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px dashed #e5eaee; }
+.upcoming-stop-name { min-width: 0; color: var(--ink); font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+.upcoming-stop-name span { display: inline-block; margin-left: 3px; color: var(--muted); font-size: 9px; white-space: nowrap; }
+.upcoming-stop-time { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.upcoming-stop-time time { color: var(--ink); font-size: 12px; font-weight: 850; white-space: nowrap; }
+.upcoming-stop-time small { color: var(--muted); font-size: 9px; line-height: 1.2; }
+.has-stop-status .upcoming-stop-time small { color: var(--red); }
+@media (max-width: 650px) {
+  .vehicle-upcoming { padding-left: 0; }
+  .vehicle-upcoming ol { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .upcoming-stop-name { font-size: 12px; }
+}
