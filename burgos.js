@@ -172,7 +172,7 @@
   }
 
   function readLiveNodeId(node) {
-    return String((node && (node.num ?? node.id ?? node.stopId)) ?? '').trim();
+    return String((node && (node.num ?? node.id ?? node.stopId ?? node.nodeId ?? node.nodoId ?? node.idNodo ?? node.numNodo)) ?? '').trim();
   }
 
   function normalizeLiveObservations(nodes, results) {
