@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   watchdog:
-    if: github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'failure'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
