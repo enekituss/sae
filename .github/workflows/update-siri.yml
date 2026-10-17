@@ -121,6 +121,7 @@ jobs:
                   stops_doc = {}
 
           stops = {}
+          stops_refreshed = False
           if is_fresh("stops.json", 7) and isinstance(stops_doc.get("stops"), list):
               stops = {str(s.get("id", "")): s for s in stops_doc["stops"] if s.get("id")}
               stops_source = stops_doc.get("source", "cache local")
@@ -163,6 +164,7 @@ jobs:
                   if len(found) >= 50:
                       stops = found
                       stops_source = PARADAS_API_URL
+                      stops_refreshed = True
                       print("Paradas recuperadas del API oficial: " + str(len(stops)))
                   else:
                       print("El XML de GetParadas no contenía un listado reconocible; se probará GTFS.")
@@ -188,9 +190,15 @@ jobs:
                           }
                       if stops:
                           stops_source = GTFS_BASE + "stops.txt"
+                          stops_refreshed = True
                           print("Paradas recuperadas del GTFS: " + str(len(stops)))
                   except Exception as exc:
                       print("No se pudo leer stops.txt: " + str(exc))
+
+          if not stops and isinstance(stops_doc.get("stops"), list):
+              stops = {str(s.get("id", "")): s for s in stops_doc["stops"] if s.get("id")}
+              stops_source = stops_doc.get("source", "caché anterior")
+              print("Usando caché anterior de paradas: " + str(len(stops)))
 
           # Create aliases for common StopPointRef formats (for example "4157" and "stop:4157").
           stop_index = {}
@@ -221,6 +229,8 @@ jobs:
               raw = fetch_bytes(TRIP_UPDATES_URL, timeout=18)
               trip_root = ET.fromstring(raw)
               for element in trip_root.iter():
+                  if local(element.tag) not in ("EstimatedVehicleJourney", "MonitoredVehicleJourney", "VehicleJourney", "TripUpdate"):
+                      continue
                   jref = value(element, "VehicleJourneyRef", "DatedVehicleJourneyRef")
                   if not jref:
                       continue
@@ -375,7 +385,7 @@ jobs:
           if stops:
               with open("stops.json", "w", encoding="utf-8") as handle:
                   json.dump({
-                      "fetchedAt": (stops_doc.get("fetchedAt") if is_fresh("stops.json", 7) else NOW.isoformat(timespec="seconds")),
+                      "fetchedAt": (NOW.isoformat(timespec="seconds") if stops_refreshed else stops_doc.get("fetchedAt", NOW.isoformat(timespec="seconds"))),
                       "source": stops_source or stops_doc.get("source", ""),
                       "count": len(stops),
                       "stops": list(stops.values()),
