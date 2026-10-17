@@ -224,7 +224,7 @@
     if (!Array.isArray(nodes) || !nodes.length) throw new Error('El Ayuntamiento no ha devuelto la lista de paradas.');
     const validNodes = nodes.filter(node => readLiveNodeId(node));
     const chunks = [];
-    for (let i = 0; i < validNodes.length; i += 25) chunks.push(validNodes.slice(i, i + 25));
+    for (let i = 0; i < validNodes.length; i += 50) chunks.push(validNodes.slice(i, i + 50));
     const results = new Array(chunks.length);
     const errors = [];
     let cursor = 0;
