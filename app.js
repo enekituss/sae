@@ -112,7 +112,7 @@ function render() {
               <div><strong>${escapeHTML(vehicle.idType || 'ID de vehículo')}</strong><br>${escapeHTML(vehicle.id)}</div>
               <div><strong>Línea</strong><br>${escapeHTML(vehicle.line || line)}${vehicle.lineRef && vehicle.lineRef !== vehicle.line ? ' · ref. ' + escapeHTML(vehicle.lineRef) : ''}</div>
               <div><strong>Última posición comunicada</strong><br>${escapeHTML(formatTime(vehicle.time))}</div>
-              ${vehicle.stop ? `<div><strong>Parada SIRI</strong><br>${escapeHTML(vehicle.stopName || 'Nombre no encontrado en el directorio')} · ID ${escapeHTML(vehicle.stop)}</div>` : ''}
+              ${vehicle.stop ? `<div><strong>Parada SIRI</strong><br><a class="stop-link" href="./paradas.html?id=${escapeHTML(encodeURIComponent(vehicle.stop))}">${escapeHTML(vehicle.stopName || 'Consultar nombre en el directorio')}</a> · ID ${escapeHTML(vehicle.stop)}</div>` : ''}
             </div>
           </article>`).join('')}
       </div>`;
