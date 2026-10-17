@@ -37,7 +37,7 @@ function vehicleSearchFields(vehicle) {
   return [
     vehicle.id, vehicle.idType, vehicle.lineRef, vehicle.direction, vehicle.destination,
     vehicle.destinationRef, vehicle.stop, vehicle.stopName, vehicle.journeyRef,
-    vehicle.blockId, vehicle.tripShortName, ...nextStops
+    vehicle.blockId, vehicle.tripShortName, vehicle.serviceNumber, vehicle.serviceCode, ...nextStops
   ];
 }
 
@@ -127,6 +127,7 @@ function render() {
             <div class="vehicle-meta">
               <div><strong>${escapeHTML(vehicle.idType || 'ID de vehículo')}</strong><br>${escapeHTML(vehicle.id)}</div>
               <div><strong>Línea</strong><br>${escapeHTML(vehicle.line || line)}${vehicle.lineRef && vehicle.lineRef !== vehicle.line ? ' · ref. ' + escapeHTML(vehicle.lineRef) : ''}</div>
+              ${vehicle.serviceNumber ? `<div><strong>Servicio (inferido de SIRI)</strong><br>Servicio ${escapeHTML(vehicle.serviceNumber)}${vehicle.serviceCode ? ' · código ' + escapeHTML(vehicle.serviceCode) : ''}</div>` : ''}
               ${vehicle.blockId ? `<div><strong>Bloque de vehículo (GTFS)</strong><br>${escapeHTML(vehicle.blockId)}</div>` : ''}
               ${vehicle.tripShortName ? `<div><strong>N.º corto del viaje (GTFS)</strong><br>${escapeHTML(vehicle.tripShortName)}</div>` : ''}
               <div><strong>Última posición comunicada</strong><br>${escapeHTML(formatTime(vehicle.time))}</div>
@@ -175,6 +176,8 @@ function applySnapshot(snapshot) {
     blockId: String(v.blockId || ''),
     tripShortName: String(v.tripShortName || ''),
     calendarServiceId: String(v.calendarServiceId || ''),
+    serviceNumber: String(v.serviceNumber || ''),
+    serviceCode: String(v.serviceCode || ''),
     tripId: String(v.tripId || ''),
     upcomingStops: Array.isArray(v.upcomingStops) ? v.upcomingStops.map(stop => ({
       stopId: String(stop.stopId || ''),
