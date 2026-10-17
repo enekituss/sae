@@ -152,3 +152,128 @@ footer span:last-child { max-width: 48%; text-align: right; }
   .vehicle-upcoming ol { grid-template-columns: minmax(0, 1fr); gap: 3px; }
   .upcoming-stop-name { font-size: 12px; }
 }
+
+
+/* Botón compacto y ventana emergente del itinerario de cada vehículo. */
+.vehicle-upcoming-action {
+  flex: 1 0 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 9px 0 0 35px;
+  border-top: 1px solid var(--line);
+  margin-top: 3px;
+}
+.upcoming-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid #f0c98f;
+  border-radius: 9px;
+  background: #fff5e6;
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.upcoming-open:hover { background: #ffebce; border-color: #e7ac54; }
+.upcoming-open > span:first-child { font-size: 17px; line-height: 1; }
+.upcoming-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #f28c00;
+  color: white;
+  font-size: 10px;
+}
+.upcoming-note, .no-upcoming { color: var(--muted); font-size: 10px; line-height: 1.4; }
+.upcoming-dialog {
+  width: min(620px, calc(100% - 28px));
+  max-width: 620px;
+  max-height: min(82vh, 760px);
+  padding: 0;
+  border: 1px solid #e2e7eb;
+  border-radius: 18px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 24px 80px #10182040;
+  overflow: hidden;
+}
+.upcoming-dialog::backdrop { background: #1119239c; backdrop-filter: blur(3px); }
+.dialog-shell { display: flex; flex-direction: column; max-height: min(82vh, 760px); }
+.dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 21px 22px 17px;
+  border-bottom: 1px solid var(--line);
+  background: #fffaf2;
+}
+.dialog-kicker { color: var(--accent-dark); font-size: 10px; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+.dialog-header h2 { margin: 5px 0 6px; font-size: clamp(17px, 4vw, 22px); line-height: 1.25; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.dialog-header p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.dialog-close {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e3e6e8;
+  border-radius: 10px;
+  background: #fff;
+  color: #53616c;
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+}
+.dialog-close:hover { background: #f2f4f6; }
+.dialog-content { padding: 8px 22px 18px; overflow-y: auto; }
+.dialog-stop-list { margin: 0; padding: 0; list-style: none; }
+.dialog-stop-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 0;
+  border-bottom: 1px solid #edf0f2;
+}
+.dialog-stop-row:last-child { border-bottom: 0; }
+.dialog-stop-index {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #f1f3f5;
+  color: #54626e;
+  font-size: 11px;
+  font-weight: 850;
+}
+.dialog-stop-main { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.dialog-stop-main strong { font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+.dialog-stop-main > span { color: var(--muted); font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
+.dialog-stop-time { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.dialog-stop-time time { color: var(--ink); font-size: 16px; font-weight: 900; white-space: nowrap; }
+.dialog-stop-time small { color: var(--muted); font-size: 9px; }
+.dialog-stop-has-status .dialog-stop-index { background: #fdecec; color: var(--red); }
+.dialog-footer { padding: 12px 22px 16px; border-top: 1px solid var(--line); background: #fafbfc; color: var(--muted); font-size: 10px; line-height: 1.5; }
+@media (max-width: 650px) {
+  .vehicle-upcoming-action { align-items: flex-start; flex-direction: column; padding-left: 0; }
+  .upcoming-open { width: 100%; justify-content: center; }
+  .dialog-header { padding: 17px 15px 14px; }
+  .dialog-content { padding: 4px 15px 14px; }
+  .dialog-stop-row { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; padding: 13px 0; }
+  .dialog-stop-index { width: 25px; height: 25px; }
+  .dialog-stop-main strong { font-size: 12px; }
+  .dialog-stop-main > span { font-size: 9px; }
+  .dialog-stop-time time { font-size: 15px; }
+  .dialog-footer { padding: 11px 15px 13px; }
+}
