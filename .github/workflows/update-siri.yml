@@ -165,6 +165,28 @@ jobs:
               except Exception:
                   return False
 
+          # Read the previous published snapshot before overwriting it. Only compare
+          # consecutive-ish snapshots; suppress alerts after an extended feed outage.
+          previous_vehicles = {}
+          previous_snapshot_fresh = False
+          try:
+              with open("vehicles.json", encoding="utf-8") as handle:
+                  previous_snapshot = json.load(handle)
+              previous_stamp = parse_time(previous_snapshot.get("fetchedAt"))
+              if previous_stamp:
+                  previous_age_seconds = (NOW - previous_stamp).total_seconds()
+                  previous_snapshot_fresh = -120 <= previous_age_seconds <= 20 * 60
+              if previous_snapshot_fresh:
+                  for previous_vehicle in previous_snapshot.get("vehicles", []):
+                      previous_id = str(previous_vehicle.get("id") or "").strip()
+                      if previous_id:
+                          previous_vehicles[previous_id] = previous_vehicle
+                  print("Snapshot anterior válido para detección de cambios: " + str(len(previous_vehicles)) + " vehículos.")
+              else:
+                  print("Snapshot anterior ausente o antiguo; esta ejecución solo establecerá la nueva referencia.")
+          except Exception as exc:
+              print("No hay snapshot anterior legible; no se enviarán alertas iniciales: " + str(exc))
+
           # Stops: keep a cache so we do not download static data on every 5-min poll.
           # Prefer Bizkaia's official stop-list endpoint, with the public GTFS file as fallback.
           stops_doc = {}
@@ -719,6 +741,64 @@ jobs:
               "vehicles": vehicles,
           }
 
+          # Detect operational route assignment changes for the same SIRI vehicle ID.
+          # We intentionally do not compare VehicleJourneyRef: it changes on normal trip changes
+          # and would create noisy notifications even when the line/destination stays the same.
+          def normalized_route_value(value):
+              return re.sub(r"\\s+", " ", str(value or "").strip()).casefold()
+
+          route_change_events = []
+          if previous_snapshot_fresh:
+              current_by_id = {}
+              for current_vehicle in vehicles:
+                  current_id = str(current_vehicle.get("id") or "").strip()
+                  if not current_id:
+                      continue
+                  # If an ID occurs more than once, keep the record with the most route metadata.
+                  score = sum(1 for field in ("line", "destination", "direction", "lineRef") if current_vehicle.get(field))
+                  prev = current_by_id.get(current_id)
+                  prev_score = sum(1 for field in ("line", "destination", "direction", "lineRef") if prev and prev.get(field))
+                  if prev is None or score > prev_score:
+                      current_by_id[current_id] = current_vehicle
+
+              route_fields = [
+                  ("line", "Línea"),
+                  ("destination", "Destino"),
+                  ("direction", "Sentido"),
+              ]
+              for current_id, current_vehicle in current_by_id.items():
+                  old_vehicle = previous_vehicles.get(current_id)
+                  if not old_vehicle:
+                      continue
+                  changed_fields = []
+                  for field, label in route_fields:
+                      old_value = str(old_vehicle.get(field) or "").strip()
+                      new_value = str(current_vehicle.get(field) or "").strip()
+                      # Ignore empty-to-filled/filled-to-empty transitions, which are often
+                      # temporary missing metadata rather than a genuine route change.
+                      if old_value and new_value and normalized_route_value(old_value) != normalized_route_value(new_value):
+                          changed_fields.append({
+                              "field": field,
+                              "label": label,
+                              "old": old_value,
+                              "new": new_value,
+                          })
+                  if changed_fields:
+                      route_change_events.append({
+                          "vehicleId": current_id,
+                          "line": str(current_vehicle.get("line") or ""),
+                          "destination": str(current_vehicle.get("destination") or ""),
+                          "direction": str(current_vehicle.get("direction") or ""),
+                          "changed": changed_fields,
+                          "detectedAt": LOCAL_NOW.isoformat(timespec="minutes"),
+                      })
+
+          events_file = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), "bizkaibus-route-changes.json")
+          with open(events_file, "w", encoding="utf-8") as handle:
+              json.dump(route_change_events, handle, ensure_ascii=False)
+          print("Cambios de línea/destino/sentido detectados: " + str(len(route_change_events)) +
+                ("." if previous_snapshot_fresh else " (sin comparar por falta de snapshot anterior reciente)."))
+
           # Save stops as a compact public dictionary as well as enriching every vehicle.
           if stops:
               with open("stops.json", "w", encoding="utf-8") as handle:
@@ -766,3 +846,76 @@ jobs:
             git rebase origin/main
             git push origin HEAD:main
           fi
+
+      - name: Enviar alertas de cambios de ruta por Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+          events_file = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), "bizkaibus-route-changes.json")
+          try:
+              with open(events_file, encoding="utf-8") as handle:
+                  events = json.load(handle)
+          except Exception as exc:
+              print("No se pudo leer la lista de cambios de ruta: " + str(exc))
+              sys.exit(0)
+
+          if not events:
+              print("No hay cambios de línea/destino/sentido para notificar.")
+              sys.exit(0)
+
+          token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+          chat_id = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
+          if not token or not chat_id:
+              print("Cambios detectados (" + str(len(events)) + "), pero Telegram aún no está configurado. Añade los secretos TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en GitHub.")
+              sys.exit(0)
+
+          def safe(value):
+              return str(value or "No disponible").strip()
+
+          def message_for(event):
+              lines = [
+                  "🚌 CAMBIO DE RUTA DETECTADO",
+                  "Vehículo: " + safe(event.get("vehicleId")),
+              ]
+              labels = {"line": "Línea", "destination": "Destino", "direction": "Sentido"}
+              for item in event.get("changed", []):
+                  lines.append(labels.get(item.get("field"), safe(item.get("label"))) + ": " +
+                               safe(item.get("old")) + " → " + safe(item.get("new")))
+              lines.append("Hora: " + safe(event.get("detectedAt")))
+              lines.append("Consulta SAE: https://enekituss.github.io/sae/")
+              return "\\n".join(lines)
+
+          endpoint = "https://api.telegram.org/bot" + token + "/sendMessage"
+          sent = 0
+          for event in events:
+              body = json.dumps({
+                  "chat_id": chat_id,
+                  "text": message_for(event),
+                  "disable_web_page_preview": True,
+              }).encode("utf-8")
+              request = urllib.request.Request(
+                  endpoint, data=body,
+                  headers={"Content-Type": "application/json"},
+                  method="POST",
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=15) as response:
+                      result = json.loads(response.read().decode("utf-8"))
+                  if not result.get("ok"):
+                      raise RuntimeError(str(result))
+                  sent += 1
+              except Exception as exc:
+                  # Do not block the periodic data refresh when Telegram is unavailable.
+                  print("No se pudo enviar aviso de Telegram para el vehículo " +
+                        safe(event.get("vehicleId")) + ": " + str(exc))
+          print("Alertas Telegram enviadas: " + str(sent) + "/" + str(len(events)))
+          PY
+        continue-on-error: true
