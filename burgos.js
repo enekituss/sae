@@ -70,6 +70,421 @@
     return [trip.id, trip.routeId, trip.serviceId, trip.headsign, trip.blockId, trip.shortName,
       route.shortName, route.longName, ...names];
   }
+
+  // ---- Seguimiento en directo de Burgos ----
+  const BURGOS_LIVE_SOURCE = 'https://movilidad.aytoburgos.es/rutas-en-directo';
+  const BURGOS_PORTLET = 'as_asac_isaenext_IsaenextWebPortlet';
+  const BURGOS_PROXY_STORAGE = 'saeBurgosRealtimeProxy';
+  const LIVE_REFRESH_MS = 25000;
+  let liveMap = null;
+  let liveLayer = null;
+  let liveRefreshRunning = false;
+  let liveFirstPositionFit = false;
+  let liveInterval = null;
+
+  function setLiveStatus(message, state) {
+    const el = $('liveStatus');
+    if (!el) return;
+    el.className = 'live-status' + (state ? ' ' + state : '');
+    el.textContent = message;
+  }
+
+  function liveProxyBase() {
+    const fromPage = String(window.SAE_BURGOS_API_BASE || '').trim();
+    const fromStorage = String(localStorage.getItem(BURGOS_PROXY_STORAGE) || '').trim();
+    return (fromPage || fromStorage).replace(/\/+$/, '');
+  }
+
+  function initLiveMap() {
+    if (!window.L) {
+      setLiveStatus('No se ha podido cargar la librería del mapa. Comprueba la conexión a Internet y recarga la página.', 'error');
+      return;
+    }
+    if (!liveMap) {
+      liveMap = L.map('liveMap', { zoomControl: true }).setView([42.344, -3.696], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(liveMap);
+      liveLayer = L.layerGroup().addTo(liveMap);
+      window.setTimeout(() => liveMap && liveMap.invalidateSize(), 250);
+    }
+
+    const input = $('liveProxyUrl');
+    if (input) input.value = liveProxyBase();
+    $('liveConfigToggle').addEventListener('click', () => {
+      const panel = $('liveConfigPanel');
+      panel.hidden = !panel.hidden;
+      if (!panel.hidden) input.focus();
+    });
+    $('liveProxySave').addEventListener('click', () => {
+      const value = String(input.value || '').trim().replace(/\/+$/, '');
+      if (!value) {
+        setLiveStatus('Introduce la URL base del Worker, por ejemplo https://nombre.subdominio.workers.dev.', 'warning');
+        return;
+      }
+      if (!/^https:\/\/[a-z0-9.-]+(?::\d+)?$/i.test(value)) {
+        setLiveStatus('La URL debe empezar por https:// y contener solo el dominio del Worker, sin rutas.', 'warning');
+        return;
+      }
+      localStorage.setItem(BURGOS_PROXY_STORAGE, value);
+      $('liveConfigPanel').hidden = true;
+      setLiveStatus('Conexión guardada. Probando el endpoint de posiciones…', '');
+      refreshLivePositions();
+    });
+    $('liveProxyClear').addEventListener('click', () => {
+      localStorage.removeItem(BURGOS_PROXY_STORAGE);
+      input.value = '';
+      setLiveStatus('Se ha quitado el Worker guardado. Se intentará consultar directamente la fuente municipal.', 'warning');
+      refreshLivePositions();
+    });
+    $('liveRefresh').addEventListener('click', refreshLivePositions);
+    window.setTimeout(() => liveMap && liveMap.invalidateSize(), 500);
+    if (liveInterval) clearInterval(liveInterval);
+    liveInterval = setInterval(refreshLivePositions, LIVE_REFRESH_MS);
+  }
+
+  function isaenextUrl(resource, extra) {
+    const url = new URL(BURGOS_LIVE_SOURCE);
+    url.searchParams.set('p_p_id', BURGOS_PORTLET);
+    url.searchParams.set('p_p_lifecycle', '2');
+    url.searchParams.set('p_p_state', 'normal');
+    url.searchParams.set('p_p_mode', 'view');
+    url.searchParams.set('p_p_cacheability', 'cacheLevelPage');
+    url.searchParams.set('p_p_resource_id', resource);
+    Object.entries(extra || {}).forEach(([key, value]) => url.searchParams.set(key, value));
+    return url.toString();
+  }
+
+  async function jsonGet(url) {
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-store',
+      headers: { 'Accept': 'application/json, text/plain, */*' },
+      signal: AbortSignal.timeout(12000)
+    });
+    const body = await response.text();
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    try { return JSON.parse(body); }
+    catch (_) { throw new Error('La fuente no devolvió JSON reconocible.'); }
+  }
+
+  function readLiveNodeId(node) {
+    return String((node && (node.num ?? node.id ?? node.stopId)) ?? '').trim();
+  }
+
+  function normalizeLiveObservations(nodes, results) {
+    const nodeMap = new Map(nodes.map(node => [readLiveNodeId(node), node]));
+    const observations = [];
+    for (const result of (Array.isArray(results) ? results : [])) {
+      const stopId = readLiveNodeId(result);
+      const node = nodeMap.get(stopId) || result;
+      const routeGroups = result.routeEstimationByNode || result.routes || [];
+      for (const group of routeGroups) {
+        const line = String(group.line ?? group.route ?? group.lineName ?? '').trim();
+        const estimates = group.publicEstimationVHExts || group.estimations || group.buses || [];
+        for (const item of estimates) {
+          const id = String(item.vehicle ?? item.vehicleId ?? item.vehicle_id ?? '').trim();
+          const secondsNumber = Number(item.seconds);
+          const metersNumber = Number(item.meters);
+          const lat = Number(item.lat ?? item.latitude);
+          const lon = Number(item.lon ?? item.lng ?? item.longitude);
+          observations.push({
+            vehicleId: id && id !== '0' ? id : '',
+            line,
+            destination: String(item.destination ?? '').trim(),
+            seconds: Number.isFinite(secondsNumber) ? secondsNumber : null,
+            meters: Number.isFinite(metersNumber) ? metersNumber : null,
+            stopId,
+            stopName: String(node.name ?? node.stop_name ?? '').trim(),
+            stopLat: Number(node.lat ?? node.latitude),
+            stopLon: Number(node.lng ?? node.lon ?? node.longitude),
+            vehicleLat: Number.isFinite(lat) && lat >= 42 && lat <= 43 ? lat : null,
+            vehicleLon: Number.isFinite(lon) && lon >= -4 && lon <= -3 ? lon : null
+          });
+        }
+      }
+    }
+    return observations;
+  }
+
+  async function directLiveSnapshot() {
+    const nodes = await jsonGet(isaenextUrl('resourceNodes'));
+    if (!Array.isArray(nodes) || !nodes.length) throw new Error('El Ayuntamiento no ha devuelto la lista de paradas.');
+    const ids = nodes.map(readLiveNodeId).filter(Boolean);
+    const results = await jsonGet(isaenextUrl('resourceEstimations', {
+      '_as_asac_isaenext_IsaenextWebPortlet_tipo': '1',
+      '_as_asac_isaenext_IsaenextWebPortlet_nodoIds': ids.join(',')
+    }));
+    if (!Array.isArray(results)) throw new Error('El Ayuntamiento no ha devuelto estimaciones en formato de lista.');
+    if (results.length < 2 && nodes.length > 2) {
+      throw new Error('La consulta agrupada no ha devuelto datos de todas las paradas. Hace falta conectar el proxy de datos.');
+    }
+    return {
+      fetchedAt: new Date().toISOString(),
+      sourceType: 'Consulta directa al visor ISAENEXT',
+      stopCount: nodes.length,
+      resultCount: results.length,
+      observations: normalizeLiveObservations(nodes, results)
+    };
+  }
+
+  async function proxyLiveSnapshot(base) {
+    const response = await jsonGet(base + '/api/burgos/live');
+    if (!Array.isArray(response.observations)) {
+      throw new Error(response.error || 'El proxy no ha devuelto la lista de estimaciones.');
+    }
+    return response;
+  }
+
+  function normalizeLineKey(value) {
+    return norm(value).replace(/^linea\s*/, '').replace(/^l(?=\d)/, '').replace(/^[0]+(?=\d)/, '').replace(/[^\da-z]/g, '');
+  }
+
+  function destinationTokens(value) {
+    const ignored = new Set(['de','del','la','el','los','las','a','al','y','estacion','parada']);
+    return norm(value).split(/[^a-z0-9]+/).filter(word => word && !ignored.has(word));
+  }
+
+  function destinationScore(a, b) {
+    const aa = destinationTokens(a);
+    const bb = destinationTokens(b);
+    if (!aa.length || !bb.length) return 0;
+    const bset = new Set(bb);
+    let shared = 0;
+    for (const token of aa) if (bset.has(token)) shared++;
+    return shared / Math.max(aa.length, bb.length);
+  }
+
+  function haversine(a, b) {
+    const rad = value => value * Math.PI / 180;
+    const dLat = rad(b.lat - a.lat);
+    const dLon = rad(b.lon - a.lon);
+    const x = Math.sin(dLat / 2) ** 2 +
+      Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
+    return 6371000 * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(Math.max(0, 1 - x)));
+  }
+
+  function interpolatePoint(a, b, fraction) {
+    return { lat: a.lat + (b.lat - a.lat) * fraction, lon: a.lon + (b.lon - a.lon) * fraction };
+  }
+
+  function projectBackAlongShape(shape, stop, meters) {
+    if (!shape || !Array.isArray(shape.points) || shape.points.length < 2 || !stop) return null;
+    const points = shape.points.map(point => ({ lat: Number(point[0]), lon: Number(point[1]) }))
+      .filter(point => Number.isFinite(point.lat) && Number.isFinite(point.lon));
+    if (points.length < 2) return null;
+
+    let nearestIndex = -1;
+    let nearestDistance = Infinity;
+    for (let i = 0; i < points.length; i++) {
+      const dist = haversine(points[i], stop);
+      if (dist < nearestDistance) { nearestDistance = dist; nearestIndex = i; }
+    }
+    if (nearestIndex < 1 || nearestDistance > 250) return null;
+
+    let remaining = Math.max(0, Number(meters) || 0);
+    if (remaining === 0) return { ...points[nearestIndex], source: 'Parada indicada por ISAENEXT' };
+    for (let i = nearestIndex; i > 0; i--) {
+      const from = points[i];
+      const to = points[i - 1];
+      const segmentMeters = haversine(from, to);
+      if (segmentMeters >= remaining && segmentMeters > 0) {
+        return { ...interpolatePoint(from, to, remaining / segmentMeters), source: 'Estimación a partir de los metros a la parada' };
+      }
+      remaining -= segmentMeters;
+    }
+    return null;
+  }
+
+  function matchTripForObservation(observation) {
+    if (!data || !data.routeById) return null;
+    const stopId = String(observation.stopId);
+    const lineKey = normalizeLineKey(observation.line);
+    let candidates = [];
+    for (const trip of data.trips) {
+      const route = data.routeById.get(String(trip.routeId));
+      if (!route) continue;
+      const routeKeys = [route.shortName, route.id].map(normalizeLineKey);
+      if (!routeKeys.includes(lineKey)) continue;
+      if (!(trip.stops || []).some(item => String(item[0]) === stopId)) continue;
+      const shape = data.shapeById && data.shapeById.get(String(trip.shapeId));
+      if (!shape) continue;
+      const score = destinationScore(observation.destination, trip.headsign);
+      candidates.push({ trip, score, shape });
+    }
+    if (!candidates.length) return null;
+    candidates.sort((a, b) => b.score - a.score);
+    return candidates[0];
+  }
+
+  function locateLiveVehicle(observation) {
+    if (Number.isFinite(observation.vehicleLat) && Number.isFinite(observation.vehicleLon)) {
+      return { lat: observation.vehicleLat, lon: observation.vehicleLon, source: 'GPS publicado por ISAENEXT' };
+    }
+    if (!Number.isFinite(observation.stopLat) || !Number.isFinite(observation.stopLon)) return null;
+    if (!Number.isFinite(observation.meters) || observation.meters < 0 || observation.meters > 12000) return null;
+    if (!data || !data.stopById) return null;
+
+    const stop = data.stopById.get(String(observation.stopId));
+    if (!stop || !Number.isFinite(Number(stop.lat)) || !Number.isFinite(Number(stop.lon))) return null;
+    const match = matchTripForObservation(observation);
+    if (!match) return null;
+    return projectBackAlongShape(match.shape, { lat: Number(stop.lat), lon: Number(stop.lon) }, observation.meters);
+  }
+
+  function deduplicateLiveVehicles(snapshot) {
+    const bestByKey = new Map();
+    for (const observation of (snapshot.observations || [])) {
+      if (!observation.line || !observation.destination) continue;
+      const key = observation.vehicleId
+        ? 'vehicle:' + observation.vehicleId
+        : 'estimate:' + normalizeLineKey(observation.line) + ':' + norm(observation.destination);
+      const existing = bestByKey.get(key);
+      const distanceA = Number.isFinite(observation.seconds) && observation.seconds >= 0 ? observation.seconds : Infinity;
+      const distanceB = existing && Number.isFinite(existing.seconds) && existing.seconds >= 0 ? existing.seconds : Infinity;
+      if (!existing || distanceA < distanceB) bestByKey.set(key, observation);
+    }
+    return [...bestByKey.values()].map(observation => {
+      const route = data.routes.find(item => normalizeLineKey(item.shortName) === normalizeLineKey(observation.line));
+      return {
+        ...observation,
+        route,
+        position: locateLiveVehicle(observation)
+      };
+    }).sort((a, b) =>
+      normalizeLineKey(a.line).localeCompare(normalizeLineKey(b.line), 'es', { numeric: true }) ||
+      String(a.vehicleId || '').localeCompare(String(b.vehicleId || ''), 'es', { numeric: true })
+    );
+  }
+
+  function secondsLabel(value) {
+    if (!Number.isFinite(value) || value < 0) return 'sin estimación temporal';
+    if (value < 60) return 'llegada estimada en menos de 1 min';
+    return 'llegada estimada en ' + Math.ceil(value / 60) + ' min';
+  }
+
+  function markerIcon(vehicle) {
+    const raw = String(vehicle.route && vehicle.route.color || '177456').replace('#', '');
+    const color = /^[0-9a-f]{6}$/i.test(raw) ? '#' + raw : '#177456';
+    const label = String(vehicle.line || '?');
+    return L.divIcon({
+      className: '',
+      html: '<div class="bus-map-icon" style="background:' + color + '">🚌<span>' + esc(label) + '</span></div>',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    });
+  }
+
+  function renderLiveVehicles(vehicles, snapshot) {
+    if (!liveLayer || !liveMap) return;
+    liveLayer.clearLayers();
+    const positioned = [];
+    for (const vehicle of vehicles) {
+      if (!vehicle.position || !Number.isFinite(vehicle.position.lat) || !Number.isFinite(vehicle.position.lon)) continue;
+      const marker = L.marker([vehicle.position.lat, vehicle.position.lon], { icon: markerIcon(vehicle) });
+      const title = 'Línea ' + vehicle.line + (vehicle.vehicleId ? ' · Vehículo ' + vehicle.vehicleId : '');
+      const locationLabel = vehicle.position.source || 'Posición estimada';
+      const secondsText = secondsLabel(vehicle.seconds);
+      const popup = '<div class="bus-popup"><strong>' + esc(title) + '</strong>' +
+        '<div>Destino: ' + esc(vehicle.destination) + '</div>' +
+        '<div>' + esc(secondsText) + '</div>' +
+        '<small>Referencia: ' + esc(vehicle.stopName || ('Parada ' + vehicle.stopId)) + '</small>' +
+        '<small>' + esc(locationLabel) + '</small></div>';
+      marker.bindPopup(popup);
+      marker.addTo(liveLayer);
+      positioned.push([vehicle.position.lat, vehicle.position.lon]);
+    }
+    $('liveBusCount').textContent = String(vehicles.filter(v => v.vehicleId).length);
+    $('livePositionCount').textContent = String(positioned.length);
+    $('liveStopCount').textContent = String(snapshot.stopCount || '—');
+
+    if (!vehicles.length) {
+      $('liveVehicleList').innerHTML = '<div class="live-empty">La consulta no ha devuelto estimaciones de autobuses para las paradas consultadas. Puede que no haya servicio activo en este momento o que ISAENEXT no esté publicando estimaciones ahora.</div>';
+    } else {
+      $('liveVehicleList').innerHTML = vehicles.slice(0, 150).map(vehicle => {
+        const routeLabel = vehicle.route ? (vehicle.route.shortName || vehicle.line) : vehicle.line;
+        const positionLabel = vehicle.position
+          ? '<span class="live-position-tag">' + esc(vehicle.position.source || 'Posición estimada en el trazado') + '</span>'
+          : '<span>Sin coordenadas suficientes para situarlo con rigor</span>';
+        const idLabel = vehicle.vehicleId ? 'Vehículo ' + vehicle.vehicleId : 'Vehículo sin ID publicado';
+        const distanceLabel = Number.isFinite(vehicle.meters) && vehicle.meters > 0 ? ' · ' + Math.round(vehicle.meters) + ' m a la parada' : '';
+        return '<article class="live-vehicle-card">' +
+          '<div class="live-vehicle-chip">' + esc(routeLabel) + '</div>' +
+          '<div class="live-vehicle-info"><strong>' + esc(idLabel + ' · ' + vehicle.destination) + '</strong>' +
+          '<span>' + esc(secondsLabel(vehicle.seconds) + distanceLabel) + '</span>' +
+          '<span>Próxima referencia: ' + esc(vehicle.stopName || ('Parada ' + vehicle.stopId)) + '</span>' +
+          positionLabel + '</div></article>';
+      }).join('');
+    }
+
+    if (!positioned.length) {
+      setLiveStatus('Conexión de estimaciones correcta, pero no se han podido reconstruir coordenadas de los vehículos con los datos recibidos. No se muestran marcadores falsos.', 'warning');
+    } else {
+      const located = vehicles.filter(v => v.position && String(v.position.source).includes('GPS publicado')).length;
+      const estimated = positioned.length - located;
+      setLiveStatus('Recibidas ' + vehicles.length + ' estimaciones; ' + positioned.length + ' vehículos aparecen en el mapa (' +
+        located + ' coordenadas GPS publicadas y ' + estimated + ' posiciones estimadas sobre el trazado). Las estimaciones se renuevan automáticamente.', 'ok');
+    }
+    if (!liveFirstPositionFit && positioned.length) {
+      liveMap.fitBounds(positioned, { padding: [30, 30], maxZoom: 14 });
+      liveFirstPositionFit = true;
+    }
+  }
+
+  async function refreshLivePositions() {
+    if (liveRefreshRunning || !liveMap) return;
+    if (!data || !data.routes || !data.routes.length) {
+      setLiveStatus('Esperando a que carguen los recorridos GTFS para poder ubicar los vehículos en el mapa…', '');
+      return;
+    }
+    liveRefreshRunning = true;
+    $('liveRefresh').disabled = true;
+    $('liveRefresh').textContent = 'Consultando…';
+    setLiveStatus('Consultando la fuente municipal de estimaciones…', '');
+    try {
+      let snapshot;
+      let directError = null;
+      const base = liveProxyBase();
+      if (base) {
+        try {
+          snapshot = await proxyLiveSnapshot(base);
+        } catch (error) {
+          directError = error;
+          console.warn('No se pudo consultar el Worker guardado; se prueba la fuente directa:', error);
+        }
+      }
+      if (!snapshot) {
+        try {
+          snapshot = await directLiveSnapshot();
+        } catch (error) {
+          directError = error;
+          if (base) throw new Error('El Worker y la consulta directa han fallado. Worker: ' + String(directError.message || directError));
+          throw error;
+        }
+      }
+      const vehicles = deduplicateLiveVehicles(snapshot);
+      renderLiveVehicles(vehicles, snapshot);
+      $('liveUpdated').textContent = 'Consulta: ' + new Date(snapshot.fetchedAt || Date.now()).toLocaleTimeString('es-ES');
+    } catch (error) {
+      console.error('No se pudieron consultar los autobuses de Burgos en directo:', error);
+      $('liveBusCount').textContent = '—';
+      $('livePositionCount').textContent = '—';
+      $('liveStopCount').textContent = '—';
+      $('liveUpdated').textContent = 'Sin conexión en directo';
+      $('liveVehicleList').innerHTML = '<div class="live-empty">No se ha podido recuperar la fuente de autobuses en directo.</div>';
+      setLiveStatus('No se ha podido acceder a ISAENEXT desde el navegador: ' + String(error.message || error) +
+        '. Si Chrome bloquea la conexión directa, despliega el Worker de Cloudflare del repositorio y guarda su URL en «Configurar conexión».', 'error');
+      if (!liveProxyBase()) $('liveConfigPanel').hidden = false;
+    } finally {
+      liveRefreshRunning = false;
+      $('liveRefresh').disabled = false;
+      $('liveRefresh').textContent = '↻ Actualizar posiciones';
+    }
+  }
+
   function buildNotice() {
     const notice = $('dataNotice');
     if (!data || !data.fetchedAt) {
@@ -177,6 +592,7 @@
       data.routes = (data.routes || []).map(r => ({...r,tripsCount:0}));
       data.stopById = new Map((data.stops || []).map(s => [String(s.id),s]));
       data.routeById = new Map(data.routes.map(r => [String(r.id),r]));
+      data.shapeById = new Map((data.shapes || []).map(shape => [String(shape.id), shape]));
       data.trips = data.trips || [];
       for (const trip of data.trips) {
         const route = data.routeById.get(String(trip.routeId));
@@ -208,6 +624,7 @@
         if (match) selectedRoute = match.id;
       }
       render();
+      refreshLivePositions();
     } catch (error) {
       console.error('No se pudieron cargar los horarios de Burgos:', error);
       setStatus('No se han podido cargar los horarios', 'error');
@@ -225,5 +642,6 @@
   $('refresh').addEventListener('click', loadData);
   $('clearLine').addEventListener('click', () => { selectedRoute = ''; const url = new URL(window.location.href); url.searchParams.delete('line'); history.replaceState(history.state, '', url.toString()); render(); });
   $('serviceDate').value = today();
+  initLiveMap();
   loadData();
 })();
