@@ -758,8 +758,7 @@ jobs:
                   with open(STATE_PATH, encoding="utf-8") as handle:
                       loaded_state = json.load(handle)
                   if isinstance(loaded_state, dict):
-                      alert_state["pendingVehicles"] = loaded_state.get("pendingVehicles", {})
-                      alert_state["outbox"] = loaded_state.get("outbox", {})
+                      alert_state.update(loaded_state)
               except Exception as exc:
                   print("No se pudo leer el estado de alertas; se inicializará de nuevo: " + str(exc))
           if not isinstance(alert_state.get("pendingVehicles"), dict):
@@ -969,11 +968,9 @@ jobs:
               if first_missing and (NOW - first_missing).total_seconds() > 60 * 60 and not candidate.get("notificationQueued"):
                   pending_vehicles.pop(vehicle_id, None)
 
-          alert_state = {
-              "schemaVersion": 1,
-              "pendingVehicles": pending_vehicles,
-              "outbox": outbox,
-          }
+          alert_state["schemaVersion"] = 1
+          alert_state["pendingVehicles"] = pending_vehicles
+          alert_state["outbox"] = outbox
           with open(STATE_PATH, "w", encoding="utf-8") as handle:
               json.dump(alert_state, handle, ensure_ascii=False, indent=2, sort_keys=True)
               handle.write("\n")
@@ -1104,6 +1101,50 @@ jobs:
               print("ERROR de conexión/configuración de Telegram: " + str(exc))
               sys.exit(1)
 
+          # Poll commands occasionally so /start and /help receive a reply.
+          # A webhook conflict must not disable the vehicle-alert sender.
+          state_dirty = False
+          try:
+              update_offset = max(0, int(state.get("telegramUpdateOffset", 0) or 0))
+              updates = telegram_api("getUpdates", {
+                  "offset": update_offset,
+                  "timeout": 0,
+                  "allowed_updates": ["message"],
+              })
+          except Exception as exc:
+              print("AVISO: no se pudieron consultar comandos de Telegram; las alertas de vehículos seguirán funcionando: " + str(exc))
+              updates = []
+              update_offset = max(0, int(state.get("telegramUpdateOffset", 0) or 0))
+
+          expected_chat_id = str(chat_info.get("id") or chat_id)
+          highest_processed_update = update_offset - 1
+          for update in sorted(updates, key=lambda item: int(item.get("update_id", -1))):
+              try:
+                  update_id = int(update.get("update_id", -1))
+              except (TypeError, ValueError):
+                  continue
+              message = update.get("message") or {}
+              incoming_chat_id = str((message.get("chat") or {}).get("id", ""))
+              raw_text = (message.get("text") or "").strip()
+              if incoming_chat_id == expected_chat_id and raw_text:
+                  command = raw_text.split()[0].split("@")[0].lower()
+                  if command in ("/start", "/help"):
+                      try:
+                          telegram_api("sendMessage", {
+                              "chat_id": chat_id,
+                              "text": "🚌 SAE Bizkaibus está conectado.\n\nTe enviaré avisos cuando detecte cambios publicados de línea, destino o sentido, y cuando un vehículo deje de aparecer en el feed durante varias consultas consecutivas.\n\nLa desaparición del feed no demuestra por sí sola una baja administrativa: también puede ser el fin de un servicio o un fallo de publicación.\n\nLas comprobaciones se realizan aproximadamente cada 5 minutos.\nConsulta SAE: https://enekituss.github.io/sae/",
+                              "disable_web_page_preview": True,
+                          })
+                          print("Comando " + command + " atendido.")
+                      except Exception as exc:
+                          print("ERROR al responder a " + command + ": " + str(exc))
+                          break
+              highest_processed_update = update_id
+          if highest_processed_update >= update_offset:
+              state["telegramUpdateOffset"] = highest_processed_update + 1
+              state_dirty = True
+              print("Actualizaciones de Telegram procesadas hasta el ID " + str(highest_processed_update) + ".")
+
           if event_name == "workflow_dispatch":
               try:
                   telegram_api("sendMessage", {
@@ -1122,7 +1163,6 @@ jobs:
           )
           if not events:
               print("No hay avisos de ruta o desaparición pendientes. Telegram se ha validado correctamente.")
-              sys.exit(0)
 
           def render_event(event):
               vehicle_id = safe(event.get("vehicleId"))
@@ -1131,8 +1171,11 @@ jobs:
                   if last_seen != "No disponible":
                       try:
                           from datetime import datetime
+                          from zoneinfo import ZoneInfo
                           last_seen_dt = datetime.fromisoformat(last_seen.replace("Z", "+00:00"))
-                          last_seen = last_seen_dt.strftime("%d/%m/%Y %H:%M")
+                          if last_seen_dt.tzinfo is None:
+                              last_seen_dt = last_seen_dt.replace(tzinfo=ZoneInfo("UTC"))
+                          last_seen = last_seen_dt.astimezone(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y %H:%M")
                       except Exception:
                           pass
                   lines = [
@@ -1195,7 +1238,9 @@ jobs:
                       if candidate and candidate.get("eventId") == event_id:
                           candidate["alerted"] = True
                           candidate["notificationQueued"] = False
+              state_dirty = True
 
+          if state_dirty:
               state["schemaVersion"] = 1
               state["pendingVehicles"] = pending
               state["outbox"] = outbox
@@ -1209,15 +1254,15 @@ jobs:
                   subprocess.run(["git", "add", state_path], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
                   diff = subprocess.run(["git", "diff", "--cached", "--quiet"], check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
                   if diff.returncode == 1:
-                      subprocess.run(["git", "commit", "-m", "Confirmar alertas entregadas por Telegram"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                      subprocess.run(["git", "commit", "-m", "Guardar estado de Telegram y confirmar avisos"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
                       subprocess.run(["git", "fetch", "origin", "main"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
                       subprocess.run(["git", "rebase", "origin/main"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
                       subprocess.run(["git", "push", "origin", "HEAD:main"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-                      print("Estado de entrega guardado en GitHub.")
+                      print("Estado de Telegram guardado en GitHub.")
                   elif diff.returncode != 0:
                       raise RuntimeError("git diff devolvió el código " + str(diff.returncode))
               except Exception as exc:
-                  print("ERROR al guardar la confirmación de entrega. Un aviso podría repetirse en el próximo intento: " + str(exc))
+                  print("ERROR al guardar el estado de Telegram. Un aviso podría repetirse en el próximo intento: " + str(exc))
                   sys.exit(1)
 
           if len(events) > len(selected_events):
