@@ -481,7 +481,7 @@
     $('liveStopCount').textContent = String(snapshot.stopCount || '—');
 
     if (!vehicles.length) {
-      $('liveVehicleList').innerHTML = '<div class="live-empty">La consulta no ha devuelto estimaciones de autobuses para las paradas consultadas. Puede que no haya servicio activo en este momento o que ISAENEXT no esté publicando estimaciones ahora.</div>';
+      $('liveVehicleList').innerHTML = '<div class="live-empty">La consulta no ha devuelto estimaciones de autobuses para las paradas consultadas. Puede que no haya servicio activo en este momento o que ISAENEXT no esté publicando estimaciones ahora. <a href="https://webburgos.com/bus/" target="_blank" rel="noopener noreferrer">Abrir otro visor de seguimiento en directo ↗</a></div>';
     } else {
       $('liveVehicleList').innerHTML = vehicles.slice(0, 150).map(vehicle => {
         const routeLabel = vehicle.route ? (vehicle.route.shortName || vehicle.line) : vehicle.line;
@@ -558,7 +558,7 @@
       $('livePositionCount').textContent = '—';
       $('liveStopCount').textContent = '—';
       $('liveUpdated').textContent = 'Sin conexión en directo';
-      $('liveVehicleList').innerHTML = '<div class="live-empty">No se ha podido recuperar la fuente de autobuses en directo.</div>';
+      $('liveVehicleList').innerHTML = '<div class="live-empty">No se ha podido recuperar la fuente de autobuses en directo. <a href="https://webburgos.com/bus/" target="_blank" rel="noopener noreferrer">Abrir otro visor de seguimiento en directo ↗</a></div>';
       setLiveStatus('No se ha podido acceder a ISAENEXT desde el navegador: ' + String(error.message || error) +
         '. Si Chrome bloquea la conexión directa, despliega el Worker de Cloudflare del repositorio y guarda su URL en «Configurar conexión».', 'error');
       if (!liveProxyBase()) $('liveConfigPanel').hidden = false;
