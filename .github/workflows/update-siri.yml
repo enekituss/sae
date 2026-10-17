@@ -798,6 +798,32 @@ jobs:
               if previous_choice is None or score > previous_score:
                   current_by_id[current_id] = current_vehicle
 
+          def has_recent_position(vehicle):
+              observed_at = parse_time(vehicle.get("time"))
+              if observed_at is None:
+                  return False
+              age_seconds = (NOW - observed_at.astimezone(timezone.utc)).total_seconds()
+              return -120 <= age_seconds <= 15 * 60
+
+          # A record left in SIRI with an old LocationRecordedAtTime is not enough to prove
+          # that the vehicle is currently in service. If every identified vehicle is stale,
+          # pause per-vehicle entry/exit detection and let the watchdog report the feed outage.
+          if current_by_id:
+              recent_ids = {
+                  vehicle_id for vehicle_id, vehicle in current_by_id.items()
+                  if has_recent_position(vehicle)
+              }
+              if recent_ids:
+                  current_by_id = {
+                      vehicle_id: vehicle
+                      for vehicle_id, vehicle in current_by_id.items()
+                      if vehicle_id in recent_ids
+                  }
+              else:
+                  current_by_id = {}
+                  previous_snapshot_fresh = False
+                  print("Las posiciones SIRI de todos los vehículos tienen más de 15 minutos; se pausa la detección individual para evitar falsas salidas.")
+
           # Keep the most recent non-empty fleet separately: vehicles.json may legitimately
           # contain an empty snapshot overnight, but we still need to know which vehicles left.
           if previous_snapshot_fresh and previous_by_id:
@@ -1092,7 +1118,18 @@ jobs:
           else:
               # A sudden fleet-wide reduction may be a partial feed. Seed candidates but
               # require six consecutive non-empty samples before sending any of those alerts.
-              large_drop = previous_count >= 20 and current_count < max(5, int(previous_count * 0.4))
+              # Once those reinforced candidates exist, do not reset their counters on every
+              # poll merely because the same partial subset continues to be published.
+              absent_ids = [vehicle_id for vehicle_id in previous_by_id if vehicle_id not in current_by_id]
+              reinforced_drop_already_tracking = bool(absent_ids) and all(
+                  vehicle_id in pending_vehicles and int(pending_vehicles[vehicle_id].get("requiredMissing", 0)) >= 6
+                  for vehicle_id in absent_ids
+              )
+              large_drop = (
+                  previous_count >= 10
+                  and current_count < max(5, previous_count * 0.4)
+                  and not reinforced_drop_already_tracking
+              )
               if large_drop:
                   for candidate in pending_vehicles.values():
                       candidate["consecutiveMissing"] = 0
