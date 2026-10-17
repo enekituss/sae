@@ -1,0 +1,186 @@
+name: Vigilar SAE y Telegram
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_run:
+    workflows: ["Actualizar posiciones Bizkaibus"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: vigilar-sae-telegram
+  cancel-in-progress: false
+
+jobs:
+  watchdog:
+    if: github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Descargar estado de vigilancia
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Comprobar actualización y avisar por Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          FAILED_RUN_ID: ${{ github.event.workflow_run.id }}
+          FAILED_RUN_URL: ${{ github.event.workflow_run.html_url }}
+          FAILED_RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          import sys
+          import time
+          import urllib.error
+          import urllib.request
+          from datetime import datetime, timezone
+
+          token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+          chat_id = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
+          gh_token = (os.environ.get("GITHUB_TOKEN") or "").strip()
+          repo = (os.environ.get("GITHUB_REPOSITORY") or "").strip()
+          event_name = os.environ.get("EVENT_NAME", "")
+          state_path = "sae-watchdog-state.json"
+
+          if not token or not chat_id or not gh_token or not repo:
+              raise SystemExit("Faltan secretos o datos necesarios para la vigilancia.")
+
+          try:
+              with open(state_path, encoding="utf-8") as f:
+                  state = json.load(f)
+          except FileNotFoundError:
+              state = {"incidentActive": False, "lastFailureRunId": ""}
+          if not isinstance(state, dict):
+              state = {"incidentActive": False, "lastFailureRunId": ""}
+
+          def telegram_send(text):
+              endpoint = "https://api.telegram.org/bot" + token + "/sendMessage"
+              last_error = None
+              for attempt in range(4):
+                  request = urllib.request.Request(
+                      endpoint,
+                      data=json.dumps({
+                          "chat_id": chat_id,
+                          "text": text,
+                          "disable_web_page_preview": True,
+                      }, ensure_ascii=False).encode("utf-8"),
+                      headers={"Content-Type": "application/json"},
+                      method="POST",
+                  )
+                  try:
+                      with urllib.request.urlopen(request, timeout=20) as response:
+                          result = json.loads(response.read().decode("utf-8"))
+                      if result.get("ok"):
+                          return
+                      retry_after = (result.get("parameters") or {}).get("retry_after")
+                      last_error = RuntimeError(result.get("description", "Error de Telegram"))
+                      if attempt < 3 and (retry_after or "temporar" in str(last_error).lower()):
+                          time.sleep(min(60, max(1, int(retry_after or 2 ** attempt))))
+                          continue
+                      raise last_error
+                  except urllib.error.HTTPError as exc:
+                      last_error = RuntimeError("Telegram HTTP " + str(exc.code))
+                      if attempt >= 3 or not (exc.code == 429 or 500 <= exc.code < 600):
+                          raise last_error
+                      time.sleep(min(30, 2 ** attempt))
+                  except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+                      last_error = exc
+                      if attempt >= 3:
+                          raise RuntimeError("No se pudo enviar la alerta de vigilancia: " + str(exc))
+                      time.sleep(min(8, 2 ** attempt))
+              raise RuntimeError(str(last_error))
+
+          def github_json(url):
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      "Authorization": "Bearer " + gh_token,
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=15) as response:
+                  return json.loads(response.read().decode("utf-8"))
+
+          changed = False
+
+          # Aviso inmediato cuando una ejecución de actualización termina con error.
+          if event_name == "workflow_run":
+              run_id = (os.environ.get("FAILED_RUN_ID") or "").strip()
+              if run_id and run_id != str(state.get("lastFailureRunId", "")):
+                  run_url = os.environ.get("FAILED_RUN_URL", "")
+                  telegram_send(
+                      "🚨 ERROR EN LA ACTUALIZACIÓN AUTOMÁTICA DEL SAE BIZKAIBUS\n"
+                      "La ejecución de GitHub Actions ha terminado con error.\n"
+                      "Ejecución: " + run_id + "\n"
+                      + (run_url + "\n" if run_url else "")
+                      + "El sistema intentará continuar en el siguiente ciclo; revisa el historial si el problema persiste."
+                  )
+                  state["lastFailureRunId"] = run_id
+                  changed = True
+                  print("Aviso de fallo enviado para la ejecución " + run_id + ".")
+
+          # Vigila que exista una ejecución correcta reciente, no solo que el workflow esté configurado.
+          api_url = "https://api.github.com/repos/" + repo + "/actions/workflows/update-siri.yml/runs?branch=main&status=success&per_page=1"
+          result = github_json(api_url)
+          runs = result.get("workflow_runs", [])
+          now = datetime.now(timezone.utc)
+          age_minutes = None
+          if runs:
+              stamp = datetime.fromisoformat(runs[0]["updated_at"].replace("Z", "+00:00"))
+              age_minutes = (now - stamp).total_seconds() / 60
+
+          stale = age_minutes is None or age_minutes > 15
+          if stale and not state.get("incidentActive", False):
+              age_text = "No se encuentra ninguna ejecución correcta reciente." if age_minutes is None else "La última ejecución correcta fue hace aproximadamente " + str(round(age_minutes)) + " minutos."
+              telegram_send(
+                  "⚠️ SAE BIZKAIBUS SIN ACTUALIZACIÓN RECIENTE\n"
+                  + age_text + "\n"
+                  + "La vigilancia automática ha detectado que los datos podrían estar desactualizados.\n"
+                  + "Historial: https://github.com/" + repo + "/actions/workflows/update-siri.yml"
+              )
+              state["incidentActive"] = True
+              changed = True
+              print("Incidencia de falta de actualización notificada.")
+          elif not stale and state.get("incidentActive", False):
+              telegram_send(
+                  "✅ SAE BIZKAIBUS RECUPERADO\n"
+                  "Se ha detectado una ejecución correcta reciente. La vigilancia da por recuperada la actualización automática.\n"
+                  + "Web: https://enekituss.github.io/sae/"
+              )
+              state["incidentActive"] = False
+              changed = True
+              print("Recuperación notificada.")
+
+          if changed:
+              with open(state_path, "w", encoding="utf-8") as f:
+                  json.dump(state, f, ensure_ascii=False, indent=2, sort_keys=True)
+                  f.write("\n")
+              subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
+              subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
+              subprocess.run(["git", "add", state_path], check=True)
+              diff = subprocess.run(["git", "diff", "--cached", "--quiet"], check=False)
+              if diff.returncode == 1:
+                  subprocess.run(["git", "commit", "-m", "Actualizar estado de vigilancia del SAE"], check=True)
+                  subprocess.run(["git", "fetch", "origin", "main"], check=True)
+                  subprocess.run(["git", "rebase", "origin/main"], check=True)
+                  subprocess.run(["git", "push", "origin", "HEAD:main"], check=True)
+                  print("Estado de vigilancia guardado.")
+              elif diff.returncode != 0:
+                  raise SystemExit("No se pudo comprobar el estado de Git.")
+          else:
+              print("No se requiere cambiar el estado de vigilancia.")
+          PY
