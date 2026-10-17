@@ -148,29 +148,62 @@ async function fetchBurgosLiveSnapshot() {
     throw new Error("ISAENEXT no devolvió la lista de paradas.");
   }
   const nodes = nodesPayload.filter(node => readNodeId(node));
-  const ids = nodes.map(readNodeId);
+  const chunks = [];
+  for (let i = 0; i < nodes.length; i += 25) chunks.push(nodes.slice(i, i + 25));
 
-  // El nombre del parámetro ISAENEXT es plural (nodoIds), así que se prueba
-  // la consulta agrupada primero. No se lanzan cientos de peticiones a ciegas.
-  const batchPayload = await fetchIsaenextJson(isaenextURL("resourceEstimations", {
-    "_as_asac_isaenext_IsaenextWebPortlet_tipo": "1",
-    "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": ids.join(",")
+  // El servicio trabaja con estimaciones por parada. Consultamos grupos
+  // pequeños para evitar una URL enorme, respetar los límites del Worker y
+  // conservar una correspondencia segura entre cada resultado y su parada.
+  const chunkResults = new Array(chunks.length);
+  const chunkErrors = [];
+  let cursor = 0;
+  const concurrency = Math.min(5, chunks.length);
+  await Promise.all(Array.from({ length: concurrency }, async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= chunks.length) return;
+      const chunk = chunks[index];
+      const ids = chunk.map(readNodeId);
+      try {
+        const payload = await fetchIsaenextJson(isaenextURL("resourceEstimations", {
+          "_as_asac_isaenext_IsaenextWebPortlet_tipo": "1",
+          "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": ids.join(",")
+        }));
+        if (!Array.isArray(payload)) {
+          throw new Error("respuesta de estimaciones no reconocible");
+        }
+        if (payload.length === 1 && chunk.length > 2) {
+          throw new Error("ISAENEXT sólo devolvió un resultado para un grupo de " + chunk.length + " paradas");
+        }
+        chunkResults[index] = { nodes: chunk, results: payload };
+      } catch (error) {
+        chunkErrors.push("grupo " + (index + 1) + ": " + (error?.message || String(error)));
+        chunkResults[index] = null;
+      }
+    }
   }));
-  if (!Array.isArray(batchPayload)) {
-    throw new Error("ISAENEXT no devolvió una lista de estimaciones reconocible.");
+
+  const completed = chunkResults.filter(Boolean);
+  if (!completed.length) {
+    throw new Error("No se pudo consultar ninguna tanda de estimaciones. " + chunkErrors.slice(0, 3).join(" | "));
   }
-  if (batchPayload.length === 1 && nodes.length > 2) {
-    throw new Error("ISAENEXT no parece admitir la consulta conjunta de paradas; se evita lanzar cientos de peticiones individuales.");
+  const observations = [];
+  let resultCount = 0;
+  for (const result of completed) {
+    resultCount += result.results.length;
+    observations.push(...normalizeObservations(result.nodes, result.results));
   }
 
-  const observations = normalizeObservations(nodes, batchPayload);
   return {
     fetchedAt: new Date().toISOString(),
     source: BURGOS_SOURCE,
     sourceType: "ISAENEXT · estimaciones por parada",
     stopCount: nodes.length,
-    resultCount: batchPayload.length,
-    batchingSupported: true,
+    resultCount,
+    completedGroups: completed.length,
+    totalGroups: chunks.length,
+    partial: chunkErrors.length > 0,
+    warnings: chunkErrors.slice(0, 5),
     observations
   };
 }
