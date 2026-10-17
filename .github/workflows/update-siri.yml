@@ -590,8 +590,6 @@ jobs:
                       "timeSource": source,
                       "status": status,
                   })
-                  if len(output) >= 5:
-                      break
               return output, realtime_used
 
           def extract_service_number(ref):
