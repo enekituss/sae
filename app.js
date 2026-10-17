@@ -105,7 +105,7 @@ function render() {
           <article class="vehicle">
             <div class="vehicle-main">
               <div class="vehicle-id"><span class="bus-icon" aria-hidden="true">🚌</span><span>${escapeHTML(vehicle.id)}</span></div>
-              <div class="vehicle-direction"><strong>Destino:</strong> ${escapeHTML(vehicle.destination || 'No identificado en los datos disponibles')}</div>
+              <div class="vehicle-direction"><strong>Destino previsto:</strong> ${escapeHTML(vehicle.destination || 'No identificado en los datos disponibles')}${vehicle.destinationSource ? ` <span class="destination-source">· ${escapeHTML(vehicle.destinationSource)}</span>` : ''} </div>
               ${vehicle.direction ? `<div class="vehicle-direction"><strong>Sentido:</strong> ${escapeHTML(vehicle.direction)}</div>` : ''}
             </div>
             <div class="vehicle-meta">
@@ -139,6 +139,7 @@ function applySnapshot(snapshot) {
     direction: String(v.direction || ''),
     destination: String(v.destination || ''),
     destinationRef: String(v.destinationRef || ''),
+    destinationSource: String(v.destinationSource || ''),
     time: String(v.time || ''),
     stop: String(v.stop || ''),
     stopName: String(v.stopName || ''),
