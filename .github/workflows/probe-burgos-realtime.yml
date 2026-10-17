@@ -1,0 +1,16 @@
+name: Probar acceso a tiempos en directo de Burgos
+on:
+  push:
+    paths:
+      - "scripts/probe_burgos_realtime.py"
+      - ".github/workflows/probe-burgos-realtime.yml"
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Consultar el visor ISAENEXT
+        run: python scripts/probe_burgos_realtime.py
