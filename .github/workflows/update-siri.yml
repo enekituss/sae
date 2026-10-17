@@ -36,13 +36,17 @@ jobs:
           import re
           import urllib.request
           import xml.etree.ElementTree as ET
+          import zipfile
           from datetime import datetime, timezone
 
           POSITIONS_URL = "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml"
           TRIP_UPDATES_URL = "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-trip-updates.xml"
           PARADAS_API_URL = "https://apps.bizkaia.eus/BBOA000M/rest/BBOA/GetParadas"
-          GTFS_BASE = "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS-PRUEBAS/"
+          GTFS_BASE = "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/"
+          GTFS_ZIP_URL = GTFS_BASE + "Bizkaibus.zip"
+          STATIC_CACHE_VERSION = "production-gtfs-2026-10"
           NOW = datetime.now(timezone.utc)
+          gtfs_zip_bytes = None
 
           def fetch_bytes(url, timeout=15):
               req = urllib.request.Request(url, headers={
@@ -51,6 +55,17 @@ jobs:
               })
               with urllib.request.urlopen(req, timeout=timeout) as response:
                   return response.read()
+
+          def gtfs_file(filename):
+              global gtfs_zip_bytes
+              if gtfs_zip_bytes is None:
+                  print("Descargando GTFS oficial actualizado: " + GTFS_ZIP_URL)
+                  gtfs_zip_bytes = fetch_bytes(GTFS_ZIP_URL, timeout=60)
+              with zipfile.ZipFile(io.BytesIO(gtfs_zip_bytes)) as archive:
+                  candidates = [n for n in archive.namelist() if n.rsplit("/", 1)[-1].lower() == filename.lower()]
+                  if not candidates:
+                      raise RuntimeError("El ZIP GTFS no contiene " + filename)
+                  return archive.read(candidates[0])
 
           def local(tag):
               return tag.rsplit("}", 1)[-1]
@@ -122,7 +137,7 @@ jobs:
 
           stops = {}
           stops_refreshed = False
-          if is_fresh("stops.json", 7) and isinstance(stops_doc.get("stops"), list):
+          if is_fresh("stops.json", 7) and stops_doc.get("cacheVersion") == STATIC_CACHE_VERSION and isinstance(stops_doc.get("stops"), list):
               stops = {str(s.get("id", "")): s for s in stops_doc["stops"] if s.get("id")}
               stops_source = stops_doc.get("source", "cache local")
               print("Usando caché de paradas: " + str(len(stops)))
@@ -138,67 +153,67 @@ jobs:
               lat_names = ["stop_lat", "Latitud", "Latitude", "Lat", "Y"]
               lon_names = ["stop_lon", "Longitud", "Longitude", "Lon", "X"]
 
-              # A) Official Bizkaia XML API (schema names vary by endpoint version).
+              # Current production GTFS ZIP is newer and easier to parse reliably.
               try:
-                  raw = fetch_bytes(PARADAS_API_URL, timeout=12)
-                  root = ET.fromstring(raw)
-                  found = {}
-                  for element in root.iter():
-                      direct = children_text(element)
-                      sid = pick(direct, id_names)
-                      name = pick(direct, name_names)
-                      vals = direct if sid and name else descendant_values(element)
-                      sid = sid or pick(vals, id_names)
-                      name = name or pick(vals, name_names)
+                  raw = gtfs_file("stops.txt")
+                  reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")))
+                  for row in reader:
+                      sid = (row.get("stop_id") or "").strip()
+                      name = (row.get("stop_name") or "").strip()
                       if not sid or not name:
                           continue
-                      sid = sid.strip()
-                      item = {
+                      stops[sid] = {
                           "id": sid,
-                          "name": name.strip(),
-                          "lat": pick(vals, lat_names),
-                          "lon": pick(vals, lon_names),
-                          "municipality": pick(vals, ["Municipio", "Municipality", "NombreMunicipio"]),
+                          "name": name,
+                          "lat": (row.get("stop_lat") or "").strip(),
+                          "lon": (row.get("stop_lon") or "").strip(),
+                          "municipality": (row.get("municipality") or row.get("parent_station") or "").strip(),
                       }
-                      found[sid] = item
-                  if len(found) >= 50:
-                      stops = found
-                      stops_source = PARADAS_API_URL
+                  if len(stops) >= 50:
+                      stops_source = GTFS_ZIP_URL + " (stops.txt)"
                       stops_refreshed = True
-                      print("Paradas recuperadas del API oficial: " + str(len(stops)))
+                      print("Paradas recuperadas del GTFS oficial: " + str(len(stops)))
                   else:
-                      print("El XML de GetParadas no contenía un listado reconocible; se probará GTFS.")
+                      stops = {}
+                      print("El archivo stops.txt del GTFS no contiene un listado reconocible.")
               except Exception as exc:
-                  print("No se pudo leer GetParadas: " + str(exc))
+                  stops = {}
+                  print("No se pudo leer stops.txt del GTFS oficial: " + str(exc))
 
-              # B) Public GTFS stops.txt. stop_id is the cross-reference for SIRI StopPointRef.
+              # Last fallback: Bizkaia's official XML API.
               if not stops:
+                  id_names = ["stop_id", "StopPointRef", "CodigoParada", "IdParada", "ParadaId", "CodigoPuntoParada", "StopId", "StopCode", "Codigo", "Id"]
+                  name_names = ["stop_name", "NombreParada", "DenominacionParada", "DescripcionParada", "Nombre", "Denominacion", "Descripcion", "DParada", "Parada"]
+                  lat_names = ["stop_lat", "Latitud", "Latitude", "Lat", "Y"]
+                  lon_names = ["stop_lon", "Longitud", "Longitude", "Lon", "X"]
                   try:
-                      raw = fetch_bytes(GTFS_BASE + "stops.txt", timeout=20)
-                      reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")))
-                      for row in reader:
-                          sid = (row.get("stop_id") or "").strip()
-                          name = (row.get("stop_name") or "").strip()
+                      raw = fetch_bytes(PARADAS_API_URL, timeout=12)
+                      root = ET.fromstring(raw)
+                      found = {}
+                      for element in root.iter():
+                          direct = children_text(element)
+                          sid = pick(direct, id_names)
+                          name = pick(direct, name_names)
+                          vals = direct if sid and name else descendant_values(element)
+                          sid = sid or pick(vals, id_names)
+                          name = name or pick(vals, name_names)
                           if not sid or not name:
                               continue
-                          stops[sid] = {
+                          sid = sid.strip()
+                          found[sid] = {
                               "id": sid,
-                              "name": name,
-                              "lat": (row.get("stop_lat") or "").strip(),
-                              "lon": (row.get("stop_lon") or "").strip(),
-                              "municipality": (row.get("municipality") or row.get("parent_station") or "").strip(),
+                              "name": name.strip(),
+                              "lat": pick(vals, lat_names),
+                              "lon": pick(vals, lon_names),
+                              "municipality": pick(vals, ["Municipio", "Municipality", "NombreMunicipio"]),
                           }
-                      if stops:
-                          stops_source = GTFS_BASE + "stops.txt"
+                      if len(found) >= 50:
+                          stops = found
+                          stops_source = PARADAS_API_URL
                           stops_refreshed = True
-                          print("Paradas recuperadas del GTFS: " + str(len(stops)))
+                          print("Paradas recuperadas del API oficial: " + str(len(stops)))
                   except Exception as exc:
-                      print("No se pudo leer stops.txt: " + str(exc))
-
-          if not stops and isinstance(stops_doc.get("stops"), list):
-              stops = {str(s.get("id", "")): s for s in stops_doc["stops"] if s.get("id")}
-              stops_source = stops_doc.get("source", "caché anterior")
-              print("Usando caché anterior de paradas: " + str(len(stops)))
+                      print("No se pudo leer GetParadas: " + str(exc))
 
           # Create aliases for common StopPointRef formats (for example "4157" and "stop:4157").
           stop_index = {}
@@ -256,12 +271,12 @@ jobs:
                   gtfs_doc = {}
 
           trips = {}
-          if is_fresh("gtfs-trips.json", 14) and isinstance(gtfs_doc.get("trips"), dict):
+          if is_fresh("gtfs-trips.json", 14) and gtfs_doc.get("cacheVersion") == STATIC_CACHE_VERSION and isinstance(gtfs_doc.get("trips"), dict):
               trips = gtfs_doc["trips"]
               print("Usando caché GTFS de destinos: " + str(len(trips)))
           else:
               try:
-                  raw = fetch_bytes(GTFS_BASE + "trips.txt", timeout=25)
+                  raw = gtfs_file("trips.txt")
                   reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")))
                   for row in reader:
                       tid = (row.get("trip_id") or "").strip()
@@ -283,7 +298,8 @@ jobs:
                       with open("gtfs-trips.json", "w", encoding="utf-8") as handle:
                           json.dump({
                               "fetchedAt": NOW.isoformat(timespec="seconds"),
-                              "source": GTFS_BASE + "trips.txt",
+                              "cacheVersion": STATIC_CACHE_VERSION,
+                              "source": GTFS_ZIP_URL + " (trips.txt)",
                               "trips": trips,
                           }, handle, ensure_ascii=False, separators=(",", ":"))
                       print("Destinos GTFS recuperados: " + str(len(trips)))
@@ -386,6 +402,7 @@ jobs:
               with open("stops.json", "w", encoding="utf-8") as handle:
                   json.dump({
                       "fetchedAt": (NOW.isoformat(timespec="seconds") if stops_refreshed else stops_doc.get("fetchedAt", NOW.isoformat(timespec="seconds"))),
+                      "cacheVersion": (STATIC_CACHE_VERSION if stops_refreshed else stops_doc.get("cacheVersion", "")),
                       "source": stops_source or stops_doc.get("source", ""),
                       "count": len(stops),
                       "stops": list(stops.values()),
