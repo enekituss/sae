@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   watchdog:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure')
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -118,8 +118,8 @@ jobs:
 
           changed = False
 
-          # Aviso inmediato cuando una ejecución de actualización termina con error.
-          if event_name == "workflow_run":
+          # Aviso inmediato solo si la ejecución del workflow principal ha fallado.
+          if event_name == "workflow_run" and (os.environ.get("FAILED_RUN_CONCLUSION") or "") == "failure":
               run_id = (os.environ.get("FAILED_RUN_ID") or "").strip()
               if run_id and run_id != str(state.get("lastFailureRunId", "")):
                   run_url = os.environ.get("FAILED_RUN_URL", "")
@@ -134,23 +134,72 @@ jobs:
                   changed = True
                   print("Aviso de fallo enviado para la ejecución " + run_id + ".")
 
-          # Vigila que exista una ejecución correcta reciente, no solo que el workflow esté configurado.
+          # Comprueba que el proceso funciona y que la hora REAL de posición no está obsoleta.
           api_url = "https://api.github.com/repos/" + repo + "/actions/workflows/update-siri.yml/runs?branch=main&status=success&per_page=1"
           result = github_json(api_url)
           runs = result.get("workflow_runs", [])
           now = datetime.now(timezone.utc)
           age_minutes = None
           if runs:
-              stamp = datetime.fromisoformat(runs[0]["updated_at"].replace("Z", "+00:00"))
-              age_minutes = (now - stamp).total_seconds() / 60
+              run_stamp = datetime.fromisoformat(runs[0]["updated_at"].replace("Z", "+00:00"))
+              age_minutes = (now - run_stamp).total_seconds() / 60
 
-          stale = age_minutes is None or age_minutes > 15
+          vehicle_count = 0
+          latest_position_stamp = None
+          try:
+              with open("vehicles.json", encoding="utf-8") as f:
+                  snapshot = json.load(f)
+              vehicles = snapshot.get("vehicles", [])
+              if isinstance(vehicles, list):
+                  vehicle_count = len(vehicles)
+                  for vehicle in vehicles:
+                      raw_time = str(vehicle.get("time") or "").strip()
+                      if not raw_time:
+                          continue
+                      try:
+                          position_stamp = datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+                          if position_stamp.tzinfo is None:
+                              position_stamp = position_stamp.replace(tzinfo=timezone.utc)
+                          if latest_position_stamp is None or position_stamp > latest_position_stamp:
+                              latest_position_stamp = position_stamp
+                      except ValueError:
+                          continue
+          except (OSError, json.JSONDecodeError, AttributeError) as exc:
+              print("No se pudo leer la hora de posición de vehicles.json: " + str(exc))
+
+          position_age_minutes = None
+          if latest_position_stamp is not None:
+              position_age_minutes = (now - latest_position_stamp.astimezone(timezone.utc)).total_seconds() / 60
+
+          workflow_stale = age_minutes is None or age_minutes > 15
+          # If the feed currently contains vehicles, alert when all reported positions are old.
+          # An empty vehicle list can be normal outside service hours, so it does not trigger this check.
+          positions_stale = vehicle_count > 0 and (
+              position_age_minutes is None or position_age_minutes > 15
+          )
+          stale = workflow_stale or positions_stale
+
           if stale and not state.get("incidentActive", False):
-              age_text = "No se encuentra ninguna ejecución correcta reciente." if age_minutes is None else "La última ejecución correcta fue hace aproximadamente " + str(round(age_minutes)) + " minutos."
+              reasons = []
+              if age_minutes is None:
+                  reasons.append("No se encuentra ninguna ejecución correcta reciente de GitHub Actions.")
+              elif age_minutes > 15:
+                  reasons.append("La última ejecución correcta de GitHub Actions fue hace aproximadamente " + str(round(age_minutes)) + " minutos.")
+              if vehicle_count > 0:
+                  if position_age_minutes is None:
+                      reasons.append("Hay vehículos en el snapshot, pero no se pudo interpretar ninguna hora de posición.")
+                  elif position_age_minutes > 15:
+                      from zoneinfo import ZoneInfo
+                      local_stamp = latest_position_stamp.astimezone(ZoneInfo("Europe/Madrid")).strftime("%d/%m %H:%M:%S")
+                      reasons.append(
+                          "La última posición comunicada de los autobuses es de las " + local_stamp
+                          + " (hace aproximadamente " + str(round(position_age_minutes)) + " minutos, hora peninsular)."
+                      )
+              age_text = "\n".join(reasons) if reasons else "La vigilancia ha detectado datos que podrían estar desactualizados."
               telegram_send(
                   "⚠️ SAE BIZKAIBUS SIN ACTUALIZACIÓN RECIENTE\n"
                   + age_text + "\n"
-                  + "La vigilancia automática ha detectado que los datos podrían estar desactualizados.\n"
+                  + "La vigilancia automática ha detectado que los datos de posición podrían estar desactualizados.\n"
                   + "Historial: https://github.com/" + repo + "/actions/workflows/update-siri.yml"
               )
               state["incidentActive"] = True
@@ -159,7 +208,7 @@ jobs:
           elif not stale and state.get("incidentActive", False):
               telegram_send(
                   "✅ SAE BIZKAIBUS RECUPERADO\n"
-                  "Se ha detectado una ejecución correcta reciente. La vigilancia da por recuperada la actualización automática.\n"
+                  "Se ha detectado una ejecución correcta reciente y las posiciones disponibles no superan el límite de antigüedad.\n"
                   + "Web: https://enekituss.github.io/sae/"
               )
               state["incidentActive"] = False
