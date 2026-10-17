@@ -48,6 +48,7 @@ jobs:
           import urllib.error
           import urllib.request
           from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
 
           token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
           chat_id = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
@@ -171,13 +172,18 @@ jobs:
           if latest_position_stamp is not None:
               position_age_minutes = (now - latest_position_stamp.astimezone(timezone.utc)).total_seconds() / 60
 
+          local_now = now.astimezone(ZoneInfo("Europe/Madrid"))
+          # Position timestamps alone are not reliable proof of failure overnight:
+          # the fleet may have finished service. The workflow itself is still monitored 24/7.
+          position_monitoring_active = local_now.hour >= 5
           workflow_stale = age_minutes is None or age_minutes > 15
-          # If the feed currently contains vehicles, alert when all reported positions are old.
-          # An empty vehicle list can be normal outside service hours, so it does not trigger this check.
-          positions_stale = vehicle_count > 0 and (
+          positions_stale = position_monitoring_active and vehicle_count > 0 and (
               position_age_minutes is None or position_age_minutes > 15
           )
           stale = workflow_stale or positions_stale
+
+          if not position_monitoring_active:
+              print("Comprobación de antigüedad de posiciones pausada hasta las 05:00 hora peninsular; se mantienen activas las alertas de fallos de GitHub Actions.")
 
           if stale and not state.get("incidentActive", False):
               reasons = []
@@ -185,11 +191,10 @@ jobs:
                   reasons.append("No se encuentra ninguna ejecución correcta reciente de GitHub Actions.")
               elif age_minutes > 15:
                   reasons.append("La última ejecución correcta de GitHub Actions fue hace aproximadamente " + str(round(age_minutes)) + " minutos.")
-              if vehicle_count > 0:
+              if position_monitoring_active and vehicle_count > 0:
                   if position_age_minutes is None:
                       reasons.append("Hay vehículos en el snapshot, pero no se pudo interpretar ninguna hora de posición.")
                   elif position_age_minutes > 15:
-                      from zoneinfo import ZoneInfo
                       local_stamp = latest_position_stamp.astimezone(ZoneInfo("Europe/Madrid")).strftime("%d/%m %H:%M:%S")
                       reasons.append(
                           "La última posición comunicada de los autobuses es de las " + local_stamp
@@ -199,21 +204,31 @@ jobs:
               telegram_send(
                   "⚠️ SAE BIZKAIBUS SIN ACTUALIZACIÓN RECIENTE\n"
                   + age_text + "\n"
-                  + "La vigilancia automática ha detectado que los datos de posición podrían estar desactualizados.\n"
+                  + "La vigilancia automática ha detectado que el proceso de actualización o los datos de posición podrían estar desactualizados.\n"
                   + "Historial: https://github.com/" + repo + "/actions/workflows/update-siri.yml"
               )
               state["incidentActive"] = True
+              state["incidentKind"] = ("both" if workflow_stale and positions_stale else ("workflow" if workflow_stale else "positions"))
               changed = True
               print("Incidencia de falta de actualización notificada.")
           elif not stale and state.get("incidentActive", False):
-              telegram_send(
-                  "✅ SAE BIZKAIBUS RECUPERADO\n"
-                  "Se ha detectado una ejecución correcta reciente y las posiciones disponibles no superan el límite de antigüedad.\n"
-                  + "Web: https://enekituss.github.io/sae/"
-              )
-              state["incidentActive"] = False
-              changed = True
-              print("Recuperación notificada.")
+              # Do not announce a position-feed recovery just because overnight monitoring is paused.
+              if not position_monitoring_active and state.get("incidentKind") == "positions":
+                  state["incidentActive"] = False
+                  state["incidentKind"] = ""
+                  changed = True
+                  print("Alerta de antigüedad de posiciones cerrada sin falso aviso de recuperación durante horario nocturno.")
+              else:
+                  telegram_send(
+                      "✅ SAE BIZKAIBUS RECUPERADO\n"
+                      "La vigilancia ha detectado que la incidencia de actualización ha dejado de cumplirse. "
+                      + ("La antigüedad de las posiciones volverá a comprobarse a partir de las 05:00 hora peninsular.\n" if not position_monitoring_active else "Las posiciones disponibles ya están dentro del límite de antigüedad.\n")
+                      + "Web: https://enekituss.github.io/sae/"
+                  )
+                  state["incidentActive"] = False
+                  state["incidentKind"] = ""
+                  changed = True
+                  print("Recuperación notificada.")
 
           if changed:
               with open(state_path, "w", encoding="utf-8") as f:
