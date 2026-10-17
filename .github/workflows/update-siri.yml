@@ -803,15 +803,23 @@ jobs:
               if first_missing and (NOW - first_missing).total_seconds() > 60 * 60 and not candidate.get("notificationQueued"):
                   pending_vehicles.pop(vehicle_id, None)
 
+          pending_route_changes = alert_state.get("pendingRouteChanges", {})
+          if not isinstance(pending_route_changes, dict):
+              pending_route_changes = {}
+          for vehicle_id, candidate in list(pending_route_changes.items()):
+              first_observed = parse_time(candidate.get("firstObservedAt"))
+              if first_observed and (NOW - first_observed).total_seconds() > 60 * 60:
+                  pending_route_changes.pop(vehicle_id, None)
+
           route_change_count = 0
-          if previous_snapshot_fresh:
-              route_fields = [
-                  ("line", "Línea"),
-                  ("destination", "Destino"),
-                  ("direction", "Sentido"),
-              ]
-              previous_stamp = str(previous_snapshot.get("fetchedAt") or "")
-              current_stamp = str(snapshot.get("fetchedAt") or "")
+          confirmed_route_count = 0
+          observed_changes = {}
+          route_fields = [
+              ("line", "Línea"),
+              ("destination", "Destino"),
+              ("direction", "Sentido"),
+          ]
+          if previous_snapshot_fresh and current_by_id:
               for current_id, current_vehicle in current_by_id.items():
                   old_vehicle = previous_by_id.get(current_id)
                   if not old_vehicle:
@@ -820,7 +828,7 @@ jobs:
                   for field, label in route_fields:
                       old_value = str(old_vehicle.get(field) or "").strip()
                       new_value = str(current_vehicle.get(field) or "").strip()
-                      # Ignore missing metadata; compare only two actual published values.
+                      # Only compare two published, non-empty values.
                       if old_value and new_value and normalized_route_value(old_value) != normalized_route_value(new_value):
                           changed_fields.append({
                               "field": field,
@@ -829,27 +837,88 @@ jobs:
                               "new": new_value,
                           })
                   if changed_fields:
-                      event_payload = {
-                          "previousSnapshot": previous_stamp,
-                          "currentSnapshot": current_stamp,
-                          "vehicleId": current_id,
-                          "changed": changed_fields,
-                      }
-                      event_id = stable_event_id("route", event_payload)
-                      if event_id not in outbox:
-                          outbox[event_id] = {
-                              "eventId": event_id,
-                              "type": "route_change",
-                              "vehicleId": current_id,
-                              "line": str(current_vehicle.get("line") or ""),
-                              "destination": str(current_vehicle.get("destination") or ""),
-                              "direction": str(current_vehicle.get("direction") or ""),
-                              "changed": changed_fields,
-                              "detectedAt": LOCAL_NOW.isoformat(timespec="minutes"),
-                              "queuedAt": LOCAL_NOW.isoformat(timespec="seconds"),
-                          }
+                      observed_changes[current_id] = changed_fields
                       route_change_count += 1
 
+              handled_route_candidates = set()
+              for vehicle_id, candidate in list(pending_route_changes.items()):
+                  handled_route_candidates.add(vehicle_id)
+                  current_vehicle = current_by_id.get(vehicle_id)
+                  if current_vehicle is None:
+                      pending_route_changes.pop(vehicle_id, None)
+                      continue
+
+                  candidate_fields = candidate.get("changed", [])
+                  still_matches = bool(candidate_fields)
+                  for item in candidate_fields:
+                      current_value = str(current_vehicle.get(item.get("field")) or "").strip()
+                      target_value = str(item.get("new") or "").strip()
+                      if not current_value or not target_value or normalized_route_value(current_value) != normalized_route_value(target_value):
+                          still_matches = False
+                          break
+
+                  if not still_matches:
+                      pending_route_changes.pop(vehicle_id, None)
+                      # If it changed again, start a fresh confirmation window for the new value.
+                      if observed_changes.get(vehicle_id):
+                          pending_route_changes[vehicle_id] = {
+                              "vehicleId": vehicle_id,
+                              "changed": observed_changes[vehicle_id],
+                              "firstObservedAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                              "consecutiveChecks": 1,
+                          }
+                      continue
+
+                  # Merge other fields that changed in the same interval for this vehicle.
+                  known_fields = {str(item.get("field")) for item in candidate_fields}
+                  for item in observed_changes.get(vehicle_id, []):
+                      if str(item.get("field")) not in known_fields:
+                          candidate_fields.append(item)
+                          known_fields.add(str(item.get("field")))
+                  candidate["changed"] = candidate_fields
+                  candidate["consecutiveChecks"] = int(candidate.get("consecutiveChecks", 1)) + 1
+
+                  first_observed = parse_time(candidate.get("firstObservedAt"))
+                  if first_observed is None:
+                      candidate["firstObservedAt"] = LOCAL_NOW.isoformat(timespec="seconds")
+                      first_observed = LOCAL_NOW
+                  elapsed_seconds = (NOW - first_observed.astimezone(timezone.utc)).total_seconds()
+                  if candidate["consecutiveChecks"] < 2 or elapsed_seconds < 4 * 60:
+                      continue
+
+                  event_payload = {
+                      "vehicleId": vehicle_id,
+                      "firstObservedAt": candidate.get("firstObservedAt", ""),
+                      "changed": candidate_fields,
+                  }
+                  event_id = stable_event_id("route", event_payload)
+                  if event_id not in outbox:
+                      outbox[event_id] = {
+                          "eventId": event_id,
+                          "type": "route_change",
+                          "vehicleId": vehicle_id,
+                          "line": str(current_vehicle.get("line") or ""),
+                          "destination": str(current_vehicle.get("destination") or ""),
+                          "direction": str(current_vehicle.get("direction") or ""),
+                          "changed": candidate_fields,
+                          "detectedAt": LOCAL_NOW.isoformat(timespec="minutes"),
+                          "queuedAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                      }
+                  pending_route_changes.pop(vehicle_id, None)
+                  confirmed_route_count += 1
+
+              # Start one confirmation window per vehicle for newly observed differences.
+              for vehicle_id, changed_fields in observed_changes.items():
+                  if vehicle_id in handled_route_candidates or vehicle_id in pending_route_changes:
+                      continue
+                  pending_route_changes[vehicle_id] = {
+                      "vehicleId": vehicle_id,
+                      "changed": changed_fields,
+                      "firstObservedAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                      "consecutiveChecks": 1,
+                  }
+
+          alert_state["pendingRouteChanges"] = pending_route_changes
           missing_confirmed_count = 0
           current_count = len(current_by_id)
           previous_count = len(previous_by_id)
@@ -984,7 +1053,8 @@ jobs:
               json.dump(alert_state, handle, ensure_ascii=False, indent=2, sort_keys=True)
               handle.write("\n")
 
-          print("Cambios de línea/destino/sentido detectados: " + str(route_change_count) + ".")
+          print("Vehículos con variaciones de ruta pendientes de confirmar: " + str(route_change_count) + ".")
+          print("Cambios de ruta confirmados para aviso: " + str(confirmed_route_count) + ".")
           print("Desapariciones confirmadas para aviso: " + str(missing_confirmed_count) + ".")
           print("Avisos pendientes en cola duradera: " + str(len(outbox)) + ".")
           # Save stops as a compact public dictionary as well as enriching every vehicle.
