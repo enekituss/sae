@@ -342,30 +342,47 @@
     return null;
   }
 
+  function nearbyGtfsStops(observation, maxDistance = 280) {
+    const lat = Number(observation.stopLat);
+    const lon = Number(observation.stopLon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || !data || !Array.isArray(data.stops)) return [];
+    const point = { lat, lon };
+    return data.stops.map(stop => {
+      const stopLat = Number(stop.lat);
+      const stopLon = Number(stop.lon);
+      if (!Number.isFinite(stopLat) || !Number.isFinite(stopLon)) return null;
+      return {
+        stop,
+        distance: haversine(point, { lat: stopLat, lon: stopLon })
+      };
+    }).filter(item => item && item.distance <= maxDistance)
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 8);
+  }
+
   function matchTripForObservation(observation) {
     if (!data || !data.routeById) return null;
-    const stopId = String(observation.stopId);
     const lineKey = normalizeLineKey(observation.line);
-    let candidates = [];
-    if (data.liveTripIndex) {
-      candidates = data.liveTripIndex.get(lineKey + '|' + stopId) || [];
-    } else {
-      for (const trip of data.trips) {
-        const route = data.routeById.get(String(trip.routeId));
-        if (!route) continue;
-        const routeKeys = [route.shortName, route.id].map(normalizeLineKey);
-        if (!routeKeys.includes(lineKey)) continue;
-        if (!(trip.stops || []).some(item => String(item[0]) === stopId)) continue;
-        candidates.push({ trip, shape: data.shapeById && data.shapeById.get(String(trip.shapeId)) });
+    const nearbyStops = nearbyGtfsStops(observation);
+    if (!nearbyStops.length) return null;
+    const candidates = [];
+    for (const nearby of nearbyStops) {
+      const stopId = String(nearby.stop.id);
+      const matches = data.liveTripIndex
+        ? (data.liveTripIndex.get(lineKey + '|' + stopId) || [])
+        : [];
+      for (const candidate of matches) {
+        if (!candidate.shape) continue;
+        candidates.push({
+          ...candidate,
+          matchedStop: nearby.stop,
+          stopDistance: nearby.distance,
+          score: destinationScore(observation.destination, candidate.trip.headsign)
+        });
       }
     }
-    candidates = candidates.filter(candidate => candidate.shape);
-    candidates = candidates.map(candidate => ({
-      ...candidate,
-      score: destinationScore(observation.destination, candidate.trip.headsign)
-    }));
     if (!candidates.length) return null;
-    candidates.sort((a, b) => b.score - a.score);
+    candidates.sort((a, b) => b.score - a.score || a.stopDistance - b.stopDistance);
     if (candidates[0].score === 0) {
       const possibleShapes = new Set(candidates.map(candidate => String(candidate.trip.shapeId || '')));
       if (possibleShapes.size > 1) return null;
@@ -382,11 +399,19 @@
     if (observation.meters === 0 && (!Number.isFinite(observation.seconds) || observation.seconds > 15)) return null;
     if (!data || !data.stopById) return null;
 
-    const stop = data.stopById.get(String(observation.stopId));
-    if (!stop || !Number.isFinite(Number(stop.lat)) || !Number.isFinite(Number(stop.lon))) return null;
     const match = matchTripForObservation(observation);
-    if (!match) return null;
-    return projectBackAlongShape(match.shape, { lat: Number(stop.lat), lon: Number(stop.lon) }, observation.meters);
+    if (!match || !match.matchedStop) return null;
+    const stop = match.matchedStop;
+    if (!Number.isFinite(Number(stop.lat)) || !Number.isFinite(Number(stop.lon))) return null;
+    const projected = projectBackAlongShape(match.shape, { lat: Number(stop.lat), lon: Number(stop.lon) }, observation.meters);
+    if (!projected) return null;
+    const offset = Math.round(match.stopDistance);
+    return {
+      ...projected,
+      source: offset > 35
+        ? 'Estimación sobre trazado GTFS · parada equivalente a ' + offset + ' m'
+        : 'Estimación sobre trazado GTFS desde la parada equivalente'
+    };
   }
 
   function deduplicateLiveVehicles(snapshot) {
