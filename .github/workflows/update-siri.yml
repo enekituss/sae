@@ -950,7 +950,7 @@ jobs:
                       candidate["firstObservedAt"] = LOCAL_NOW.isoformat(timespec="seconds")
                       first_observed = LOCAL_NOW
                   elapsed_seconds = (NOW - first_observed.astimezone(timezone.utc)).total_seconds()
-                  if candidate["consecutiveChecks"] < 2 or elapsed_seconds < 4 * 60:
+                  if candidate["consecutiveChecks"] < 2 or elapsed_seconds < 2 * 60:
                       continue
 
                   event_payload = {
@@ -1063,8 +1063,8 @@ jobs:
                               first_missing_dt = LOCAL_NOW
                           minimum_missing_seconds = 20 * 60 if required >= 6 else 3 * 60
                           elapsed_missing_seconds = (NOW - first_missing_dt.astimezone(timezone.utc)).total_seconds()
-                          # GitHub Actions scheduled workflows have a 5-minute minimum cadence,
-                          # so this 3-minute threshold is normally confirmed on the next poll.
+                          # With the external fast scheduler, this 3-minute minimum is
+                          # checked on roughly 2-minute cycles without removing confirmation safeguards.
                           if elapsed_missing_seconds < minimum_missing_seconds:
                               continue
                           last_known = candidate.get("lastKnown", {})
@@ -1091,8 +1091,8 @@ jobs:
                           candidate["notificationQueued"] = True
                           missing_confirmed_count += 1
 
-                  # Start tracking vehicles that were present in the previous good snapshot
-                  # and are absent now. Three consecutive polls (about 15 minutes) are required.
+                  # Start tracking vehicles absent from the previous good snapshot.
+                  # Alerts still require repeated valid observations and a minimum elapsed window.
                   for vehicle_id, old_vehicle in previous_by_id.items():
                       if vehicle_id in current_by_id or vehicle_id in pending_vehicles:
                           continue
@@ -1283,7 +1283,7 @@ jobs:
                       try:
                           telegram_api("sendMessage", {
                               "chat_id": chat_id,
-                              "text": "🚌 SAE Bizkaibus está conectado.\n\nTe enviaré avisos cuando detecte cambios publicados de línea, destino o sentido, y cuando un vehículo deje de aparecer en el feed durante varias consultas consecutivas.\n\nLa desaparición del feed no demuestra por sí sola una baja administrativa: también puede ser el fin de un servicio o un fallo de publicación.\n\nLas comprobaciones se realizan aproximadamente cada 5 minutos.\nConsulta SAE: https://enekituss.github.io/sae/",
+                              "text": "🚌 SAE Bizkaibus está conectado.\n\nTe enviaré avisos cuando detecte cambios publicados de línea, destino o sentido, y cuando un vehículo deje de aparecer en el feed durante varias consultas consecutivas.\n\nLa desaparición del feed no demuestra por sí sola una baja administrativa: también puede ser el fin de un servicio o un fallo de publicación.\n\nLa consulta rápida está diseñada para ejecutarse aproximadamente cada 2 minutos cuando el planificador externo está activo; la publicación final también depende del tiempo de procesamiento.\nConsulta SAE: https://enekituss.github.io/sae/",
                               "disable_web_page_preview": True,
                           })
                           print("Comando " + command + " atendido.")
