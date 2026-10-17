@@ -46,3 +46,16 @@ El archivo GTFS estático se mantiene en caché dentro de GitHub Actions, por lo
 ## Actualización
 GitHub Actions refresca la copia de posiciones aproximadamente cada cinco minutos y genera `vehicles.json` y `vehicles-data.js`. El navegador lee la copia del mismo dominio para evitar bloqueos CORS.
 Flujo y ejecución manual: https://github.com/enekituss/sae/actions
+
+
+## Selección de ciudad e instalación como aplicación
+Después del login, `index.html` ofrece la elección entre Burgos y Bizkaibus. La vista anterior de Bizkaibus se conserva en `bizkaibus.html`; el directorio de paradas también vuelve a esa página. La navegación usa enlaces normales del navegador, y en la portada se añade un límite al historial para que Atrás no vuelva al formulario de login ni cierre la aplicación desde allí.
+
+El manifiesto `manifest.webmanifest`, el Service Worker y los iconos permiten que Chrome ofrezca la instalación de SAE Spotter. En Android, se puede usar la opción **Instalar aplicación** cuando Chrome la ofrezca, o el menú de Chrome si todavía no aparece el botón de instalación dentro de la web.
+
+## Horarios urbanos de Burgos
+- `burgos.html` permite consultar líneas y viajes, y abrir la tabla completa de horas programadas para cada parada.
+- `scripts/update_burgos_gtfs.py` descarga `https://www.aytoburgos.es/GTFS/Google_transit.zip` y genera `burgos-data.json`.
+- `.github/workflows/update-burgos-gtfs.yml` actualiza el fichero diariamente y se puede lanzar manualmente desde GitHub Actions.
+- Los identificadores `trip_id`, `service_id` y `block_id` son los campos del GTFS; no equivalen necesariamente al número físico de flota ni al turno operativo que conoce el conductor.
+- El GTFS estático no contiene posiciones GPS ni confirma si un autobús está circulando. El panel lo señala y separa horarios del seguimiento real. La vigencia se comprueba usando las fechas declaradas en los calendarios del fichero.
