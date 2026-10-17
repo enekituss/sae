@@ -594,6 +594,19 @@ jobs:
                       break
               return output, realtime_used
 
+          def extract_service_number(ref):
+              # Many live VehicleJourneyRefs end with a route-specific code such as
+              # O9SI3411_341102_12. The six-digit code repeats the four-digit route
+              # code and adds a two-digit service number (02 -> Servicio 2).
+              parts = (ref or "").split("_")
+              for index in range(len(parts) - 1):
+                  previous = parts[index]
+                  route_match = re.search(r"(\\d{4})$", previous) if previous.startswith("O") else None
+                  candidate = parts[index + 1]
+                  if route_match and re.fullmatch(r"\\d{6}", candidate) and candidate.startswith(route_match.group(1)):
+                      return str(int(candidate[-2:])), candidate
+              return "", ""
+
           vehicles = []
           seen = set()
           joined_stops = 0
@@ -659,6 +672,7 @@ jobs:
 
               arrival_status = value(journey, "ArrivalStatus") or value(journey, "DepartureStatus")
               upcoming_stops, realtime_stops_used = compose_upcoming_stops(jref, gtfs_trip_id, stop_id, arrival_status, vehicle_id)
+              service_number, service_code = extract_service_number(jref)
 
               item = {
                   "id": vehicle_id or jref or ("Registro " + str(index)),
@@ -673,6 +687,8 @@ jobs:
                   "tripShortName": gtfs.get("trip_short_name", ""),
                   "blockId": gtfs.get("block_id", ""),
                   "calendarServiceId": gtfs.get("service_id", ""),
+                  "serviceNumber": service_number,
+                  "serviceCode": service_code,
                   "upcomingStops": upcoming_stops,
                   "time": value(journey, "LocationRecordedAtTime", "RecordedAtTime") or value(activity, "RecordedAtTime", "ValidUntilTime"),
                   "stop": stop_id,
@@ -699,6 +715,7 @@ jobs:
               "destinationMatches": joined_destinations,
               "vehicleBlocks": sum(1 for v in vehicles if v.get("blockId")),
               "tripShortNames": sum(1 for v in vehicles if v.get("tripShortName")),
+              "vehiclesWithServiceNumber": sum(1 for v in vehicles if v.get("serviceNumber")),
               "vehiclesWithUpcomingStops": sum(1 for v in vehicles if v.get("upcomingStops")),
               "vehiclesWithRealtimeStopTimes": sum(1 for v in vehicles if any(s.get("timeSource") == "Estimación GTFS-RT" for s in v.get("upcomingStops", []))),
               "vehicles": vehicles,
@@ -733,6 +750,7 @@ jobs:
           print("Fuentes de destino: " + json.dumps(sources, ensure_ascii=False))
           print("Bloque de vehículo GTFS disponible: " + str(snapshot["vehicleBlocks"]) + "/" + str(len(vehicles)))
           print("Nombre corto de viaje GTFS disponible: " + str(snapshot["tripShortNames"]) + "/" + str(len(vehicles)))
+          print("Número de servicio inferido del VehicleJourneyRef: " + str(snapshot["vehiclesWithServiceNumber"]) + "/" + str(len(vehicles)))
           print("Vehículos con próximas paradas: " + str(snapshot["vehiclesWithUpcomingStops"]) + "/" + str(len(vehicles)))
           print("Vehículos con al menos una hora estimada GTFS-RT: " + str(snapshot["vehiclesWithRealtimeStopTimes"]) + "/" + str(len(vehicles)))
           PY
