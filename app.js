@@ -88,7 +88,10 @@ function render() {
 
   $('lines').innerHTML = '';
   if (!matchingLines.length) {
-    $('lines').innerHTML = '<div class="message">No hay líneas ni vehículos que coincidan con la búsqueda.</div>';
+    const message = !query && vehicles.length === 0
+      ? 'El feed se ha leído correctamente, pero ahora mismo no devuelve vehículos con posición.'
+      : 'No hay líneas ni vehículos que coincidan con la búsqueda.';
+    $('lines').innerHTML = '<div class="message">' + message + '</div>';
     return;
   }
 
