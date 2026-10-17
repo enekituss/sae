@@ -1,6 +1,72 @@
 {
-  "outbox": {},
+  "outbox": {
+    "route_after_gap:aa6af1196f4f1f1fd07c3906": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "MUSKIZ La Arena",
+          "old": "GETXO"
+        }
+      ],
+      "destination": "MUSKIZ La Arena",
+      "detectedAt": "2026-10-17T19:54+02:00",
+      "direction": "",
+      "eventId": "route_after_gap:aa6af1196f4f1f1fd07c3906",
+      "line": "A3338",
+      "queuedAt": "2026-10-17T19:54:29+02:00",
+      "type": "route_change_after_gap",
+      "vehicleId": "7813"
+    },
+    "route_after_gap:db4afa6a4557135861f04b0a": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "BILBAO",
+          "old": "GALDAKAO Urreta"
+        }
+      ],
+      "destination": "BILBAO",
+      "detectedAt": "2026-10-17T19:54+02:00",
+      "direction": "",
+      "eventId": "route_after_gap:db4afa6a4557135861f04b0a",
+      "line": "A3631",
+      "queuedAt": "2026-10-17T19:54:29+02:00",
+      "type": "route_change_after_gap",
+      "vehicleId": "3386"
+    },
+    "vehicle_returned:be4d32db20cb43c31759545d": {
+      "destination": "ERRIGOITI",
+      "detectedAt": "2026-10-17T19:54+02:00",
+      "direction": "",
+      "eventId": "vehicle_returned:be4d32db20cb43c31759545d",
+      "lastKnown": {
+        "destination": "ERRIGOITI",
+        "direction": "",
+        "id": "8680",
+        "line": "A3534"
+      },
+      "line": "A3534",
+      "queuedAt": "2026-10-17T19:54:29+02:00",
+      "type": "vehicle_returned",
+      "vehicleId": "8680"
+    }
+  },
   "pendingRouteChanges": {
+    "1512": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "BILBAO",
+          "old": "GETXO"
+        }
+      ],
+      "consecutiveChecks": 1,
+      "firstObservedAt": "2026-10-17T19:54:29+02:00",
+      "vehicleId": "1512"
+    },
     "1714": {
       "changed": [
         {
@@ -10,9 +76,22 @@
           "old": "PLENTZIA (Metro)"
         }
       ],
-      "consecutiveChecks": 1,
+      "consecutiveChecks": 2,
       "firstObservedAt": "2026-10-17T19:51:45+02:00",
       "vehicleId": "1714"
+    },
+    "1715": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "BILBAO",
+          "old": "GETXO"
+        }
+      ],
+      "consecutiveChecks": 1,
+      "firstObservedAt": "2026-10-17T19:54:29+02:00",
+      "vehicleId": "1715"
     },
     "1761": {
       "changed": [
@@ -29,9 +108,22 @@
           "old": "CRUCES/GURUTZETA"
         }
       ],
-      "consecutiveChecks": 1,
+      "consecutiveChecks": 2,
       "firstObservedAt": "2026-10-17T19:51:45+02:00",
       "vehicleId": "1761"
+    },
+    "2132": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "PLENTZIA",
+          "old": "MUNGIA"
+        }
+      ],
+      "consecutiveChecks": 1,
+      "firstObservedAt": "2026-10-17T19:54:29+02:00",
+      "vehicleId": "2132"
     },
     "3360": {
       "changed": [
@@ -42,7 +134,7 @@
           "old": "BASAURI"
         }
       ],
-      "consecutiveChecks": 1,
+      "consecutiveChecks": 2,
       "firstObservedAt": "2026-10-17T19:51:45+02:00",
       "vehicleId": "3360"
     },
@@ -61,7 +153,7 @@
           "old": "BILBAO (Aut.)"
         }
       ],
-      "consecutiveChecks": 1,
+      "consecutiveChecks": 2,
       "firstObservedAt": "2026-10-17T19:51:45+02:00",
       "vehicleId": "3374"
     },
@@ -74,9 +166,22 @@
           "old": "BILBAO"
         }
       ],
-      "consecutiveChecks": 1,
+      "consecutiveChecks": 2,
       "firstObservedAt": "2026-10-17T19:51:45+02:00",
       "vehicleId": "5044"
+    },
+    "5047": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "BILBAO",
+          "old": "BALMASEDA"
+        }
+      ],
+      "consecutiveChecks": 1,
+      "firstObservedAt": "2026-10-17T19:54:29+02:00",
+      "vehicleId": "5047"
     },
     "7833": {
       "changed": [
@@ -87,7 +192,7 @@
           "old": "BILBAO"
         }
       ],
-      "consecutiveChecks": 1,
+      "consecutiveChecks": 2,
       "firstObservedAt": "2026-10-17T19:51:45+02:00",
       "vehicleId": "7833"
     },
@@ -100,9 +205,22 @@
           "old": "PORTUGALETE Metro"
         }
       ],
-      "consecutiveChecks": 1,
+      "consecutiveChecks": 2,
       "firstObservedAt": "2026-10-17T19:51:45+02:00",
       "vehicleId": "7861"
+    },
+    "7899": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "SANTURTZI",
+          "old": "BILBAO"
+        }
+      ],
+      "consecutiveChecks": 1,
+      "firstObservedAt": "2026-10-17T19:54:29+02:00",
+      "vehicleId": "7899"
     },
     "8643": {
       "changed": [
@@ -113,7 +231,7 @@
           "old": "GERNIKA"
         }
       ],
-      "consecutiveChecks": 1,
+      "consecutiveChecks": 2,
       "firstObservedAt": "2026-10-17T19:51:45+02:00",
       "vehicleId": "8643"
     },
@@ -126,15 +244,76 @@
           "old": "BILBAO (Aut.)"
         }
       ],
-      "consecutiveChecks": 1,
+      "consecutiveChecks": 2,
       "firstObservedAt": "2026-10-17T19:51:45+02:00",
       "vehicleId": "8668"
+    },
+    "8669": {
+      "changed": [
+        {
+          "field": "line",
+          "label": "Línea",
+          "new": "A3513",
+          "old": "A3523"
+        },
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "BILBAO",
+          "old": "LEKEITIO"
+        }
+      ],
+      "consecutiveChecks": 1,
+      "firstObservedAt": "2026-10-17T19:54:29+02:00",
+      "vehicleId": "8669"
     }
   },
   "pendingVehicles": {
-    "2089": {
+    "1551": {
       "alerted": false,
       "consecutiveMissing": 1,
+      "firstMissingAt": "2026-10-17T19:54:29+02:00",
+      "lastKnown": {
+        "destination": "GETXO",
+        "direction": "",
+        "id": "1551",
+        "line": "A3414"
+      },
+      "lastSeenAt": "2026-10-17T19:50:45+02:00",
+      "notificationQueued": false,
+      "requiredMissing": 2
+    },
+    "2076": {
+      "alerted": false,
+      "consecutiveMissing": 1,
+      "firstMissingAt": "2026-10-17T19:54:29+02:00",
+      "lastKnown": {
+        "destination": "AIREPORTUA",
+        "direction": "",
+        "id": "2076",
+        "line": "A3247"
+      },
+      "lastSeenAt": "2026-10-17T19:50:45+02:00",
+      "notificationQueued": false,
+      "requiredMissing": 2
+    },
+    "2078": {
+      "alerted": false,
+      "consecutiveMissing": 1,
+      "firstMissingAt": "2026-10-17T19:54:29+02:00",
+      "lastKnown": {
+        "destination": "AIREPORTUA",
+        "direction": "",
+        "id": "2078",
+        "line": "A3247"
+      },
+      "lastSeenAt": "2026-10-17T19:50:45+02:00",
+      "notificationQueued": false,
+      "requiredMissing": 2
+    },
+    "2089": {
+      "alerted": false,
+      "consecutiveMissing": 2,
       "firstMissingAt": "2026-10-17T19:51:45+02:00",
       "lastKnown": {
         "destination": "BILBAO",
@@ -148,7 +327,7 @@
     },
     "2103": {
       "alerted": false,
-      "consecutiveMissing": 1,
+      "consecutiveMissing": 2,
       "firstMissingAt": "2026-10-17T19:51:45+02:00",
       "lastKnown": {
         "destination": "BILBAO",
@@ -162,7 +341,7 @@
     },
     "2120": {
       "alerted": false,
-      "consecutiveMissing": 1,
+      "consecutiveMissing": 2,
       "firstMissingAt": "2026-10-17T19:51:45+02:00",
       "lastKnown": {
         "destination": "AIREPORTUA",
@@ -171,6 +350,20 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-17T19:47:09+02:00",
+      "notificationQueued": false,
+      "requiredMissing": 2
+    },
+    "2124": {
+      "alerted": false,
+      "consecutiveMissing": 1,
+      "firstMissingAt": "2026-10-17T19:54:29+02:00",
+      "lastKnown": {
+        "destination": "BAKIO (Aut.)",
+        "direction": "",
+        "id": "2124",
+        "line": "A3518"
+      },
+      "lastSeenAt": "2026-10-17T19:50:45+02:00",
       "notificationQueued": false,
       "requiredMissing": 2
     },
@@ -189,17 +382,17 @@
       "notificationQueued": false,
       "requiredMissing": 2
     },
-    "3303": {
+    "3293": {
       "alerted": false,
       "consecutiveMissing": 1,
-      "firstMissingAt": "2026-10-17T19:51:45+02:00",
+      "firstMissingAt": "2026-10-17T19:54:29+02:00",
       "lastKnown": {
-        "destination": "GALDAKAO Ospital",
+        "destination": "BILBAO",
         "direction": "",
-        "id": "3303",
-        "line": "A3642"
+        "id": "3293",
+        "line": "A3613"
       },
-      "lastSeenAt": "2026-10-17T19:47:09+02:00",
+      "lastSeenAt": "2026-10-17T19:50:45+02:00",
       "notificationQueued": false,
       "requiredMissing": 2
     },
@@ -215,6 +408,20 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-17T19:45:18+02:00",
+      "notificationQueued": false,
+      "requiredMissing": 2
+    },
+    "3370": {
+      "alerted": false,
+      "consecutiveMissing": 1,
+      "firstMissingAt": "2026-10-17T19:54:29+02:00",
+      "lastKnown": {
+        "destination": "GALDAKAO (Aut.)",
+        "direction": "",
+        "id": "3370",
+        "line": "A3930"
+      },
+      "lastSeenAt": "2026-10-17T19:50:45+02:00",
       "notificationQueued": false,
       "requiredMissing": 2
     },
@@ -235,7 +442,7 @@
     },
     "3373": {
       "alerted": false,
-      "consecutiveMissing": 1,
+      "consecutiveMissing": 2,
       "firstMissingAt": "2026-10-17T19:51:45+02:00",
       "lastKnown": {
         "destination": "GALDAKAO Ospitalea",
@@ -247,37 +454,9 @@
       "notificationQueued": false,
       "requiredMissing": 2
     },
-    "3386": {
-      "alerted": false,
-      "consecutiveMissing": 1,
-      "firstMissingAt": "2026-10-17T19:51:45+02:00",
-      "lastKnown": {
-        "destination": "GALDAKAO Urreta",
-        "direction": "",
-        "id": "3386",
-        "line": "A3631"
-      },
-      "lastSeenAt": "2026-10-17T19:47:09+02:00",
-      "notificationQueued": false,
-      "requiredMissing": 2
-    },
-    "7813": {
-      "alerted": false,
-      "consecutiveMissing": 1,
-      "firstMissingAt": "2026-10-17T19:51:45+02:00",
-      "lastKnown": {
-        "destination": "GETXO",
-        "direction": "",
-        "id": "7813",
-        "line": "A3338"
-      },
-      "lastSeenAt": "2026-10-17T19:47:09+02:00",
-      "notificationQueued": false,
-      "requiredMissing": 2
-    },
     "7863": {
       "alerted": false,
-      "consecutiveMissing": 1,
+      "consecutiveMissing": 2,
       "firstMissingAt": "2026-10-17T19:51:45+02:00",
       "lastKnown": {
         "destination": "LUTXANA",
@@ -299,21 +478,6 @@
         "direction": "",
         "id": "7870",
         "line": "A3151"
-      },
-      "lastSeenAt": "2026-10-17T19:45:18+02:00",
-      "notificationQueued": false,
-      "requiredMissing": 2
-    },
-    "8680": {
-      "alerted": true,
-      "consecutiveMissing": 2,
-      "eventId": "missing:64b48014ece9d238d979dcd9",
-      "firstMissingAt": "2026-10-17T19:48:22+02:00",
-      "lastKnown": {
-        "destination": "ERRIGOITI",
-        "direction": "",
-        "id": "8680",
-        "line": "A3534"
       },
       "lastSeenAt": "2026-10-17T19:45:18+02:00",
       "notificationQueued": false,
