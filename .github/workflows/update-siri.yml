@@ -578,8 +578,8 @@ jobs:
 
                   event_dt = arrival_dt or departure_dt
                   if not event_dt:
-                      continue
-                  if source == "Horario GTFS" and event_dt < now_local - timedelta(minutes=1):
+                      source = "Horario GTFS · hora no disponible"
+                  elif source == "Horario GTFS" and event_dt < now_local - timedelta(minutes=1):
                       source = "Horario GTFS · hora pasada"
                   output.append({
                       "stopId": row["stopId"],
