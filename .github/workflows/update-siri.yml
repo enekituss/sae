@@ -1329,7 +1329,7 @@ jobs:
                           last_seen_dt = datetime.fromisoformat(last_seen.replace("Z", "+00:00"))
                           if last_seen_dt.tzinfo is None:
                               last_seen_dt = last_seen_dt.replace(tzinfo=ZoneInfo("UTC"))
-                          last_seen = last_seen_dt.astimezone(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y %H:%M")
+                          last_seen = last_seen_dt.astimezone(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y %H:%M:%S")
                       except Exception:
                           pass
                   lines = [
@@ -1338,10 +1338,10 @@ jobs:
                       "Última línea publicada: " + safe(event.get("line")),
                       "Último destino publicado: " + safe(event.get("destination")),
                       "Último sentido publicado: " + safe(event.get("direction")),
-                      "Última aparición: " + last_seen,
+                      "Última detección en el SAE: " + last_seen,
                       "Confirmación: " + safe(event.get("missingChecks")) + " consultas consecutivas válidas.",
                       "Importante: esto confirma que ha dejado de aparecer en el feed, no una baja administrativa; también puede ser fin de servicio o un fallo de publicación.",
-                      "Detectado: " + safe(event.get("detectedAt")),
+                      "Hora del aviso: " + safe(event.get("detectedAt")),
                   ]
               elif event.get("type") == "vehicle_returned":
                   last_known = event.get("lastKnown", {})
