@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f28c00">
+  <title>Directorio de paradas · Bizkaibus Spotter</title>
+  <meta name="description" content="Consulta el identificador SIRI y el nombre de las paradas de Bizkaibus.">
+  <link rel="stylesheet" href="styles.css?v=20261017e">
+  <link rel="stylesheet" href="paradas.css?v=20261017e">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="eyebrow">SAE · BIZKAIBUS</div>
+      <h1>Directorio de <span>paradas</span></h1>
+      <p>Relaciona el ID de parada del feed SIRI con su nombre.</p>
+      <a class="back-link" href="./">← Volver a los vehículos</a>
+    </div>
+    <div class="status" aria-live="polite">
+      <span id="dot" class="status-dot"></span>
+      <span id="statusText">Cargando directorio…</span>
+    </div>
+  </header>
+  <main class="page">
+    <section class="summary">
+      <div class="summary-copy">
+        <h2 id="summaryTitle">Paradas Bizkaibus</h2>
+        <p>Busca por identificador, nombre de parada o municipio. Al abrir esta página desde una ficha de vehículo, el ID de parada aparece ya buscado.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><strong id="stopCount">—</strong><span>paradas en el directorio</span></div>
+      </div>
+    </section>
+
+    <section class="list-panel directory-panel">
+      <div class="toolbar">
+        <label class="searchbox">
+          <span aria-hidden="true">⌕</span>
+          <input id="stopSearch" type="search" placeholder="Buscar ID, nombre o municipio…" autocomplete="off">
+        </label>
+        <button id="stopReload" type="button">↻ Actualizar</button>
+      </div>
+      <div class="list-heading">
+        <span>DIRECTORIO OFICIAL / GTFS</span>
+        <span id="stopUpdated">Esperando datos…</span>
+      </div>
+      <div id="stopResults" class="stop-results" aria-live="polite">
+        <div class="message"><span class="spinner"></span> Cargando directorio de paradas…</div>
+      </div>
+    </section>
+    <footer>
+      <span>Datos de referencia de Open Data Bizkaia y/o el conjunto GTFS de Bizkaibus.</span>
+      <span>El nombre mostrado depende de la disponibilidad del directorio y de que el ID coincida con StopPointRef.</span>
+    </footer>
+  </main>
+  <script src="paradas.js?v=20261017e"></script>
+</body>
+</html>
