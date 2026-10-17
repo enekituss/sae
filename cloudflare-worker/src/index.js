@@ -93,15 +93,25 @@ function jsonResponse(request, body, status = 200, extraHeaders = {}) {
 
 
 function readNodeId(node) {
-  return String(node?.num ?? node?.id ?? node?.stopId ?? "").trim();
+  return String(node?.num ?? node?.id ?? node?.stopId ?? node?.nodeId ??
+    node?.nodoId ?? node?.idNodo ?? node?.numNodo ?? "").trim();
 }
 
 function normalizeObservations(nodes, results) {
   const nodeById = new Map(nodes.map(node => [readNodeId(node), node]));
+  const rows = Array.isArray(results) ? results : [];
   const observations = [];
-  for (const result of Array.isArray(results) ? results : []) {
-    const stopId = readNodeId(result);
-    const node = nodeById.get(stopId) || result;
+  rows.forEach((result, resultIndex) => {
+    const explicitId = readNodeId(result);
+    let stopId = explicitId;
+    let node = nodeById.get(explicitId) || null;
+    // Some ISAENEXT builds don't echo the node ID, but return one result per
+    // requested node in the original order. Use this only when array sizes match.
+    if (!node && rows.length === nodes.length && nodes[resultIndex]) {
+      node = nodes[resultIndex];
+      stopId = readNodeId(node);
+    }
+    if (!node) node = result;
     const routeGroups = result?.routeEstimationByNode || result?.routes || [];
     for (const routeGroup of routeGroups) {
       const line = String(routeGroup?.line ?? routeGroup?.route ?? routeGroup?.lineName ?? "").trim();
@@ -128,7 +138,7 @@ function normalizeObservations(nodes, results) {
         });
       }
     }
-  }
+  });
   return observations;
 }
 
