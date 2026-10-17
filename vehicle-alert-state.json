@@ -1,7 +1,91 @@
 {
   "outbox": {},
-  "pendingRouteChanges": {},
-  "pendingVehicles": {},
+  "pendingRouteChanges": {
+    "2078": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "AIREPORTUA",
+          "old": "BILBAO"
+        }
+      ],
+      "consecutiveChecks": 1,
+      "firstObservedAt": "2026-10-17T19:46:50+02:00",
+      "vehicleId": "2078"
+    },
+    "7793": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "BILBAO",
+          "old": "BARAKALDO"
+        }
+      ],
+      "consecutiveChecks": 1,
+      "firstObservedAt": "2026-10-17T19:46:50+02:00",
+      "vehicleId": "7793"
+    }
+  },
+  "pendingVehicles": {
+    "2109": {
+      "alerted": false,
+      "consecutiveMissing": 1,
+      "firstMissingAt": "2026-10-17T19:46:50+02:00",
+      "lastKnown": {
+        "destination": "BILBAO",
+        "direction": "",
+        "id": "2109",
+        "line": "A2153"
+      },
+      "lastSeenAt": "2026-10-17T19:44:24+02:00",
+      "notificationQueued": false,
+      "requiredMissing": 2
+    },
+    "2135": {
+      "alerted": false,
+      "consecutiveMissing": 1,
+      "firstMissingAt": "2026-10-17T19:46:50+02:00",
+      "lastKnown": {
+        "destination": "AREETA/LAS ARENAS",
+        "direction": "",
+        "id": "2135",
+        "line": "A2151"
+      },
+      "lastSeenAt": "2026-10-17T19:44:24+02:00",
+      "notificationQueued": false,
+      "requiredMissing": 2
+    },
+    "3305": {
+      "alerted": false,
+      "consecutiveMissing": 1,
+      "firstMissingAt": "2026-10-17T19:46:50+02:00",
+      "lastKnown": {
+        "destination": "OROZKO Ibarra",
+        "direction": "",
+        "id": "3305",
+        "line": "A3613"
+      },
+      "lastSeenAt": "2026-10-17T19:44:24+02:00",
+      "notificationQueued": false,
+      "requiredMissing": 2
+    },
+    "7880": {
+      "alerted": false,
+      "consecutiveMissing": 1,
+      "firstMissingAt": "2026-10-17T19:46:50+02:00",
+      "lastKnown": {
+        "destination": "MUSKIZ",
+        "direction": "",
+        "id": "7880",
+        "line": "A3321"
+      },
+      "lastSeenAt": "2026-10-17T19:44:24+02:00",
+      "notificationQueued": false,
+      "requiredMissing": 2
+    }
+  },
   "schemaVersion": 1,
   "telegramUpdateOffset": 30217590
 }
