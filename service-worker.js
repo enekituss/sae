@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sae-spotter-shell-v1';
+const CACHE_NAME = 'sae-spotter-shell-v2';
 const SHELL = [
   './',
   './index.html',
@@ -15,7 +15,9 @@ const SHELL = [
   './pwa.js',
   './navigation.js',
   './manifest.webmanifest',
-  './icon.svg'
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', event => {
