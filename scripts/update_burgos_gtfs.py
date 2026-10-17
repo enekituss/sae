@@ -20,7 +20,7 @@ def download_feed():
     # real a partir de los calendarios incluidos en el propio ZIP.
     sources = [
         SOURCE_URL,
-        "https://files.mobilitydatabase.org/mdb-3145/mdb-3145-202605191439/mdb-3145-202605191439.zip",
+        "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-castile-and-leon-autobuses-urbanos-de-burgos-gtfs-3145.zip?alt=media",
     ]
     errors = []
     for url in sources:
@@ -75,6 +75,7 @@ def main():
         calendar_raw = read_rows(archive, "calendar.txt")
         exceptions_raw = read_rows(archive, "calendar_dates.txt")
         agency_raw = read_rows(archive, "agency.txt")
+        shapes_raw = read_rows(archive, "shapes.txt")
 
     routes = []
     for row in routes_raw:
@@ -117,6 +118,7 @@ def main():
             "directionId": clean(row.get("direction_id")),
             "blockId": clean(row.get("block_id")),
             "shortName": clean(row.get("trip_short_name")),
+            "shapeId": clean(row.get("shape_id")),
             "stops": [],
         }
 
@@ -142,6 +144,26 @@ def main():
     trips = list(trips_by_id.values())
     for trip in trips:
         trip["stops"].sort(key=lambda item: int(item[3] or 0))
+
+    # Shapes GTFS: needed to place live stop-distance estimates on the
+    # correct route geometry. Keep only coordinates and sequence, not CSV rows.
+    shapes_by_id = {}
+    for row in shapes_raw:
+        shape_id = clean(row.get("shape_id"))
+        lat = clean(row.get("shape_pt_lat"))
+        lon = clean(row.get("shape_pt_lon"))
+        if not shape_id or not lat or not lon:
+            continue
+        shapes_by_id.setdefault(shape_id, []).append([
+            lat,
+            lon,
+            clean(row.get("shape_pt_sequence")),
+            clean(row.get("shape_dist_traveled")),
+        ])
+    shapes = []
+    for shape_id, points in shapes_by_id.items():
+        points.sort(key=lambda item: int(item[2] or 0))
+        shapes.append({"id": shape_id, "points": points})
 
     calendar = []
     service_dates = []
@@ -209,12 +231,15 @@ def main():
         )),
         "stops": sorted(stops, key=lambda item: item["id"]),
         "trips": trips,
+        "shapes": shapes,
         "calendar": calendar,
         "exceptions": exceptions,
         "stats": {
             "routeCount": len(routes),
             "stopCount": len(stops),
             "tripCount": len(trips),
+            "shapeCount": len(shapes),
+            "shapePointCount": sum(len(shape["points"]) for shape in shapes),
             "stopTimeCount": sum(len(trip["stops"]) for trip in trips),
             "missingTripRefs": missing_trip_refs,
             "zipBytes": len(zipped),
