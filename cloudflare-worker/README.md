@@ -38,3 +38,16 @@ Después, en **Logs / Observability**, comprueba que en el siguiente ciclo apare
 El flujo de GitHub Actions mantiene su programación actual de cinco minutos como respaldo durante la configuración. Cuando se compruebe que este Worker ya está disparando ejecuciones correctamente, se debe retirar la programación nativa de cinco minutos para evitar comprobaciones redundantes. No la quites antes de verificar el Worker.
 
 El Worker también comprueba si hay una ejecución del mismo flujo en cola o en curso; si la hay, omite ese ciclo para no acumular ejecuciones. La hora real de publicación depende de cuánto tarde GitHub Actions en descargar y procesar los feeds y publicar los archivos.
+
+
+## Proxy de información en directo de Burgos
+
+El mismo Worker incluye ahora dos endpoints públicos, sin credenciales adicionales:
+- `/api/burgos/nodes`: devuelve las paradas que publica el visor ISAENEXT.
+- `/api/burgos/estimates?stopId=200`: consulta las estimaciones que publica el visor para una parada concreta (el ejemplo usa el identificador 200).
+
+La respuesta de estimaciones puede incluir línea, destino, segundos estimados hasta la parada, distancia e identificador de vehículo. El visor no debe tratar estos campos como coordenadas GPS individuales; el endpoint de estimaciones por parada no es un feed de posiciones GPS.
+
+Tras desplegar el Worker, prueba primero `/health`, después `/api/burgos/nodes` y por último `/api/burgos/estimates?stopId=200`. Si ISAENEXT responde con timeout o un formato distinto, el endpoint devuelve un error JSON en vez de inventar información.
+
+El proxy permite peticiones desde `https://enekituss.github.io` mediante CORS. Otros orígenes no reciben permiso CORS.
