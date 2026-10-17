@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bizkaibus SAE · Spotter</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">SAE · BIZKAIBUS</div>
+      <h1>Bizkaibus Spotter</h1>
+      <p>Vehículos detectados en servicio a partir del feed SIRI.</p>
+    </div>
+    <div class="status"><span id="dot"></span><span id="statusText">Conectando…</span></div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel">
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Buscar línea o vehículo…" autocomplete="off">
+        <button id="refresh" title="Actualizar ahora">↻</button>
+      </div>
+      <div class="stats">
+        <div><strong id="vehicleCount">0</strong><span>vehículos</span></div>
+        <div><strong id="lineCount">0</strong><span>líneas</span></div>
+      </div>
+      <div id="lines" class="lines"><div class="empty">Cargando datos…</div></div>
+    </aside>
+    <section class="mapwrap">
+      <div id="map"></div>
+      <div class="mapinfo">Actualización automática cada 30 s · Fuente: Open Data Bizkaia / SIRI</div>
+    </section>
+  </main>
+
+  <div id="vehicleModal" class="modal hidden">
+    <div class="modal-card">
+      <button id="closeModal" class="close">×</button>
+      <div class="eyebrow">VEHÍCULO</div>
+      <h2 id="modalVehicle">—</h2>
+      <dl>
+        <dt>Línea</dt><dd id="modalLine">—</dd>
+        <dt>Sentido</dt><dd id="modalDirection">—</dd>
+        <dt>Última posición</dt><dd id="modalTime">—</dd>
+        <dt>Parada próxima</dt><dd id="modalStop">—</dd>
+      </dl>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
