@@ -917,6 +917,15 @@ jobs:
                       candidate["consecutiveMissing"] = int(candidate.get("consecutiveMissing", 0)) + 1
                       required = max(3, int(candidate.get("requiredMissing", 3)))
                       if candidate["consecutiveMissing"] >= required:
+                          first_missing_dt = parse_time(candidate.get("firstMissingAt"))
+                          if first_missing_dt is None:
+                              candidate["firstMissingAt"] = LOCAL_NOW.isoformat(timespec="seconds")
+                              first_missing_dt = LOCAL_NOW
+                          minimum_missing_seconds = 20 * 60 if required >= 6 else 10 * 60
+                          elapsed_missing_seconds = (NOW - first_missing_dt.astimezone(timezone.utc)).total_seconds()
+                          # Extra workflow_dispatch/push runs must not count as 5-minute polls.
+                          if elapsed_missing_seconds < minimum_missing_seconds:
+                              continue
                           last_known = candidate.get("lastKnown", {})
                           event_payload = {
                               "vehicleId": vehicle_id,
