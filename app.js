@@ -127,11 +127,35 @@ function render() {
 // La web está alojada en GitHub Pages, por lo que el navegador no puede leer
 // necesariamente el XML de otro dominio (CORS). El flujo de GitHub Actions
 // consulta SIRI del lado del servidor y publica esta copia JSON en el mismo sitio.
+function applySnapshot(snapshot) {
+  if (!snapshot || !Array.isArray(snapshot.vehicles)) throw new Error('La copia de datos no contiene vehículos en un formato válido');
+
+  vehicles = snapshot.vehicles.map(v => ({
+    id: String(v.id || 'ID no publicado'),
+    idType: String(v.idType || 'ID de vehículo'),
+    line: String(v.line || 'Sin línea identificada'),
+    lineRef: String(v.lineRef || ''),
+    direction: String(v.direction || ''),
+    time: String(v.time || ''),
+    stop: String(v.stop || ''),
+    journeyRef: String(v.journeyRef || ''),
+    lat: v.lat ?? '',
+    lon: v.lon ?? ''
+  }));
+
+  const fetchedAt = snapshot.fetchedAt ? new Date(snapshot.fetchedAt) : null;
+  lastSuccessfulUpdate = fetchedAt && !Number.isNaN(fetchedAt.getTime()) ? fetchedAt : null;
+  render();
+  $('lastUpdated').textContent = lastSuccessfulUpdate
+    ? 'SIRI consultado: ' + lastSuccessfulUpdate.toLocaleTimeString('es-ES') + ' · ' + lastSuccessfulUpdate.toLocaleDateString('es-ES')
+    : 'Fecha de consulta no disponible';
+}
+
 async function fetchSnapshot() {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    const url = new URL(DATA_FILE, window.location.href);
+    const url = new URL('./vehicles.json', window.location.href);
     url.searchParams.set('_', String(Date.now()));
     const response = await fetch(url.toString(), {
       cache: 'no-store',
@@ -140,9 +164,7 @@ async function fetchSnapshot() {
     });
     if (!response.ok) throw new Error('vehicles.json respondió HTTP ' + response.status);
     const data = await response.json();
-    if (!data || !Array.isArray(data.vehicles)) {
-      throw new Error('El fichero de datos no tiene el formato esperado');
-    }
+    if (!data || !Array.isArray(data.vehicles)) throw new Error('El fichero de datos no tiene el formato esperado');
     return data;
   } catch (error) {
     if (error.name === 'AbortError') throw new Error('La copia de datos ha tardado demasiado en responder');
@@ -157,58 +179,62 @@ async function load() {
   updateRunning = true;
   $('refresh').disabled = true;
   $('refresh').innerHTML = '<span aria-hidden="true">↻</span> Cargando';
-  setStatus('Leyendo datos publicados…', '');
+  setStatus('Actualizando datos publicados…', '');
 
   try {
     const snapshot = await fetchSnapshot();
-    vehicles = snapshot.vehicles.map(v => ({
-      id: String(v.id || 'ID no publicado'),
-      idType: String(v.idType || 'ID de vehículo'),
-      line: String(v.line || 'Sin línea identificada'),
-      lineRef: String(v.lineRef || ''),
-      direction: String(v.direction || ''),
-      time: String(v.time || ''),
-      stop: String(v.stop || ''),
-      journeyRef: String(v.journeyRef || ''),
-      lat: v.lat ?? '',
-      lon: v.lon ?? ''
-    }));
-
-    const fetchedAt = snapshot.fetchedAt ? new Date(snapshot.fetchedAt) : null;
-    lastSuccessfulUpdate = fetchedAt && !Number.isNaN(fetchedAt.getTime()) ? fetchedAt : null;
-    render();
-
-    if (!lastSuccessfulUpdate) {
-      $('lastUpdated').textContent = 'A la espera de la primera descarga SIRI';
-      setStatus('Pendiente de la primera consulta SIRI', '');
+    applySnapshot(snapshot);
+    const ageMinutes = lastSuccessfulUpdate
+      ? Math.max(0, Math.round((Date.now() - lastSuccessfulUpdate.getTime()) / 60000))
+      : null;
+    if (ageMinutes !== null && ageMinutes >= 15) {
+      setStatus('Copia de datos antigua · hace ' + ageMinutes + ' min', 'error');
     } else {
-      const ageMinutes = Math.max(0, Math.round((Date.now() - lastSuccessfulUpdate.getTime()) / 60000));
-      $('lastUpdated').textContent = 'SIRI consultado: ' + lastSuccessfulUpdate.toLocaleTimeString('es-ES') +
-        ' · ' + lastSuccessfulUpdate.toLocaleDateString('es-ES');
-      if (ageMinutes >= 15) {
-        setStatus('Copia de datos antigua · hace ' + ageMinutes + ' min', 'error');
-      } else {
-        setStatus('Datos disponibles · ' + vehicles.length + ' registros', 'ok');
-      }
+      setStatus('Datos disponibles · ' + vehicles.length + ' vehículos', 'ok');
     }
   } catch (error) {
-    console.error('No se pudo leer la copia de datos de Bizkaibus:', error);
-    setStatus('No se han podido leer los datos', 'error');
-    $('lines').innerHTML = `
-      <div class="message error">
-        <strong>No se ha podido leer la copia de datos publicada.</strong><br>
-        Comprueba que GitHub Pages esté actualizado y que la tarea de actualización SIRI haya terminado.
-        <br><br><span>${escapeHTML(error.message)}</span>
-        <br><br><a href="https://github.com/enekituss/sae/actions" target="_blank" rel="noopener noreferrer">Abrir el estado de la actualización SIRI</a>
-        <br><br><a href="${FEED}" target="_blank" rel="noopener noreferrer">Abrir el feed oficial SIRI</a>
-      </div>`;
-    $('vehicleCount').textContent = '—';
-    $('lineCount').textContent = '—';
-    $('lastUpdated').textContent = 'Sin datos';
+    console.error('No se pudo leer vehicles.json:', error);
+    // Si falla la petición JSON, seguimos mostrando la copia que se ha
+    // cargado desde vehicles-data.js, en lugar de dejar vacía la página.
+    if (window.BIZKAIBUS_DATA && Array.isArray(window.BIZKAIBUS_DATA.vehicles)) {
+      try {
+        applySnapshot(window.BIZKAIBUS_DATA);
+        setStatus('Mostrando copia integrada · ' + vehicles.length + ' vehículos', vehicles.length ? 'ok' : 'error');
+      } catch (fallbackError) {
+        showLoadError(error);
+      }
+    } else {
+      showLoadError(error);
+    }
   } finally {
     updateRunning = false;
     $('refresh').disabled = false;
     $('refresh').innerHTML = '<span aria-hidden="true">↻</span> Actualizar';
+  }
+}
+
+function showLoadError(error) {
+  setStatus('No se han podido leer los datos', 'error');
+  $('lines').innerHTML = `
+    <div class="message error">
+      <strong>No se ha podido leer la copia de datos publicada.</strong><br>
+      <span>${escapeHTML(error.message)}</span>
+      <br><br><a href="https://github.com/enekituss/sae/actions" target="_blank" rel="noopener noreferrer">Abrir el estado de la actualización SIRI</a>
+      <br><br><a href="${FEED}" target="_blank" rel="noopener noreferrer">Abrir el feed oficial SIRI</a>
+    </div>`;
+  $('vehicleCount').textContent = '—';
+  $('lineCount').textContent = '—';
+  $('lastUpdated').textContent = 'Sin datos';
+}
+
+
+// Mostrar de inmediato la copia incluida en la página antes de consultar el JSON.
+if (window.BIZKAIBUS_DATA && Array.isArray(window.BIZKAIBUS_DATA.vehicles)) {
+  try {
+    applySnapshot(window.BIZKAIBUS_DATA);
+    setStatus('Copia integrada · ' + vehicles.length + ' vehículos', vehicles.length ? 'ok' : '');
+  } catch (error) {
+    console.warn('La copia integrada no se pudo procesar:', error);
   }
 }
 
