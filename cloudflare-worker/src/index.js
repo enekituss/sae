@@ -91,6 +91,80 @@ function jsonResponse(request, body, status = 200, extraHeaders = {}) {
   });
 }
 
+
+function readNodeId(node) {
+  return String(node?.num ?? node?.id ?? node?.stopId ?? "").trim();
+}
+
+function normalizeObservations(nodes, results) {
+  const nodeById = new Map(nodes.map(node => [readNodeId(node), node]));
+  const observations = [];
+  for (const result of Array.isArray(results) ? results : []) {
+    const stopId = readNodeId(result);
+    const node = nodeById.get(stopId) || result;
+    const routeGroups = result?.routeEstimationByNode || result?.routes || [];
+    for (const routeGroup of routeGroups) {
+      const line = String(routeGroup?.line ?? routeGroup?.route ?? routeGroup?.lineName ?? "").trim();
+      const estimates = routeGroup?.publicEstimationVHExts ||
+        routeGroup?.estimations || routeGroup?.buses || [];
+      for (const item of estimates) {
+        const id = String(item?.vehicle ?? item?.vehicleId ?? item?.vehicle_id ?? "").trim();
+        const seconds = Number(item?.seconds);
+        const meters = Number(item?.meters);
+        const lat = Number(item?.lat ?? item?.latitude);
+        const lon = Number(item?.lon ?? item?.lng ?? item?.longitude);
+        observations.push({
+          vehicleId: id && id !== "0" ? id : "",
+          line,
+          destination: String(item?.destination ?? "").trim(),
+          seconds: Number.isFinite(seconds) ? seconds : null,
+          meters: Number.isFinite(meters) ? meters : null,
+          stopId,
+          stopName: String(node?.name ?? node?.stop_name ?? "").trim(),
+          stopLat: Number(node?.lat ?? node?.latitude),
+          stopLon: Number(node?.lng ?? node?.lon ?? node?.longitude),
+          vehicleLat: Number.isFinite(lat) && lat >= 42 && lat <= 43 ? lat : null,
+          vehicleLon: Number.isFinite(lon) && lon >= -4 && lon <= -3 ? lon : null
+        });
+      }
+    }
+  }
+  return observations;
+}
+
+async function fetchBurgosLiveSnapshot() {
+  const nodesPayload = await fetchIsaenextJson(isaenextURL("resourceNodes"));
+  if (!Array.isArray(nodesPayload) || !nodesPayload.length) {
+    throw new Error("ISAENEXT no devolvió la lista de paradas.");
+  }
+  const nodes = nodesPayload.filter(node => readNodeId(node));
+  const ids = nodes.map(readNodeId);
+
+  // El nombre del parámetro ISAENEXT es plural (nodoIds), así que se prueba
+  // la consulta agrupada primero. No se lanzan cientos de peticiones a ciegas.
+  const batchPayload = await fetchIsaenextJson(isaenextURL("resourceEstimations", {
+    "_as_asac_isaenext_IsaenextWebPortlet_tipo": "1",
+    "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": ids.join(",")
+  }));
+  if (!Array.isArray(batchPayload)) {
+    throw new Error("ISAENEXT no devolvió una lista de estimaciones reconocible.");
+  }
+  if (batchPayload.length < Math.min(2, nodes.length)) {
+    throw new Error("ISAENEXT no parece admitir la consulta conjunta de paradas; se evita lanzar cientos de peticiones individuales.");
+  }
+
+  const observations = normalizeObservations(nodes, batchPayload);
+  return {
+    fetchedAt: new Date().toISOString(),
+    source: BURGOS_SOURCE,
+    sourceType: "ISAENEXT · estimaciones por parada",
+    stopCount: nodes.length,
+    resultCount: batchPayload.length,
+    batchingSupported: true,
+    observations
+  };
+}
+
 function isaenextURL(resource, extra = {}) {
   const url = new URL(BURGOS_SOURCE);
   url.searchParams.set("p_p_id", ISAENEXT_PORTLET);
@@ -147,8 +221,8 @@ export default {
         ok: true,
         service: "SAE Spotter scheduler y proxy público",
         cadence: "*/2 * * * *",
-        endpoints: ["/api/burgos/nodes", "/api/burgos/estimates?stopId=200"],
-        note: "El proxy da acceso al visor ISAENEXT desde la web. No añade coordenadas GPS de cada vehículo si la fuente no las publica."
+        endpoints: ["/api/burgos/nodes", "/api/burgos/estimates?stopId=200", "/api/burgos/live"],
+        note: "La fuente pública entrega estimaciones por parada. Las coordenadas sólo se consideran GPS si el servicio las publica; si no, el mapa calcula una posición estimada sobre el trazado GTFS."
       });
     }
 
@@ -166,6 +240,38 @@ export default {
       } catch (error) {
         console.error("Fallo al consultar las paradas de Burgos:", error?.message || String(error));
         return jsonResponse(request, { error: error?.message || "No se pudo consultar ISAENEXT." }, 502);
+      }
+    }
+
+
+    if (request.method === "GET" && url.pathname === "/api/burgos/live") {
+      const cache = caches.default;
+      const cacheRequest = new Request(new URL("/__cache/burgos-live-snapshot", url.origin).toString());
+      try {
+        const cached = await cache.match(cacheRequest);
+        if (cached) {
+          return jsonResponse(request, { ...(await cached.json()), cacheHit: true }, 200, { "Cache-Control": "public, max-age=8" });
+        }
+      } catch {
+        // La caché es opcional.
+      }
+      try {
+        const payload = await fetchBurgosLiveSnapshot();
+        try {
+          await cache.put(cacheRequest, new Response(JSON.stringify(payload), {
+            headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=8" }
+          }));
+        } catch {
+          // La respuesta sigue siendo válida aunque no se pueda guardar en caché.
+        }
+        return jsonResponse(request, payload, 200, { "Cache-Control": "public, max-age=8" });
+      } catch (error) {
+        console.error("Fallo al consultar las estimaciones en directo de Burgos:", error?.message || String(error));
+        return jsonResponse(request, {
+          error: error?.message || "No se pudo consultar ISAENEXT.",
+          source: BURGOS_SOURCE,
+          fetchedAt: new Date().toISOString()
+        }, 502);
       }
     }
 
