@@ -601,9 +601,9 @@ jobs:
               parts = (ref or "").split("_")
               for index in range(len(parts) - 1):
                   previous = parts[index]
-                  route_match = re.search(r"(\\d{4})$", previous) if previous.startswith("O") else None
+                  route_match = re.search(r"(\d{4})$", previous) if previous.startswith("O") else None
                   candidate = parts[index + 1]
-                  if route_match and re.fullmatch(r"\\d{6}", candidate) and candidate.startswith(route_match.group(1)):
+                  if route_match and re.fullmatch(r"\d{6}", candidate) and candidate.startswith(route_match.group(1)):
                       return str(int(candidate[-2:])), candidate
               return "", ""
 
