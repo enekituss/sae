@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f28c00">
   <title>Bizkaibus SAE · Spotter</title>
   <meta name="description" content="Listado de líneas Bizkaibus e identificadores de vehículos detectados en el feed SIRI.">
-  <link rel="stylesheet" href="styles.css?v=20261017i">
+  <link rel="stylesheet" href="styles.css?v=20261017j">
 </head>
 <body>
   <header class="topbar">
@@ -57,7 +57,22 @@
     </footer>
   </main>
 
-  <script src="vehicles-data.js?v=20261017i"></script>
-  <script src="app.js?v=20261017i"></script>
+  <dialog id="upcomingDialog" class="upcoming-dialog" aria-labelledby="upcomingDialogTitle">
+    <div class="dialog-shell">
+      <header class="dialog-header">
+        <div>
+          <div class="dialog-kicker">Itinerario previsto</div>
+          <h2 id="upcomingDialogTitle">Próximas paradas</h2>
+          <p id="upcomingDialogSubtitle"></p>
+        </div>
+        <button id="upcomingDialogClose" class="dialog-close" type="button" aria-label="Cerrar itinerario">×</button>
+      </header>
+      <div id="upcomingDialogStops" class="dialog-content"></div>
+      <div class="dialog-footer">La hora puede proceder del horario GTFS o de una estimación GTFS-RT. Solo se identifica como estimación en tiempo real cuando el feed la proporciona.</div>
+    </div>
+  </dialog>
+
+  <script src="vehicles-data.js?v=20261017j"></script>
+  <script src="app.js?v=20261017j"></script>
 </body>
 </html>
