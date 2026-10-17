@@ -1335,7 +1335,7 @@ jobs:
                   lines = [
                       "⚠️ AUTOBÚS DEJA DE APARECER EN EL FEED (POSIBLE FIN DE SERVICIO)",
                       "Vehículo: " + vehicle_id,
-                      "Última línea publicada: " + safe(event.get("line")),
+                      "Última línea realizada según el SAE: " + safe(event.get("line")),
                       "Último destino publicado: " + safe(event.get("destination")),
                       "Último sentido publicado: " + safe(event.get("direction")),
                       "Última detección en el SAE: " + last_seen,
@@ -1354,42 +1354,44 @@ jobs:
                       "Detectado: " + safe(event.get("detectedAt")),
                   ]
               else:
-                  title = "🔁 CAMBIO DE RUTA TRAS REAPARICIÓN" if event.get("type") == "route_change_after_gap" else "🚌 CAMBIO DE RUTA DETECTADO"
+                  is_route_after_gap = event.get("type") == "route_change_after_gap"
+                  title = "🔁 CAMBIO DETECTADO TRAS REAPARICIÓN" if is_route_after_gap else "🚌 CAMBIO DE RUTA DETECTADO"
                   lines = [
                       title,
                       "Vehículo: " + vehicle_id,
                   ]
                   labels = {"line": "Línea", "destination": "Destino", "direction": "Sentido"}
                   for item in event.get("changed", []):
-                      label = labels.get(item.get("field"), safe(item.get("label")))
-                      lines.append(label + ": " + safe(item.get("old")) + " → " + safe(item.get("new")))
-                  lines.append("Hora: " + safe(event.get("detectedAt")))
+                      field = item.get("field")
+                      old_value = safe(item.get("old"))
+                      new_value = safe(item.get("new"))
+                      if is_route_after_gap and field == "line":
+                          lines.append("Última línea realizada según el SAE: " + old_value)
+                          lines.append("Nueva línea en la que aparece ahora: " + new_value)
+                      else:
+                          label = labels.get(field, safe(item.get("label")))
+                          lines.append(label + ": " + old_value + " → " + new_value)
+                  lines.append("Hora del aviso: " + safe(event.get("detectedAt")))
               return "\n".join(lines)
 
-          def render_batch(batch):
-              return "🚌 AVISOS SAE BIZKAIBUS (" + str(len(batch)) + ")\n\n" + "\n\n──────────\n\n".join(
-                  render_event(event) for event in batch
-              ) + "\n\nConsulta SAE: https://enekituss.github.io/sae/"
-
           delivered_ids = []
-          failed_batches = []
-          max_batches_per_run = 10
-          batch_size = 5
-          selected_events = events[:max_batches_per_run * batch_size]
-          for offset in range(0, len(selected_events), batch_size):
-              batch = selected_events[offset:offset + batch_size]
+          failed_events = []
+          max_events_per_run = 50
+          selected_events = events[:max_events_per_run]
+          for index, event in enumerate(selected_events):
               try:
                   telegram_api("sendMessage", {
                       "chat_id": chat_id,
-                      "text": render_batch(batch),
+                      "text": render_event(event) + "\n\nConsulta SAE: https://enekituss.github.io/sae/",
                       "disable_web_page_preview": True,
                   })
-                  delivered_ids.extend(str(event.get("eventId")) for event in batch if event.get("eventId"))
-                  print("Telegram aceptó el lote de " + str(len(batch)) + " avisos.")
+                  if event.get("eventId"):
+                      delivered_ids.append(str(event.get("eventId")))
+                  print("Telegram aceptó un aviso individual del vehículo " + safe(event.get("vehicleId")) + ".")
               except Exception as exc:
-                  failed_batches.append((batch, str(exc)))
-                  print("ERROR al enviar un lote de avisos: " + str(exc))
-              if offset + batch_size < len(selected_events):
+                  failed_events.append((event, str(exc)))
+                  print("ERROR al enviar el aviso individual del vehículo " + safe(event.get("vehicleId")) + ": " + str(exc))
+              if index + 1 < len(selected_events):
                   time.sleep(1.1)
 
           if delivered_ids:
@@ -1432,8 +1434,8 @@ jobs:
 
           if len(events) > len(selected_events):
               print("Quedan " + str(len(events) - len(selected_events)) + " avisos en cola para próximos ciclos.")
-          if failed_batches:
-              print("ERROR: " + str(len(failed_batches)) + " lote(s) no se pudieron enviar; permanecerán en cola para reintentar.")
+          if failed_events:
+              print("ERROR: " + str(len(failed_events)) + " aviso(s) individual(es) no se pudieron enviar; permanecerán en cola para reintentar.")
               sys.exit(1)
           print("Proceso de alertas terminado. Avisos enviados: " + str(len(delivered_ids)) + "; pendientes restantes: " + str(len(outbox)) + ".")
           PY
