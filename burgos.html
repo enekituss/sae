@@ -11,7 +11,8 @@
   <meta name="description" content="Líneas, recorridos y horarios programados de los autobuses urbanos de Burgos.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./burgos.css?v=20261018a">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="./burgos.css?v=20261018b">
   <script>document.documentElement.classList.add('auth-check');</script>
   <style>html.auth-check body { visibility: hidden; }</style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -24,7 +25,7 @@
     <div class="brand">
       <div class="eyebrow">SAE SPOTTER · BURGOS</div>
       <h1>Autobuses urbanos <span>de Burgos</span></h1>
-      <p>Líneas, recorridos y horarios por parada.</p>
+      <p>Posiciones estimadas en directo, líneas y horarios por parada.</p>
       <nav class="page-nav" aria-label="Navegación">
         <a href="./index.html">← Cambiar ciudad</a>
       </nav>
@@ -43,6 +44,42 @@
         <div class="stat"><strong id="stopCount">—</strong><span>paradas</span></div>
         <div class="stat"><strong id="tripCount">—</strong><span>viajes del fichero</span></div>
       </div>
+    </section>
+
+
+    <section class="live-panel" aria-labelledby="liveTitle">
+      <header class="live-panel-head">
+        <div>
+          <div class="live-kicker">FUENTE MUNICIPAL · ISAENEXT</div>
+          <h2 id="liveTitle">Autobuses en directo</h2>
+          <p>Consulta los vehículos que la fuente está detectando y su ubicación sobre el recorrido.</p>
+        </div>
+        <div class="live-actions">
+          <span id="liveUpdated">Esperando primera consulta…</span>
+          <button id="liveRefresh" type="button">↻ Actualizar posiciones</button>
+          <button id="liveConfigToggle" class="quiet-button" type="button">Configurar conexión</button>
+        </div>
+      </header>
+      <div id="liveConfigPanel" class="live-config" hidden>
+        <label for="liveProxyUrl">URL de Cloudflare Worker <span>(opcional si funciona la conexión directa)</span></label>
+        <div class="live-config-row">
+          <input id="liveProxyUrl" type="url" inputmode="url" placeholder="https://nombre.subdominio.workers.dev">
+          <button id="liveProxySave" type="button">Guardar conexión</button>
+          <button id="liveProxyClear" class="quiet-button" type="button">Quitar</button>
+        </div>
+        <p>Se utiliza solo como intermediario para acceder al servicio municipal si Chrome bloquea la conexión directa. La URL se guarda únicamente en este navegador.</p>
+      </div>
+      <div class="live-summary">
+        <div><strong id="liveBusCount">—</strong><span>vehículos identificados</span></div>
+        <div><strong id="livePositionCount">—</strong><span>posiciones en el mapa</span></div>
+        <div><strong id="liveStopCount">—</strong><span>paradas consultadas</span></div>
+      </div>
+      <div id="liveMap" aria-label="Mapa de autobuses de Burgos en directo"></div>
+      <div id="liveStatus" class="live-status" role="status" aria-live="polite">
+        <span class="spinner"></span> Consultando si el servicio municipal está publicando posiciones…
+      </div>
+      <div id="liveVehicleList" class="live-vehicle-list"></div>
+      <p class="live-disclaimer">La fuente pública consultada ofrece estimaciones por parada. Si no publica coordenadas GPS del vehículo, el punto del mapa se reconstruye a partir de la distancia declarada y del trazado GTFS; esas marcas se identifican como estimaciones, no como GPS exacto.</p>
     </section>
 
     <section id="dataNotice" class="notice" aria-live="polite">
@@ -65,7 +102,7 @@
     </section>
 
     <section class="notice secondary-notice">
-      <strong>Qué significa la información:</strong> las horas que se muestran proceden de horarios GTFS publicados, no de predicciones GPS. El GTFS consultado no identifica por sí solo el autobús físico, su matrícula ni su posición en vivo. Si el Ayuntamiento publica un feed operativo accesible, se podrá enlazar en otra fase.
+      <strong>Qué significa la información:</strong> el mapa consulta el servicio público de estimaciones de Burgos; cuando no se publica GPS, sitúa el autobús de forma estimada sobre el trazado. La tabla de viajes usa horarios GTFS, que se muestran por separado y no garantizan que un vehículo esté circulando.
     </section>
 
     <footer>
@@ -74,6 +111,7 @@
     </footer>
   </main>
 
-  <script src="./burgos.js?v=20261018a"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="./burgos.js?v=20261018b"></script>
 </body>
 </html>
