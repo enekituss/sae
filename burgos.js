@@ -189,6 +189,14 @@
       $('lastUpdated').textContent = data.fetchedAt ? 'Descargado: ' + new Date(data.fetchedAt).toLocaleDateString('es-ES') : 'Datos pendientes';
       $('feedValidity').textContent = data.serviceStart && data.serviceEnd ? 'Fechas declaradas del calendario: ' + data.serviceStart + ' – ' + data.serviceEnd : 'El fichero no declara un periodo de vigencia.';
       buildNotice();
+      // Si el último GTFS publicado no cubre la fecha actual, mostrar los
+      // viajes que sí contiene como referencia en vez de dejar cada línea vacía.
+      if (data.serviceStart && data.serviceEnd) {
+        const currentDateKey = parseISO(today());
+        if (currentDateKey < data.serviceStart || currentDateKey > data.serviceEnd) {
+          $('showAllSchedules').checked = true;
+        }
+      }
       setStatus('GTFS leído · ' + data.routes.length + ' líneas', data.routes.length ? 'ok' : 'error');
       const params = new URLSearchParams(window.location.search);
       const preset = params.get('line');
