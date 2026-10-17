@@ -1,5 +1,10 @@
 const FEED = 'https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml';
-const PROXY_FEED = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(FEED);
+const FEED_URLS = [
+  { label: 'feed oficial', url: FEED },
+  { label: 'proxy AllOrigins', url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(FEED) },
+  { label: 'proxy CORSProxy', url: 'https://corsproxy.io/?url=' + encodeURIComponent(FEED) }
+];
+const REQUEST_TIMEOUT_MS = 8000;
 const REFRESH_MS = 30000;
 const $ = id => document.getElementById(id);
 
@@ -194,50 +199,75 @@ function render() {
 }
 
 async function fetchFeed(url) {
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) throw new Error('HTTP ' + response.status);
-  const body = await response.text();
-  const xml = new DOMParser().parseFromString(body, 'application/xml');
-  if (xml.getElementsByTagName('parsererror').length || !xml.documentElement) {
-    throw new Error('Respuesta XML no válida');
+  // AbortController corta la petición y también libera la interfaz si una URL no responde.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      cache: 'no-store',
+      signal: controller.signal,
+      headers: { 'Accept': 'application/xml, text/xml, */*' }
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const body = await response.text();
+    const xml = new DOMParser().parseFromString(body, 'application/xml');
+    if (xml.getElementsByTagName('parsererror').length || !xml.documentElement) {
+      throw new Error('Respuesta XML no válida');
+    }
+    const hasActivities = elements(xml, 'VehicleActivity').length > 0;
+    const isSiriResponse = /Siri|VehicleMonitoringDelivery|VehicleActivity/i.test(
+      xml.documentElement.nodeName + ' ' + body.slice(0, 1000)
+    );
+    if (!hasActivities && !isSiriResponse) throw new Error('La respuesta no parece contener datos SIRI');
+    return xml;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Tiempo de espera agotado (' + Math.round(REQUEST_TIMEOUT_MS / 1000) + ' s)');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-  const hasActivities = elements(xml, 'VehicleActivity').length > 0;
-  const isSiriResponse = /Siri|VehicleMonitoringDelivery|VehicleActivity/i.test(
-    xml.documentElement.nodeName + ' ' + body.slice(0, 1000)
-  );
-  if (!hasActivities && !isSiriResponse) throw new Error('La respuesta no parece contener datos SIRI');
-  return xml;
 }
-
 async function load() {
   $('refresh').disabled = true;
   $('refresh').innerHTML = '<span aria-hidden="true">↻</span> Cargando';
-  setStatus('Actualizando datos…', '');
+  setStatus('Conectando con SIRI…', '');
 
   try {
-    let xml;
-    let usedProxy = false;
-    try {
-      xml = await fetchFeed(FEED);
-    } catch (directError) {
-      console.warn('No se pudo leer directamente el feed SIRI; se probará una ruta alternativa.', directError);
-      xml = await fetchFeed(PROXY_FEED);
-      usedProxy = true;
+    let xml = null;
+    let usedSource = '';
+    const errors = [];
+
+    for (const source of FEED_URLS) {
+      try {
+        setStatus('Probando ' + source.label + '…', '');
+        xml = await fetchFeed(source.url);
+        usedSource = source.label;
+        break;
+      } catch (error) {
+        errors.push(source.label + ': ' + error.message);
+        console.warn('Falló ' + source.label + ':', error.message);
+      }
     }
+
+    if (!xml) throw new Error(errors.join(' · ') || 'Ninguna fuente ha respondido');
 
     vehicles = parse(xml);
     lastSuccessfulUpdate = new Date();
     render();
     $('lastUpdated').textContent = 'Actualizado a las ' + lastSuccessfulUpdate.toLocaleTimeString('es-ES');
-    setStatus((usedProxy ? 'Conectado mediante alternativa' : 'Feed actualizado') + ' · ' + vehicles.length + ' registros', 'ok');
+    setStatus('Conectado (' + usedSource + ') · ' + vehicles.length + ' registros', 'ok');
   } catch (error) {
     console.error('No se pudo actualizar el feed Bizkaibus SIRI:', error);
     setStatus('No se pudieron cargar los datos', 'error');
     if (!lastSuccessfulUpdate) {
       $('lines').innerHTML = `
         <div class="message error">
-          <strong>No se ha podido conectar con el feed de vehículos.</strong><br>
-          Puede ser un bloqueo de conexión/CORS o un problema temporal de la fuente de datos. Pulsa «Actualizar» para volver a intentarlo.
+          <strong>El feed SIRI no ha respondido.</strong><br>
+          Se ha cancelado la conexión tras varios intentos para evitar que se quede cargando indefinidamente.
+          <br><br><span class="error-detail">${escapeHTML(error.message)}</span>
+          <br><br>Pulsa «Actualizar» para intentarlo de nuevo o abre el feed oficial directamente.
           <br><br><a href="${FEED}" target="_blank" rel="noopener noreferrer">Abrir el feed oficial SIRI</a>
         </div>`;
       $('vehicleCount').textContent = '—';
