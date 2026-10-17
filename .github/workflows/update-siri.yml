@@ -18,112 +18,343 @@ concurrency:
 jobs:
   refresh-feed:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
         with:
           persist-credentials: true
 
-      - name: Descargar SIRI y generar vehicles.json
+      - name: Descargar SIRI y enriquecer paradas y destinos
         shell: bash
         run: |
           python - <<'PY'
+          import csv
+          import io
           import json
+          import os
           import re
           import urllib.request
           import xml.etree.ElementTree as ET
           from datetime import datetime, timezone
 
-          URL = "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml"
-          request = urllib.request.Request(
-              URL,
-              headers={
-                  "User-Agent": "Bizkaibus-Spotter/1.0 (+https://github.com/enekituss/sae)",
-                  "Accept": "application/xml, text/xml, */*",
-              },
-          )
-          with urllib.request.urlopen(request, timeout=20) as response:
-              raw = response.read()
+          POSITIONS_URL = "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml"
+          TRIP_UPDATES_URL = "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-trip-updates.xml"
+          PARADAS_API_URL = "https://apps.bizkaia.eus/BBOA000M/rest/BBOA/GetParadas"
+          GTFS_BASE = "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS-PRUEBAS/"
+          NOW = datetime.now(timezone.utc)
 
-          root = ET.fromstring(raw)
+          def fetch_bytes(url, timeout=15):
+              req = urllib.request.Request(url, headers={
+                  "User-Agent": "Bizkaibus-Spotter/1.0 (+https://github.com/enekituss/sae)",
+                  "Accept": "application/xml, text/xml, text/csv, */*",
+              })
+              with urllib.request.urlopen(req, timeout=timeout) as response:
+                  return response.read()
 
           def local(tag):
               return tag.rsplit("}", 1)[-1]
 
-          def descendants(node, name):
-              return [element for element in node.iter() if local(element.tag) == name]
+          def norm_tag(tag):
+              return re.sub(r"[^a-z0-9]", "", local(tag).lower())
 
-          def value(node, *names):
-              if node is None:
-                  return ""
+          def children_text(element):
+              result = {}
+              for child in list(element):
+                  val = (child.text or "").strip()
+                  if val:
+                      result[norm_tag(child.tag)] = val
+              return result
+
+          def descendant_values(element):
+              result = {}
+              for child in element.iter():
+                  val = (child.text or "").strip()
+                  if val and norm_tag(child.tag) not in result:
+                      result[norm_tag(child.tag)] = val
+              return result
+
+          def pick(values, names):
               for name in names:
-                  for element in descendants(node, name):
-                      text = (element.text or "").strip()
-                      if text:
-                          return text
+                  val = values.get(re.sub(r"[^a-z0-9]", "", name.lower()), "")
+                  if val:
+                      return val
               return ""
 
-          activities = descendants(root, "VehicleActivity")
-          has_delivery = bool(descendants(root, "VehicleMonitoringDelivery"))
-          if local(root.tag).lower() != "siri" and not has_delivery:
-              raise RuntimeError("La URL respondió, pero el contenido no parece ser una respuesta SIRI.")
-          if not activities and not has_delivery:
-              raise RuntimeError("No se encontró VehicleMonitoringDelivery en el XML.")
+          def value(element, *names):
+              if element is None:
+                  return ""
+              vals = descendant_values(element)
+              return pick(vals, list(names))
+
+          def parse_time(value):
+              if not value:
+                  return None
+              try:
+                  dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                  if dt.tzinfo is None:
+                      dt = dt.replace(tzinfo=timezone.utc)
+                  return dt
+              except (ValueError, TypeError):
+                  return None
+
+          def is_fresh(path, age_days):
+              if not os.path.exists(path):
+                  return False
+              try:
+                  with open(path, encoding="utf-8") as handle:
+                      obj = json.load(handle)
+                  stamp = parse_time(obj.get("fetchedAt"))
+                  return stamp is not None and (NOW - stamp).total_seconds() < age_days * 86400
+              except Exception:
+                  return False
+
+          # Stops: keep a cache so we do not download static data on every 5-min poll.
+          # Prefer Bizkaia's official stop-list endpoint, with the public GTFS file as fallback.
+          stops_doc = {}
+          stops_source = ""
+          if os.path.exists("stops.json"):
+              try:
+                  with open("stops.json", encoding="utf-8") as handle:
+                      stops_doc = json.load(handle)
+              except Exception:
+                  stops_doc = {}
+
+          stops = {}
+          if is_fresh("stops.json", 7) and isinstance(stops_doc.get("stops"), list):
+              stops = {str(s.get("id", "")): s for s in stops_doc["stops"] if s.get("id")}
+              stops_source = stops_doc.get("source", "cache local")
+              print("Usando caché de paradas: " + str(len(stops)))
+          else:
+              id_names = [
+                  "stop_id", "StopPointRef", "CodigoParada", "IdParada", "ParadaId",
+                  "CodigoPuntoParada", "StopId", "StopCode", "Codigo", "Id"
+              ]
+              name_names = [
+                  "stop_name", "NombreParada", "DenominacionParada", "DescripcionParada",
+                  "Nombre", "Denominacion", "Descripcion", "DParada", "Parada"
+              ]
+              lat_names = ["stop_lat", "Latitud", "Latitude", "Lat", "Y"]
+              lon_names = ["stop_lon", "Longitud", "Longitude", "Lon", "X"]
+
+              # A) Official Bizkaia XML API (schema names vary by endpoint version).
+              try:
+                  raw = fetch_bytes(PARADAS_API_URL, timeout=12)
+                  root = ET.fromstring(raw)
+                  found = {}
+                  for element in root.iter():
+                      direct = children_text(element)
+                      sid = pick(direct, id_names)
+                      name = pick(direct, name_names)
+                      vals = direct if sid and name else descendant_values(element)
+                      sid = sid or pick(vals, id_names)
+                      name = name or pick(vals, name_names)
+                      if not sid or not name:
+                          continue
+                      sid = sid.strip()
+                      item = {
+                          "id": sid,
+                          "name": name.strip(),
+                          "lat": pick(vals, lat_names),
+                          "lon": pick(vals, lon_names),
+                          "municipality": pick(vals, ["Municipio", "Municipality", "NombreMunicipio"]),
+                      }
+                      found[sid] = item
+                  if len(found) >= 50:
+                      stops = found
+                      stops_source = PARADAS_API_URL
+                      print("Paradas recuperadas del API oficial: " + str(len(stops)))
+                  else:
+                      print("El XML de GetParadas no contenía un listado reconocible; se probará GTFS.")
+              except Exception as exc:
+                  print("No se pudo leer GetParadas: " + str(exc))
+
+              # B) Public GTFS stops.txt. stop_id is the cross-reference for SIRI StopPointRef.
+              if not stops:
+                  try:
+                      raw = fetch_bytes(GTFS_BASE + "stops.txt", timeout=20)
+                      reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")))
+                      for row in reader:
+                          sid = (row.get("stop_id") or "").strip()
+                          name = (row.get("stop_name") or "").strip()
+                          if not sid or not name:
+                              continue
+                          stops[sid] = {
+                              "id": sid,
+                              "name": name,
+                              "lat": (row.get("stop_lat") or "").strip(),
+                              "lon": (row.get("stop_lon") or "").strip(),
+                              "municipality": (row.get("municipality") or row.get("parent_station") or "").strip(),
+                          }
+                      if stops:
+                          stops_source = GTFS_BASE + "stops.txt"
+                          print("Paradas recuperadas del GTFS: " + str(len(stops)))
+                  except Exception as exc:
+                      print("No se pudo leer stops.txt: " + str(exc))
+
+          # Create aliases for common StopPointRef formats (for example "4157" and "stop:4157").
+          stop_index = {}
+          aliases_ambiguous = set()
+          def add_stop_alias(alias, item):
+              if not alias:
+                  return
+              if alias in stop_index and stop_index[alias].get("id") != item.get("id"):
+                  aliases_ambiguous.add(alias)
+              else:
+                  stop_index[alias] = item
+
+          for sid, item in stops.items():
+              add_stop_alias(str(sid).strip().lower(), item)
+              numeric = re.fullmatch(r"0*(\d+)", str(sid).strip())
+              if numeric:
+                  add_stop_alias(numeric.group(1), item)
+              else:
+                  suffix = re.search(r"(\d+)$", str(sid).strip())
+                  if suffix:
+                      add_stop_alias(suffix.group(1), item)
+          for alias in aliases_ambiguous:
+              stop_index.pop(alias, None)
+
+          # Destinations: SIRI trip-updates first, then the GTFS trip_headsign as fallback.
+          trip_updates = {}
+          try:
+              raw = fetch_bytes(TRIP_UPDATES_URL, timeout=18)
+              trip_root = ET.fromstring(raw)
+              for element in trip_root.iter():
+                  jref = value(element, "VehicleJourneyRef", "DatedVehicleJourneyRef")
+                  if not jref:
+                      continue
+                  dest_name = value(element, "DestinationName", "DestinationDisplay", "DestinationText", "JourneyEndName")
+                  dest_ref = value(element, "DestinationRef")
+                  direction = value(element, "DirectionName")
+                  if dest_name or dest_ref or direction:
+                      current = trip_updates.get(jref, {})
+                      current["destination"] = current.get("destination") or dest_name
+                      current["destinationRef"] = current.get("destinationRef") or dest_ref
+                      current["direction"] = current.get("direction") or direction
+                      trip_updates[jref] = current
+              print("Referencias de viaje con datos de destino en SIRI-trip-updates: " + str(len(trip_updates)))
+          except Exception as exc:
+              print("No se pudo leer trip-updates SIRI; se usará el GTFS cuando sea posible: " + str(exc))
+
+          gtfs_doc = {}
+          if os.path.exists("gtfs-trips.json"):
+              try:
+                  with open("gtfs-trips.json", encoding="utf-8") as handle:
+                      gtfs_doc = json.load(handle)
+              except Exception:
+                  gtfs_doc = {}
+
+          trips = {}
+          if is_fresh("gtfs-trips.json", 14) and isinstance(gtfs_doc.get("trips"), dict):
+              trips = gtfs_doc["trips"]
+              print("Usando caché GTFS de destinos: " + str(len(trips)))
+          else:
+              try:
+                  raw = fetch_bytes(GTFS_BASE + "trips.txt", timeout=25)
+                  reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")))
+                  for row in reader:
+                      tid = (row.get("trip_id") or "").strip()
+                      headsign = (row.get("trip_headsign") or "").strip()
+                      if not tid:
+                          continue
+                      item = {
+                          "headsign": headsign,
+                          "route_id": (row.get("route_id") or "").strip(),
+                          "direction_id": (row.get("direction_id") or "").strip(),
+                          "service_id": (row.get("service_id") or "").strip(),
+                      }
+                      trips[tid] = item
+                      if tid.startswith("trp_"):
+                          trips.setdefault(tid[4:], item)
+                      else:
+                          trips.setdefault("trp_" + tid, item)
+                  if trips:
+                      with open("gtfs-trips.json", "w", encoding="utf-8") as handle:
+                          json.dump({
+                              "fetchedAt": NOW.isoformat(timespec="seconds"),
+                              "source": GTFS_BASE + "trips.txt",
+                              "trips": trips,
+                          }, handle, ensure_ascii=False, separators=(",", ":"))
+                      print("Destinos GTFS recuperados: " + str(len(trips)))
+              except Exception as exc:
+                  print("No se pudo leer trips.txt: " + str(exc))
+                  if isinstance(gtfs_doc.get("trips"), dict):
+                      trips = gtfs_doc["trips"]
+
+          # Read current vehicle positions.
+          root = ET.fromstring(fetch_bytes(POSITIONS_URL, timeout=25))
+          activities = [e for e in root.iter() if local(e.tag) == "VehicleActivity"]
+          if not activities and not any(local(e.tag) == "VehicleMonitoringDelivery" for e in root.iter()):
+              raise RuntimeError("La URL respondió, pero no contiene una respuesta SIRI de posiciones.")
 
           vehicles = []
           seen = set()
+          joined_stops = 0
+          joined_destinations = 0
           for index, activity in enumerate(activities, 1):
-              journey_list = descendants(activity, "MonitoredVehicleJourney")
-              if not journey_list:
+              journeys = [e for e in activity.iter() if local(e.tag) == "MonitoredVehicleJourney"]
+              if not journeys:
                   continue
-              journey = journey_list[0]
+              journey = journeys[0]
 
               vehicle_id = value(journey, "VehicleRef", "VehicleIdentifier", "VehicleId", "FleetNumber")
-              if not vehicle_id:
-                  vehicle_id = value(activity, "VehicleRef", "VehicleIdentifier", "VehicleId", "FleetNumber")
-
-              journey_ref = value(journey, "VehicleJourneyRef", "DatedVehicleJourneyRef")
-              if not journey_ref:
-                  journey_ref = value(activity, "VehicleJourneyRef", "DatedVehicleJourneyRef")
+              jref = value(journey, "VehicleJourneyRef", "DatedVehicleJourneyRef")
+              if not jref:
+                  jref = value(activity, "VehicleJourneyRef", "DatedVehicleJourneyRef")
 
               line_name = value(journey, "PublishedLineName", "LineName", "PublicLineCode", "LinePublicNumber")
               line_ref = value(journey, "LineRef", "LineReference")
-              if not line_ref:
-                  line_ref = value(activity, "LineRef", "LineReference")
               line = line_name or line_ref
-
-              # En algunas actividades SIRI la línea no viene en LineRef,
-              # pero sí aparece codificada al principio de VehicleJourneyRef (p. ej. trp_A3136_...).
-              if not line and journey_ref:
-                  match = re.search(r"(?:^|_)([A-Z]\d{3,4})(?:_|$)", journey_ref.upper())
+              if not line and jref:
+                  match = re.search(r"(?:^|_)([A-Z]\d{3,4})(?:_|$)", jref.upper())
                   if match:
                       line = match.group(1)
               if not line:
                   line = "Sin línea identificada"
 
-              id_value = vehicle_id or journey_ref or f"Registro {index}"
-              id_type = "ID de vehículo" if vehicle_id else (
-                  "Referencia de viaje (sin ID de vehículo)" if journey_ref else "Identificador no publicado"
-              )
+              stop_id = value(journey, "StopPointRef", "StopPointId")
+              stop_name = value(journey, "StopPointName")
+              stop_item = stop_index.get(stop_id.lower()) if stop_id else None
+              if not stop_item and stop_id:
+                  numeric = re.fullmatch(r"0*(\d+)", stop_id.strip())
+                  stop_item = stop_index.get(numeric.group(1)) if numeric else None
+              if stop_item:
+                  stop_name = stop_name or stop_item.get("name", "")
+                  joined_stops += 1
 
-              location = next((e for e in descendants(journey, "VehicleLocation")), None)
-              lat = value(location, "Latitude")
-              lon = value(location, "Longitude")
-              stop = value(journey, "StopPointRef", "StopPointName")
-              recorded = value(journey, "LocationRecordedAtTime", "RecordedAtTime") or value(activity, "RecordedAtTime", "ValidUntilTime")
+              update = trip_updates.get(jref, {})
+              gtfs = trips.get(jref, {}) or trips.get(jref[4:] if jref.startswith("trp_") else "trp_" + jref, {})
+              destination = value(journey, "DestinationName", "DestinationDisplay", "DestinationText", "JourneyEndName")
+              destination_ref = value(journey, "DestinationRef")
+              direction = value(journey, "DirectionName")
+              destination = destination or update.get("destination", "") or gtfs.get("headsign", "") or direction
+              destination_ref = destination_ref or update.get("destinationRef", "")
+              direction = direction or update.get("direction", "")
+              if not destination and destination_ref:
+                  dest_stop = stop_index.get(destination_ref.lower())
+                  if dest_stop:
+                      destination = dest_stop.get("name", "")
+              if destination:
+                  joined_destinations += 1
 
               item = {
-                  "id": id_value,
-                  "idType": id_type,
+                  "id": vehicle_id or jref or ("Registro " + str(index)),
+                  "idType": "ID de vehículo" if vehicle_id else ("Referencia de viaje (sin ID de vehículo)" if jref else "Identificador no publicado"),
                   "line": line,
                   "lineRef": line_ref,
-                  "direction": value(journey, "DestinationName", "DestinationDisplay", "DirectionName"),
-                  "time": recorded,
-                  "stop": stop,
-                  "journeyRef": journey_ref,
-                  "lat": lat,
-                  "lon": lon,
+                  "direction": direction,
+                  "destination": destination,
+                  "destinationRef": destination_ref,
+                  "time": value(journey, "LocationRecordedAtTime", "RecordedAtTime") or value(activity, "RecordedAtTime", "ValidUntilTime"),
+                  "stop": stop_id,
+                  "stopName": stop_name,
+                  "stopLat": (stop_item or {}).get("lat", ""),
+                  "stopLon": (stop_item or {}).get("lon", ""),
+                  "stopSource": stops_source if stop_item else "",
+                  "journeyRef": jref,
+                  "lat": value(journey, "Latitude"),
+                  "lon": value(journey, "Longitude"),
               }
               key = (item["id"], item["line"], item["journeyRef"])
               if key not in seen:
@@ -131,11 +362,25 @@ jobs:
                   vehicles.append(item)
 
           snapshot = {
-              "sourceUrl": URL,
-              "fetchedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+              "sourceUrl": POSITIONS_URL,
+              "fetchedAt": NOW.isoformat(timespec="seconds"),
               "vehicleCount": len(vehicles),
+              "stopLookupCount": len(stops),
+              "stopMatches": joined_stops,
+              "destinationMatches": joined_destinations,
               "vehicles": vehicles,
           }
+
+          # Save stops as a compact public dictionary as well as enriching every vehicle.
+          if stops:
+              with open("stops.json", "w", encoding="utf-8") as handle:
+                  json.dump({
+                      "fetchedAt": (stops_doc.get("fetchedAt") if is_fresh("stops.json", 7) else NOW.isoformat(timespec="seconds")),
+                      "source": stops_source or stops_doc.get("source", ""),
+                      "count": len(stops),
+                      "stops": list(stops.values()),
+                  }, handle, ensure_ascii=False, separators=(",", ":"))
+
           with open("vehicles.json", "w", encoding="utf-8") as handle:
               json.dump(snapshot, handle, ensure_ascii=False, indent=2)
 
@@ -144,17 +389,19 @@ jobs:
               json.dump(snapshot, handle, ensure_ascii=False, separators=(",", ":"))
               handle.write(";")
 
-          print(f"Respuesta SIRI válida: {len(activities)} actividades; {len(vehicles)} registros procesados.")
+          print("SIRI: " + str(len(activities)) + " actividades; vehículos procesados: " + str(len(vehicles)))
+          print("Paradas conocidas: " + str(len(stops)) + "; vehículos enlazados con nombre de parada: " + str(joined_stops))
+          print("Destinos encontrados: " + str(joined_destinations) + "; referencias SIRI con datos de destino: " + str(len(trip_updates)))
           PY
 
-      - name: Guardar la copia pública si ha cambiado
+      - name: Guardar los datos públicos si han cambiado
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add vehicles.json vehicles-data.js
+          git add vehicles.json vehicles-data.js stops.json gtfs-trips.json
           if git diff --cached --quiet; then
             echo "Los datos no han cambiado; no hay commit que crear."
           else
-            git commit -m "Actualizar posiciones SIRI de Bizkaibus"
+            git commit -m "Actualizar posiciones, paradas y destinos Bizkaibus"
             git push
           fi
