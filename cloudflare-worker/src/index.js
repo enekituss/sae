@@ -149,7 +149,7 @@ async function fetchBurgosLiveSnapshot() {
   }
   const nodes = nodesPayload.filter(node => readNodeId(node));
   const chunks = [];
-  for (let i = 0; i < nodes.length; i += 25) chunks.push(nodes.slice(i, i + 25));
+  for (let i = 0; i < nodes.length; i += 50) chunks.push(nodes.slice(i, i + 50));
 
   // El servicio trabaja con estimaciones por parada. Consultamos grupos
   // pequeños para evitar una URL enorme, respetar los límites del Worker y
