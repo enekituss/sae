@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17212b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SAE Spotter">
+  <title>Autobuses urbanos de Burgos · SAE Spotter</title>
+  <meta name="description" content="Líneas, recorridos y horarios programados de los autobuses urbanos de Burgos.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./burgos.css?v=20261018a">
+  <script>document.documentElement.classList.add('auth-check');</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./auth-guard.js?v=20261017a"></script>
+  <script src="./pwa.js?v=20261018a" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="eyebrow">SAE SPOTTER · BURGOS</div>
+      <h1>Autobuses urbanos <span>de Burgos</span></h1>
+      <p>Líneas, recorridos y horarios por parada.</p>
+      <nav class="page-nav" aria-label="Navegación">
+        <a href="./index.html">← Cambiar ciudad</a>
+      </nav>
+    </div>
+    <div class="status" aria-live="polite"><span id="dot" class="status-dot"></span><span id="statusText">Leyendo GTFS oficial…</span></div>
+  </header>
+
+  <main class="page">
+    <section class="summary">
+      <div class="summary-copy">
+        <h2>Servicios programados</h2>
+        <p>Selecciona una línea para consultar sus viajes y las horas de llegada y salida en cada parada. El ID del viaje GTFS no es el número físico de flota del autobús.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><strong id="routeCount">—</strong><span>líneas</span></div>
+        <div class="stat"><strong id="stopCount">—</strong><span>paradas</span></div>
+        <div class="stat"><strong id="tripCount">—</strong><span>viajes del fichero</span></div>
+      </div>
+    </section>
+
+    <section id="dataNotice" class="notice" aria-live="polite">
+      <strong>Comprobando la vigencia del horario…</strong>
+    </section>
+
+    <section class="list-panel">
+      <div class="toolbar">
+        <label class="searchbox"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Buscar línea, destino, parada o ID de viaje…" autocomplete="off"></label>
+        <button id="refresh" type="button">↻ Actualizar</button>
+      </div>
+      <div class="filters">
+        <label for="serviceDate">Fecha del servicio</label>
+        <input id="serviceDate" type="date">
+        <label class="checkbox-label"><input id="showAllSchedules" type="checkbox"> Mostrar también horarios de referencia de otras fechas</label>
+        <button id="clearLine" class="quiet-button" type="button" hidden>Ver todas las líneas</button>
+      </div>
+      <div class="list-heading"><span id="listTitle">LÍNEAS DE AUTOBÚS</span><span id="lastUpdated">Esperando datos…</span></div>
+      <div id="results" class="results" aria-live="polite"><div class="message"><span class="spinner"></span> Cargando líneas y horarios oficiales…</div></div>
+    </section>
+
+    <section class="notice secondary-notice">
+      <strong>Qué significa la información:</strong> las horas que se muestran proceden de horarios GTFS publicados, no de predicciones GPS. El GTFS consultado no identifica por sí solo el autobús físico, su matrícula ni su posición en vivo. Si el Ayuntamiento publica un feed operativo accesible, se podrá enlazar en otra fase.
+    </section>
+
+    <footer>
+      <span>Fuente: <a href="https://www.aytoburgos.es/GTFS/Google_transit.zip" target="_blank" rel="noopener noreferrer">GTFS oficial del Ayuntamiento de Burgos</a>.</span>
+      <span id="feedValidity">La validez de los calendarios se comprueba con los datos publicados.</span>
+    </footer>
+  </main>
+
+  <script src="./burgos.js?v=20261018a"></script>
+</body>
+</html>
