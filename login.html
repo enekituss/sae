@@ -3,20 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f28c00">
-  <title>Acceso · Bizkaibus SAE Spotter</title>
-  <meta name="description" content="Acceso al panel Bizkaibus SAE Spotter.">
+  <meta name="theme-color" content="#17212b">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SAE Spotter">
+  <title>Acceso · SAE Spotter</title>
+  <meta name="description" content="Acceso al panel de información de autobuses urbanos.">
   <link rel="stylesheet" href="./login.css?v=20261017a">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
   <script src="./login.js?v=20261017a" defer></script>
+  <script src="./pwa.js?v=20261018a" defer></script>
 </head>
 <body>
   <main class="login-card">
     <div class="login-icon" aria-hidden="true">🚌</div>
-    <p class="eyebrow">SAE · BIZKAIBUS</p>
-    <h1>Bizkaibus <span>Spotter</span></h1>
-    <p class="subtitle">Inicia sesión para acceder al panel.</p>
+    <p class="eyebrow">TRANSPORTE URBANO · SAE</p>
+    <h1>SAE <span>Spotter</span></h1>
+    <p class="subtitle">Inicia sesión y elige entre Burgos y Bilbao (Bizkaibus).</p>
 
     <form id="loginForm">
       <label for="email">Correo electrónico</label>
