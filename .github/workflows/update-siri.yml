@@ -1,10 +1,6 @@
 name: Actualizar posiciones Bizkaibus
 
 on:
-  # Activación temporal para recuperar datos tras una programación que no está ejecutándose.
-  push:
-    paths:
-      - ".github/workflows/update-siri.yml"
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
