@@ -1,0 +1,23 @@
+name: Comprobar panel de autobuses en directo de Burgos
+on:
+  push:
+    paths:
+      - "burgos.html"
+      - "burgos.css"
+      - "burgos.js"
+      - "scripts/update_burgos_gtfs.py"
+      - "cloudflare-worker/src/index.js"
+      - ".github/workflows/check-burgos-live.yml"
+permissions:
+  contents: read
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Comprobar JavaScript de la web
+        run: node --check burgos.js
+      - name: Comprobar JavaScript del proxy Cloudflare
+        run: node --check cloudflare-worker/src/index.js
+      - name: Comprobar sintaxis del importador GTFS
+        run: python -m py_compile scripts/update_burgos_gtfs.py
