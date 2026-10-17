@@ -117,7 +117,7 @@ function render() {
         <span class="badge">${matchingVehicles.length} ${matchingVehicles.length === 1 ? 'activo' : 'activos'}</span>
       </button>
       <div class="vehicles">
-        ${matchingVehicles.map(vehicle => `
+        ${matchingVehicles.map((vehicle, vehicleIndex) => `
           <article class="vehicle">
             <div class="vehicle-main">
               <div class="vehicle-id"><span class="bus-icon" aria-hidden="true">🚌</span><span>${escapeHTML(vehicle.id)}</span></div>
@@ -134,19 +134,13 @@ function render() {
               ${vehicle.stop ? `<div><strong>Parada SIRI</strong><br><a class="stop-link" href="./paradas.html?id=${escapeHTML(encodeURIComponent(vehicle.stop))}">${escapeHTML(vehicle.stopName || 'Consultar nombre en el directorio')}</a> · ID ${escapeHTML(vehicle.stop)}</div>` : ''}
             </div>
             ${Array.isArray(vehicle.upcomingStops) && vehicle.upcomingStops.length ? `
-              <div class="vehicle-upcoming">
-                <div class="upcoming-heading"><strong>Próximas paradas previstas</strong><span>Hasta ${vehicle.upcomingStops.length} paradas</span></div>
-                <ol>
-                  ${vehicle.upcomingStops.map(stop => `
-                    <li class="${stop.status ? 'has-stop-status' : ''}">
-                      <div class="upcoming-stop-name">${escapeHTML(stop.name || ('Parada ' + (stop.stopId || '')))}${stop.stopId ? ` <span>ID ${escapeHTML(stop.stopId)}</span>` : ''}</div>
-                      <div class="upcoming-stop-time">
-                        <time>${escapeHTML(formatClock(stop.arrivalTime || stop.departureTime))}</time>
-                        <small>${escapeHTML(stop.status || stop.timeSource || 'Horario GTFS')}</small>
-                      </div>
-                    </li>`).join('')}
-                </ol>
-              </div>` : ''}
+              <div class="vehicle-upcoming-action">
+                <button class="upcoming-open" type="button" data-vehicle-index="${vehicleIndex}">
+                  <span aria-hidden="true">☷</span> Ver próximas paradas <span class="upcoming-count">${vehicle.upcomingStops.length}</span>
+                </button>
+                <span class="upcoming-note">Horario previsto y estimaciones en tiempo real cuando están disponibles</span>
+              </div>` : `
+              <div class="vehicle-upcoming-action"><span class="no-upcoming">Itinerario próximo no disponible</span></div>`}
           </article>`).join('')}
       </div>`;
     section.querySelector('.line-head').addEventListener('click', () => {
@@ -154,8 +148,47 @@ function render() {
       else expandedLines.add(line);
       render();
     });
+    section.querySelectorAll('.upcoming-open').forEach(button => {
+      button.addEventListener('click', () => {
+        const vehicle = matchingVehicles[Number(button.dataset.vehicleIndex)];
+        if (vehicle) openUpcomingDialog(vehicle);
+      });
+    });
     $('lines').appendChild(section);
   }
+}
+
+function openUpcomingDialog(vehicle) {
+  const dialog = $('upcomingDialog');
+  if (!dialog) return;
+
+  $('upcomingDialogTitle').textContent = 'Próximas paradas · ' + vehicle.id;
+  const details = [
+    vehicle.line ? 'Línea ' + vehicle.line : '',
+    vehicle.serviceNumber ? 'Servicio ' + vehicle.serviceNumber : '',
+    vehicle.destination ? 'Destino: ' + vehicle.destination : ''
+  ].filter(Boolean);
+  $('upcomingDialogSubtitle').textContent = details.join(' · ') || 'Itinerario publicado en los datos disponibles';
+
+  $('upcomingDialogStops').innerHTML = '<ol class="dialog-stop-list">' +
+    vehicle.upcomingStops.map((stop, index) => {
+      const timingInfo = [stop.timeSource, stop.status].filter(Boolean).join(' · ') || 'Horario GTFS';
+      const stopName = stop.name || ('Parada ' + (stop.stopId || ''));
+      return `<li class="dialog-stop-row${stop.status ? ' dialog-stop-has-status' : ''}">
+        <span class="dialog-stop-index">${index + 1}</span>
+        <div class="dialog-stop-main">
+          <strong>${escapeHTML(stopName)}</strong>
+          <span>${stop.stopId ? 'ID ' + escapeHTML(stop.stopId) : ''}${stop.stopId ? ' · ' : ''}${escapeHTML(timingInfo)}</span>
+        </div>
+        <div class="dialog-stop-time">
+          <time>${escapeHTML(formatClock(stop.arrivalTime || stop.departureTime))}</time>
+          <small>hora prevista</small>
+        </div>
+      </li>`;
+    }).join('') + '</ol>';
+
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+  else dialog.setAttribute('open', '');
 }
 
 // La web está alojada en GitHub Pages, por lo que el navegador no puede leer
@@ -290,6 +323,11 @@ if (window.BIZKAIBUS_DATA && Array.isArray(window.BIZKAIBUS_DATA.vehicles)) {
     console.warn('La copia integrada no se pudo procesar:', error);
   }
 }
+
+$('upcomingDialogClose').addEventListener('click', () => $('upcomingDialog').close());
+$('upcomingDialog').addEventListener('click', event => {
+  if (event.target === $('upcomingDialog')) $('upcomingDialog').close();
+});
 
 $('refresh').addEventListener('click', load);
 $('search').addEventListener('input', render);
