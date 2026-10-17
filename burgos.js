@@ -177,10 +177,19 @@
 
   function normalizeLiveObservations(nodes, results) {
     const nodeMap = new Map(nodes.map(node => [readLiveNodeId(node), node]));
+    const rows = Array.isArray(results) ? results : [];
     const observations = [];
-    for (const result of (Array.isArray(results) ? results : [])) {
-      const stopId = readLiveNodeId(result);
-      const node = nodeMap.get(stopId) || result;
+    rows.forEach((result, resultIndex) => {
+      // Algunas versiones ISAENEXT no incluyen el ID de parada en cada
+      // resultado, aunque devuelven un resultado por cada ID en el orden pedido.
+      const explicitId = readLiveNodeId(result);
+      let stopId = explicitId;
+      let node = nodeMap.get(explicitId) || null;
+      if (!node && rows.length === nodes.length && nodes[resultIndex]) {
+        node = nodes[resultIndex];
+        stopId = readLiveNodeId(node);
+      }
+      if (!node) node = result;
       const routeGroups = result.routeEstimationByNode || result.routes || [];
       for (const group of routeGroups) {
         const line = String(group.line ?? group.route ?? group.lineName ?? '').trim();
@@ -206,7 +215,7 @@
           });
         }
       }
-    }
+    });
     return observations;
   }
 
@@ -409,7 +418,7 @@
       marker.addTo(liveLayer);
       positioned.push([vehicle.position.lat, vehicle.position.lon]);
     }
-    $('liveBusCount').textContent = String(vehicles.filter(v => v.vehicleId).length);
+    $('liveBusCount').textContent = String(vehicles.length);
     $('livePositionCount').textContent = String(positioned.length);
     $('liveStopCount').textContent = String(snapshot.stopCount || '—');
 
