@@ -235,7 +235,7 @@ footer span:last-child { max-width: 48%; text-align: right; }
   cursor: pointer;
 }
 .dialog-close:hover { background: #f2f4f6; }
-.dialog-content { padding: 8px 22px 18px; overflow-y: auto; }
+.dialog-content { flex: 1 1 auto; min-height: 0; padding: 8px 22px 18px; overflow-y: auto; overscroll-behavior: contain; }
 .dialog-stop-list { margin: 0; padding: 0; list-style: none; }
 .dialog-stop-row {
   display: grid;
