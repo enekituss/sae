@@ -1,6 +1,11 @@
 name: Actualizar horarios de autobús urbano de Burgos
 
 on:
+  push:
+    paths:
+      - "scripts/update_burgos_gtfs.py"
+      - "scripts/generate_pwa_icons.py"
+      - ".github/workflows/update-burgos-gtfs.yml"
   schedule:
     - cron: "17 4 * * *"
   workflow_dispatch:
@@ -22,6 +27,9 @@ jobs:
         with:
           persist-credentials: true
 
+      - name: Generar iconos instalables de la aplicación
+        run: python scripts/generate_pwa_icons.py
+
       - name: Descargar GTFS oficial y generar la base de horarios
         run: python scripts/update_burgos_gtfs.py
 
@@ -30,7 +38,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add burgos-data.json
+          git add burgos-data.json icon-192.png icon-512.png
           if git diff --cached --quiet; then
             echo "El archivo generado no ha cambiado; no hay nada que publicar."
             exit 0
