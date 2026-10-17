@@ -15,21 +15,37 @@ USER_AGENT = "SAE-Spotter/1.0 (+https://github.com/enekituss/sae)"
 
 
 def download_feed():
-    request = urllib.request.Request(
+    # La URL municipal a veces no responde desde GitHub Actions. En ese caso
+    # utilizamos el archivo espejo de MobilityDatabase y mostramos su vigencia
+    # real a partir de los calendarios incluidos en el propio ZIP.
+    sources = [
         SOURCE_URL,
-        headers={
-            "User-Agent": USER_AGENT,
-            "Accept": "application/zip, application/octet-stream, */*",
-        },
-    )
-    with urllib.request.urlopen(request, timeout=60) as response:
-        if response.status != 200:
-            raise RuntimeError(f"El GTFS municipal respondió HTTP {response.status}")
-        content = response.read()
-    if not content.startswith(b"PK"):
-        raise RuntimeError("La URL municipal no ha devuelto un ZIP GTFS válido")
-    return content
-
+        "https://files.mobilitydatabase.org/mdb-3145/mdb-3145-202605191439/mdb-3145-202605191439.zip",
+    ]
+    errors = []
+    for url in sources:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "application/zip, application/octet-stream, */*",
+            },
+        )
+        try:
+            print(f"Intentando fuente GTFS: {url}")
+            with urllib.request.urlopen(request, timeout=22) as response:
+                if response.status != 200:
+                    raise RuntimeError(f"HTTP {response.status}")
+                content = response.read()
+            if not content.startswith(b"PK"):
+                raise RuntimeError("la respuesta no parece un ZIP")
+            print(f"Descarga correcta desde {url} ({len(content):,} bytes)")
+            return content, url
+        except Exception as exc:
+            message = f"{url}: {type(exc).__name__}: {exc}"
+            errors.append(message)
+            print(f"No se pudo descargar esta fuente: {message}")
+    raise RuntimeError("No se pudo obtener ningún GTFS. " + " | ".join(errors))
 
 def read_rows(archive, filename, required=False):
     members = [name for name in archive.namelist()
@@ -49,7 +65,7 @@ def clean(value):
 
 def main():
     print(f"Descargando {SOURCE_URL}")
-    zipped = download_feed()
+    zipped, downloaded_from = download_feed()
     print(f"ZIP recibido: {len(zipped):,} bytes")
     with zipfile.ZipFile(io.BytesIO(zipped)) as archive:
         routes_raw = read_rows(archive, "routes.txt", required=True)
@@ -182,7 +198,8 @@ def main():
     service_start = min(service_dates) if service_dates else None
     service_end = max(service_dates) if service_dates else None
     payload = {
-        "sourceUrl": SOURCE_URL,
+        "sourceUrl": downloaded_from,
+        "producerUrl": SOURCE_URL,
         "fetchedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "agency": agency,
         "serviceStart": service_start,
