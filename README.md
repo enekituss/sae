@@ -1,24 +1,19 @@
 # Bizkaibus SAE · Spotter
 
-Web para localizar vehículos Bizkaibus a partir del feed público SIRI de Open Data Bizkaia.
+Web ligera para consultar las líneas y los vehículos Bizkaibus que aparecen como activos en el feed público SIRI de Open Data Bizkaia. La interfaz se centra en una lista agrupada por línea; no incluye mapa.
 
-## Funciones actuales
-- Mapa Leaflet con posiciones GPS.
-- Agrupación automática por línea.
-- Número de vehículos detectados por línea.
-- Buscador por línea o vehículo.
-- Ficha de vehículo con línea, sentido, hora y parada.
-- Actualización automática cada 30 segundos.
+## Funciones
+- Agrupación de vehículos detectados por línea.
+- Contador de vehículos y líneas presentes en el feed.
+- Listas desplegables por línea con identificador del vehículo, destino/sentido, última hora de posición y referencia de parada si está disponible.
+- Búsqueda por línea, identificador de vehículo, destino o referencia de parada.
+- Actualización automática cada 30 segundos y botón de actualización manual.
+- Si la conexión directa falla por CORS, intenta leer el feed mediante AllOrigins como alternativa pública. Este servicio externo puede no estar disponible siempre.
 
-## Fuente
-Feed oficial: https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml
+## Fuente de datos
+Feed de posiciones SIRI: https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml
 
-Los datos publicados por Open Data Bizkaia incluyen identificadores de vehículo (`VehicleRef`), posición, línea/sentido cuando están disponibles y marcas temporales. El feed está en formato SIRI/XML y se publica bajo CC BY 4.0.
+Solo se listan vehículos presentes en el feed en el momento de la consulta. No equivale necesariamente al total de vehículos que están circulando: puede haber vehículos que no estén reportando posición o campos que no vengan informados.
 
-## Próximos pasos
-1. Comprobar CORS del feed en GitHub Pages.
-2. Si el navegador bloquea el XML, añadir un proxy mediante GitHub Actions.
-3. Incorporar catálogo completo de líneas y paradas desde los recursos NETEX.
-4. Añadir filtros por línea, sentido y estado.
-5. Añadir base de datos manual de matrícula/modelo/número de flota para spotting.
-6. Guardar histórico de apariciones para saber cuándo se ha visto cada vehículo.
+## Publicación
+El sitio se publica mediante GitHub Pages desde la rama `main`, carpeta raíz (`/(root)`). Si la web devuelve 404 o no carga, comprueba en **Settings → Pages** que GitHub Pages esté activado y que la fuente de despliegue sea `main / (root)`.
