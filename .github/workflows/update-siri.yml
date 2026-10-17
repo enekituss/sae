@@ -25,7 +25,17 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Descargar SIRI y enriquecer paradas y destinos
+      - name: Cache GTFS oficial de producción
+        uses: actions/cache@v4
+        with:
+          path: /tmp/bizkaibus-gtfs/Bizkaibus.zip
+          key: bizkaibus-gtfs-production-2026-10-v2
+
+      - name: Preparar lector GTFS-Realtime
+        run: python -m pip install --quiet --disable-pip-version-check gtfs-realtime-bindings
+        continue-on-error: true
+
+      - name: Descargar SIRI y enriquecer paradas, destinos y horarios
         shell: bash
         run: |
           python - <<'PY'
@@ -37,15 +47,20 @@ jobs:
           import urllib.request
           import xml.etree.ElementTree as ET
           import zipfile
-          from datetime import datetime, timezone
+          from datetime import datetime, timezone, timedelta
+          from zoneinfo import ZoneInfo
 
           POSITIONS_URL = "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml"
           TRIP_UPDATES_URL = "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-trip-updates.xml"
+          GTFS_RT_UPDATES_URL = "https://baliabideak.bizkaia.eus/Bizkaibus/GTFSRealTime/FeedTripUpdates.pb"
           PARADAS_API_URL = "https://apps.bizkaia.eus/BBOA000M/rest/BBOA/GetParadas"
           GTFS_BASE = "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/"
           GTFS_ZIP_URL = GTFS_BASE + "Bizkaibus.zip"
-          STATIC_CACHE_VERSION = "production-gtfs-2026-10"
+          GTFS_CACHE_FILE = "/tmp/bizkaibus-gtfs/Bizkaibus.zip"
+          STATIC_CACHE_VERSION = "production-gtfs-2026-10-v2"
+          LOCAL_TZ = ZoneInfo("Europe/Madrid")
           NOW = datetime.now(timezone.utc)
+          LOCAL_NOW = datetime.now(LOCAL_TZ)
           gtfs_zip_bytes = None
 
           def fetch_bytes(url, timeout=15):
@@ -56,16 +71,42 @@ jobs:
               with urllib.request.urlopen(req, timeout=timeout) as response:
                   return response.read()
 
-          def gtfs_file(filename):
+          def ensure_gtfs_zip():
               global gtfs_zip_bytes
-              if gtfs_zip_bytes is None:
-                  print("Descargando GTFS oficial actualizado: " + GTFS_ZIP_URL)
+              if gtfs_zip_bytes is not None:
+                  return gtfs_zip_bytes
+              if os.path.isfile(GTFS_CACHE_FILE):
+                  with open(GTFS_CACHE_FILE, "rb") as handle:
+                      gtfs_zip_bytes = handle.read()
+                  print("Usando ZIP GTFS de caché (" + str(len(gtfs_zip_bytes)) + " bytes).")
+              else:
+                  print("Descargando GTFS oficial de producción: " + GTFS_ZIP_URL)
                   gtfs_zip_bytes = fetch_bytes(GTFS_ZIP_URL, timeout=60)
-              with zipfile.ZipFile(io.BytesIO(gtfs_zip_bytes)) as archive:
+                  os.makedirs(os.path.dirname(GTFS_CACHE_FILE), exist_ok=True)
+                  with open(GTFS_CACHE_FILE, "wb") as handle:
+                      handle.write(gtfs_zip_bytes)
+                  print("ZIP GTFS descargado (" + str(len(gtfs_zip_bytes)) + " bytes).")
+              return gtfs_zip_bytes
+
+          def gtfs_file(filename):
+              archive_data = ensure_gtfs_zip()
+              with zipfile.ZipFile(io.BytesIO(archive_data)) as archive:
                   candidates = [n for n in archive.namelist() if n.rsplit("/", 1)[-1].lower() == filename.lower()]
                   if not candidates:
                       raise RuntimeError("El ZIP GTFS no contiene " + filename)
                   return archive.read(candidates[0])
+
+          def gtfs_rows(filename):
+              archive_data = ensure_gtfs_zip()
+              with zipfile.ZipFile(io.BytesIO(archive_data)) as archive:
+                  candidates = [n for n in archive.namelist() if n.rsplit("/", 1)[-1].lower() == filename.lower()]
+                  if not candidates:
+                      raise RuntimeError("El ZIP GTFS no contiene " + filename)
+                  with archive.open(candidates[0], "r") as binary:
+                      with io.TextIOWrapper(binary, encoding="utf-8-sig", newline="") as stream:
+                          reader = csv.DictReader(stream)
+                          for row in reader:
+                              yield row
 
           def local(tag):
               return tag.rsplit("}", 1)[-1]
@@ -284,10 +325,13 @@ jobs:
                       if not tid:
                           continue
                       item = {
+                          "trip_id": tid,
                           "headsign": headsign,
                           "route_id": (row.get("route_id") or "").strip(),
                           "direction_id": (row.get("direction_id") or "").strip(),
                           "service_id": (row.get("service_id") or "").strip(),
+                          "trip_short_name": (row.get("trip_short_name") or "").strip(),
+                          "block_id": (row.get("block_id") or "").strip(),
                       }
                       trips[tid] = item
                       if tid.startswith("trp_"):
@@ -313,6 +357,242 @@ jobs:
           activities = [e for e in root.iter() if local(e.tag) == "VehicleActivity"]
           if not activities and not any(local(e.tag) == "VehicleMonitoringDelivery" for e in root.iter()):
               raise RuntimeError("La URL respondió, pero no contiene una respuesta SIRI de posiciones.")
+
+          # Parse the official public GTFS-Realtime Trip Updates feed.
+          # This is the source for live ETAs; static GTFS stop_times remains a fallback.
+          realtime_updates = {}
+          realtime_trip_count = 0
+          realtime_stop_update_count = 0
+          realtime_feed_timestamp = None
+          try:
+              from google.transit import gtfs_realtime_pb2
+              rt_bytes = fetch_bytes(GTFS_RT_UPDATES_URL, timeout=20)
+              rt_feed = gtfs_realtime_pb2.FeedMessage()
+              rt_feed.ParseFromString(rt_bytes)
+              if rt_feed.header.timestamp:
+                  realtime_feed_timestamp = datetime.fromtimestamp(rt_feed.header.timestamp, timezone.utc)
+              for entity in rt_feed.entity:
+                  if not entity.HasField("trip_update"):
+                      continue
+                  trip_update = entity.trip_update
+                  trip_id = trip_update.trip.trip_id if trip_update.HasField("trip") else ""
+                  if not trip_id:
+                      continue
+                  entry_timestamp = int(trip_update.timestamp) if trip_update.timestamp else (
+                      int(realtime_feed_timestamp.timestamp()) if realtime_feed_timestamp else 0
+                  )
+                  stop_updates = []
+                  for stop_update in trip_update.stop_time_update:
+                      row_update = {
+                          "stopSequence": int(stop_update.stop_sequence) if stop_update.stop_sequence else None,
+                          "stopId": (stop_update.stop_id or "").strip(),
+                          "relationship": int(stop_update.schedule_relationship),
+                      }
+                      if stop_update.HasField("arrival"):
+                          event = stop_update.arrival
+                          if event.time:
+                              row_update["arrivalEpoch"] = int(event.time)
+                          if event.HasField("delay"):
+                              row_update["arrivalDelay"] = int(event.delay)
+                      if stop_update.HasField("departure"):
+                          event = stop_update.departure
+                          if event.time:
+                              row_update["departureEpoch"] = int(event.time)
+                          if event.HasField("delay"):
+                              row_update["departureDelay"] = int(event.delay)
+                      if len(row_update) > 3:
+                          stop_updates.append(row_update)
+                  entry = {
+                      "tripId": trip_id,
+                      "vehicleId": (trip_update.vehicle.id or "").strip() if trip_update.HasField("vehicle") else "",
+                      "timestamp": entry_timestamp,
+                      "stops": stop_updates,
+                  }
+                  realtime_updates[trip_id] = entry
+                  if trip_id.startswith("trp_"):
+                      realtime_updates.setdefault(trip_id[4:], entry)
+                  else:
+                      realtime_updates.setdefault("trp_" + trip_id, entry)
+                  realtime_trip_count += 1
+                  realtime_stop_update_count += len(stop_updates)
+              print("GTFS-RT TripUpdates: " + str(realtime_trip_count) + " viajes; " + str(realtime_stop_update_count) + " actualizaciones de parada.")
+          except Exception as exc:
+              print("No se pudo leer el feed GTFS-RT de actualizaciones; se usará el horario estático: " + str(exc))
+
+          # Find each currently active trip's GTFS ID, then scan stop_times.txt once,
+          # retaining only those trips. The ZIP is cached by GitHub Actions between runs.
+          active_gtfs_trip_ids = set()
+          trip_id_by_ref = {}
+          service_date_by_trip = {}
+          for activity in activities:
+              journeys = [e for e in activity.iter() if local(e.tag) == "MonitoredVehicleJourney"]
+              if not journeys:
+                  continue
+              journey = journeys[0]
+              ref = value(journey, "VehicleJourneyRef", "DatedVehicleJourneyRef") or value(activity, "VehicleJourneyRef", "DatedVehicleJourneyRef")
+              if not ref:
+                  continue
+              trip_meta = trips.get(ref, {}) or trips.get(ref[4:] if ref.startswith("trp_") else "trp_" + ref, {})
+              trip_id = trip_meta.get("trip_id") or ref
+              trip_id_by_ref[ref] = trip_id
+              active_gtfs_trip_ids.add(trip_id)
+              active_gtfs_trip_ids.add(ref)
+              if ref.startswith("trp_"):
+                  active_gtfs_trip_ids.add(ref[4:])
+              else:
+                  active_gtfs_trip_ids.add("trp_" + ref)
+              # SIRI JourneyRefs encode service-day seconds after the OP... token.
+              # If the start is >= 24:00, GTFS times belong to the previous service date.
+              time_match = re.search(r"_OP[^_]+_(\\d{4,6})_", ref.upper())
+              service_date = LOCAL_NOW.date()
+              if time_match and int(time_match.group(1)) >= 86400:
+                  service_date = service_date - timedelta(days=1)
+              service_date_by_trip[trip_id] = service_date
+              service_date_by_trip[ref] = service_date
+
+          def gtfs_datetime(raw_time, service_date):
+              if not raw_time:
+                  return None
+              try:
+                  hours, minutes, seconds = [int(part) for part in raw_time.strip().split(":")]
+                  midnight = datetime.combine(service_date, datetime.min.time(), tzinfo=LOCAL_TZ)
+                  return midnight + timedelta(hours=hours, minutes=minutes, seconds=seconds)
+              except (ValueError, TypeError):
+                  return None
+
+          schedule_by_trip = {}
+          if active_gtfs_trip_ids:
+              try:
+                  for row in gtfs_rows("stop_times.txt"):
+                      trip_id = (row.get("trip_id") or "").strip()
+                      if trip_id not in active_gtfs_trip_ids:
+                          continue
+                      stop_id = (row.get("stop_id") or "").strip()
+                      seq_text = (row.get("stop_sequence") or "").strip()
+                      try:
+                          sequence = int(seq_text) if seq_text else None
+                      except ValueError:
+                          sequence = None
+                      stop_obj = stops.get(stop_id) or stop_index.get(stop_id.lower())
+                      if not stop_obj:
+                          numeric = re.fullmatch(r"0*(\\d+)", stop_id)
+                          if numeric:
+                              stop_obj = stop_index.get(numeric.group(1))
+                      service_date = service_date_by_trip.get(trip_id, LOCAL_NOW.date())
+                      arrival_dt = gtfs_datetime((row.get("arrival_time") or "").strip(), service_date)
+                      departure_dt = gtfs_datetime((row.get("departure_time") or "").strip(), service_date)
+                      schedule_by_trip.setdefault(trip_id, []).append({
+                          "stopId": stop_id,
+                          "stopSequence": sequence,
+                          "name": (row.get("stop_headsign") or "").strip() or (stop_obj or {}).get("name", ""),
+                          "arrivalDt": arrival_dt,
+                          "departureDt": departure_dt,
+                      })
+                  for rows in schedule_by_trip.values():
+                      rows.sort(key=lambda x: (x["stopSequence"] is None, x["stopSequence"] or 0))
+                  print("Horarios estáticos cargados para " + str(len(schedule_by_trip)) + " viajes activos.")
+              except Exception as exc:
+                  print("No se pudo leer stop_times.txt: " + str(exc))
+
+          def realtime_entry_for(trip_id, ref, vehicle_id):
+              for key in (trip_id, ref, trip_id[4:] if trip_id.startswith("trp_") else "trp_" + trip_id):
+                  if key and key in realtime_updates:
+                      return realtime_updates[key]
+              if vehicle_id:
+                  seen_entries = set()
+                  for entry in realtime_updates.values():
+                      marker = entry.get("tripId")
+                      if marker in seen_entries:
+                          continue
+                      seen_entries.add(marker)
+                      if entry.get("vehicleId") == vehicle_id:
+                          return entry
+              return None
+
+          def iso_local(dt):
+              return dt.isoformat(timespec="seconds") if dt else ""
+
+          def compose_upcoming_stops(ref, trip_id, current_stop_id, arrival_status, vehicle_id):
+              rows = schedule_by_trip.get(trip_id) or schedule_by_trip.get(ref) or []
+              if not rows:
+                  return [], 0
+              now_local = datetime.now(LOCAL_TZ)
+              current_stop_key = (current_stop_id or "").strip().lower()
+              matches = [i for i, row in enumerate(rows) if current_stop_key and row["stopId"].strip().lower() == current_stop_key]
+              start_index = 0
+              if matches:
+                  def time_distance(index):
+                      dt = rows[index]["arrivalDt"] or rows[index]["departureDt"]
+                      return abs((dt - now_local).total_seconds()) if dt else 10**12
+                  current_index = min(matches, key=time_distance)
+                  status = (arrival_status or "").lower()
+                  start_index = current_index + 1 if status in ("arrived", "departed", "passed", "left") else current_index
+              else:
+                  future = [
+                      i for i, row in enumerate(rows)
+                      if (row["arrivalDt"] or row["departureDt"]) and (row["arrivalDt"] or row["departureDt"]) >= now_local - timedelta(minutes=3)
+                  ]
+                  start_index = future[0] if future else len(rows)
+
+              rt_entry = realtime_entry_for(trip_id, ref, vehicle_id)
+              rt_is_fresh = False
+              if rt_entry and rt_entry.get("timestamp"):
+                  rt_age = now_local.timestamp() - rt_entry["timestamp"]
+                  rt_is_fresh = -120 <= rt_age <= 15 * 60
+              rt_stops = rt_entry.get("stops", []) if rt_entry and rt_is_fresh else []
+              output = []
+              realtime_used = 0
+              for row in rows[start_index:]:
+                  rt_match = None
+                  for candidate in rt_stops:
+                      seq_match = row["stopSequence"] is not None and candidate.get("stopSequence") == row["stopSequence"]
+                      stop_match = bool(row["stopId"] and candidate.get("stopId") and row["stopId"].strip().lower() == candidate["stopId"].strip().lower())
+                      if seq_match or (row["stopSequence"] is None and stop_match) or (seq_match and stop_match):
+                          rt_match = candidate
+                          break
+                  schedule_arrival = row["arrivalDt"]
+                  schedule_departure = row["departureDt"]
+                  arrival_dt = schedule_arrival
+                  departure_dt = schedule_departure
+                  source = "Horario GTFS"
+                  status = ""
+
+                  if rt_match and rt_match.get("relationship") == 1:
+                      status = "Omitida según GTFS-RT"
+                  elif rt_match:
+                      rt_arrival = None
+                      rt_departure = None
+                      if rt_match.get("arrivalEpoch"):
+                          rt_arrival = datetime.fromtimestamp(rt_match["arrivalEpoch"], timezone.utc).astimezone(LOCAL_TZ)
+                      elif "arrivalDelay" in rt_match and schedule_arrival:
+                          rt_arrival = schedule_arrival + timedelta(seconds=rt_match["arrivalDelay"])
+                      if rt_match.get("departureEpoch"):
+                          rt_departure = datetime.fromtimestamp(rt_match["departureEpoch"], timezone.utc).astimezone(LOCAL_TZ)
+                      elif "departureDelay" in rt_match and schedule_departure:
+                          rt_departure = schedule_departure + timedelta(seconds=rt_match["departureDelay"])
+                      if rt_arrival or rt_departure:
+                          arrival_dt = rt_arrival or arrival_dt
+                          departure_dt = rt_departure or departure_dt
+                          source = "Estimación GTFS-RT"
+                          realtime_used += 1
+
+                  event_dt = arrival_dt or departure_dt
+                  if not event_dt:
+                      continue
+                  if source == "Horario GTFS" and event_dt < now_local - timedelta(minutes=1):
+                      source = "Horario GTFS · hora pasada"
+                  output.append({
+                      "stopId": row["stopId"],
+                      "stopSequence": row["stopSequence"],
+                      "name": row["name"] or row["stopId"] or "Parada sin nombre",
+                      "arrivalTime": iso_local(arrival_dt),
+                      "departureTime": iso_local(departure_dt),
+                      "timeSource": source,
+                      "status": status,
+                  })
+                  if len(output) >= 5:
+                      break
+              return output, realtime_used
 
           vehicles = []
           seen = set()
@@ -351,6 +631,7 @@ jobs:
 
               update = trip_updates.get(jref, {})
               gtfs = trips.get(jref, {}) or trips.get(jref[4:] if jref.startswith("trp_") else "trp_" + jref, {})
+              gtfs_trip_id = gtfs.get("trip_id") or trip_id_by_ref.get(jref) or jref
               destination = value(journey, "DestinationName", "DestinationDisplay", "DestinationText", "JourneyEndName")
               destination_ref = value(journey, "DestinationRef")
               direction = value(journey, "DirectionName")
@@ -376,6 +657,9 @@ jobs:
               if destination:
                   joined_destinations += 1
 
+              arrival_status = value(journey, "ArrivalStatus") or value(journey, "DepartureStatus")
+              upcoming_stops, realtime_stops_used = compose_upcoming_stops(jref, gtfs_trip_id, stop_id, arrival_status, vehicle_id)
+
               item = {
                   "id": vehicle_id or jref or ("Registro " + str(index)),
                   "idType": "ID de vehículo" if vehicle_id else ("Referencia de viaje (sin ID de vehículo)" if jref else "Identificador no publicado"),
@@ -385,6 +669,11 @@ jobs:
                   "destination": destination,
                   "destinationSource": destination_source,
                   "destinationRef": destination_ref,
+                  "tripId": gtfs_trip_id,
+                  "tripShortName": gtfs.get("trip_short_name", ""),
+                  "blockId": gtfs.get("block_id", ""),
+                  "calendarServiceId": gtfs.get("service_id", ""),
+                  "upcomingStops": upcoming_stops,
                   "time": value(journey, "LocationRecordedAtTime", "RecordedAtTime") or value(activity, "RecordedAtTime", "ValidUntilTime"),
                   "stop": stop_id,
                   "stopName": stop_name,
@@ -402,11 +691,16 @@ jobs:
 
           snapshot = {
               "sourceUrl": POSITIONS_URL,
+              "tripUpdatesUrl": GTFS_RT_UPDATES_URL,
               "fetchedAt": NOW.isoformat(timespec="seconds"),
               "vehicleCount": len(vehicles),
               "stopLookupCount": len(stops),
               "stopMatches": joined_stops,
               "destinationMatches": joined_destinations,
+              "vehicleBlocks": sum(1 for v in vehicles if v.get("blockId")),
+              "tripShortNames": sum(1 for v in vehicles if v.get("tripShortName")),
+              "vehiclesWithUpcomingStops": sum(1 for v in vehicles if v.get("upcomingStops")),
+              "vehiclesWithRealtimeStopTimes": sum(1 for v in vehicles if any(s.get("timeSource") == "Estimación GTFS-RT" for s in v.get("upcomingStops", []))),
               "vehicles": vehicles,
           }
 
@@ -437,6 +731,10 @@ jobs:
               sources[source] = sources.get(source, 0) + 1
           print("Destinos encontrados: " + str(joined_destinations) + "; referencias SIRI con datos de destino: " + str(len(trip_updates)))
           print("Fuentes de destino: " + json.dumps(sources, ensure_ascii=False))
+          print("Bloque de vehículo GTFS disponible: " + str(snapshot["vehicleBlocks"]) + "/" + str(len(vehicles)))
+          print("Nombre corto de viaje GTFS disponible: " + str(snapshot["tripShortNames"]) + "/" + str(len(vehicles)))
+          print("Vehículos con próximas paradas: " + str(snapshot["vehiclesWithUpcomingStops"]) + "/" + str(len(vehicles)))
+          print("Vehículos con al menos una hora estimada GTFS-RT: " + str(snapshot["vehiclesWithRealtimeStopTimes"]) + "/" + str(len(vehicles)))
           PY
 
       - name: Guardar los datos públicos si han cambiado
