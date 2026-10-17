@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sae-spotter-shell-v2';
+const CACHE_NAME = 'sae-spotter-shell-v3';
 const SHELL = [
   './',
   './index.html',
@@ -12,6 +12,10 @@ const SHELL = [
   './login.css',
   './login.js',
   './auth-guard.js',
+  './supabase-config.js',
+  './paradas.html',
+  './paradas.js',
+  './paradas.css',
   './pwa.js',
   './navigation.js',
   './manifest.webmanifest',
@@ -66,15 +70,13 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Network-first: evita servir indefinidamente JS/CSS antiguos tras publicar cambios.
   event.respondWith(
-    caches.match(request).then(cached => {
-      const fresh = fetch(request).then(response => {
-        if (response && response.ok) {
-          caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone())).catch(() => {});
-        }
-        return response;
-      }).catch(() => cached);
-      return cached || fresh;
-    })
+    caches.match(request).then(cached => fetch(request).then(response => {
+      if (response && response.ok) {
+        caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone())).catch(() => {});
+      }
+      return response;
+    }).catch(() => cached || Response.error()))
   );
 });
