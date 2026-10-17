@@ -136,7 +136,7 @@ function render() {
             ${Array.isArray(vehicle.upcomingStops) && vehicle.upcomingStops.length ? `
               <div class="vehicle-upcoming-action">
                 <button class="upcoming-open" type="button" data-vehicle-index="${vehicleIndex}">
-                  <span aria-hidden="true">☷</span> Ver próximas paradas <span class="upcoming-count">${vehicle.upcomingStops.length}</span>
+                  <span aria-hidden="true">☷</span> Ver itinerario completo <span class="upcoming-count">${vehicle.upcomingStops.length}</span>
                 </button>
                 <span class="upcoming-note">Horario previsto y estimaciones en tiempo real cuando están disponibles</span>
               </div>` : `
@@ -162,7 +162,7 @@ function openUpcomingDialog(vehicle) {
   const dialog = $('upcomingDialog');
   if (!dialog) return;
 
-  $('upcomingDialogTitle').textContent = 'Próximas paradas · ' + vehicle.id;
+  $('upcomingDialogTitle').textContent = 'Itinerario hasta el final · ' + vehicle.id;
   const details = [
     vehicle.line ? 'Línea ' + vehicle.line : '',
     vehicle.serviceNumber ? 'Servicio ' + vehicle.serviceNumber : '',
