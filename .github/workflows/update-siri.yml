@@ -745,7 +745,7 @@ jobs:
           # We intentionally do not compare VehicleJourneyRef: it changes on normal trip changes
           # and would create noisy notifications even when the line/destination stays the same.
           def normalized_route_value(value):
-              return re.sub(r"\\s+", " ", str(value or "").strip()).casefold()
+              return re.sub(r"\s+", " ", str(value or "").strip()).casefold()
 
           route_change_events = []
           if previous_snapshot_fresh:
@@ -891,7 +891,7 @@ jobs:
                                safe(item.get("old")) + " → " + safe(item.get("new")))
               lines.append("Hora: " + safe(event.get("detectedAt")))
               lines.append("Consulta SAE: https://enekituss.github.io/sae/")
-              return "\\n".join(lines)
+              return "\n".join(lines)
 
           endpoint = "https://api.telegram.org/bot" + token + "/sendMessage"
           sent = 0
