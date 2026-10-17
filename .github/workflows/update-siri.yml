@@ -819,6 +819,14 @@ jobs:
                       for vehicle_id, vehicle in current_by_id.items()
                       if vehicle_id in recent_ids
                   }
+                  # Compare against vehicles that were also reporting a recent position,
+                  # not IDs left over in a stale snapshot from the previous service period.
+                  if previous_snapshot_fresh:
+                      previous_by_id = {
+                          vehicle_id: vehicle
+                          for vehicle_id, vehicle in previous_by_id.items()
+                          if has_recent_position(vehicle)
+                      }
               else:
                   current_by_id = {}
                   previous_snapshot_fresh = False
