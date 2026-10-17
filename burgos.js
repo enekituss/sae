@@ -222,21 +222,54 @@
   async function directLiveSnapshot() {
     const nodes = await jsonGet(isaenextUrl('resourceNodes'));
     if (!Array.isArray(nodes) || !nodes.length) throw new Error('El Ayuntamiento no ha devuelto la lista de paradas.');
-    const ids = nodes.map(readLiveNodeId).filter(Boolean);
-    const results = await jsonGet(isaenextUrl('resourceEstimations', {
-      '_as_asac_isaenext_IsaenextWebPortlet_tipo': '1',
-      '_as_asac_isaenext_IsaenextWebPortlet_nodoIds': ids.join(',')
+    const validNodes = nodes.filter(node => readLiveNodeId(node));
+    const chunks = [];
+    for (let i = 0; i < validNodes.length; i += 25) chunks.push(validNodes.slice(i, i + 25));
+    const results = new Array(chunks.length);
+    const errors = [];
+    let cursor = 0;
+    const concurrency = Math.min(5, chunks.length);
+    await Promise.all(Array.from({ length: concurrency }, async () => {
+      while (true) {
+        const index = cursor++;
+        if (index >= chunks.length) return;
+        const chunk = chunks[index];
+        try {
+          const payload = await jsonGet(isaenextUrl('resourceEstimations', {
+            '_as_asac_isaenext_IsaenextWebPortlet_tipo': '1',
+            '_as_asac_isaenext_IsaenextWebPortlet_nodoIds': chunk.map(readLiveNodeId).join(',')
+          }));
+          if (!Array.isArray(payload)) throw new Error('La respuesta no tiene formato de lista.');
+          if (payload.length === 1 && chunk.length > 2) {
+            throw new Error('ISAENEXT devolvió un único resultado para un grupo de ' + chunk.length + ' paradas.');
+          }
+          results[index] = { nodes: chunk, rows: payload };
+        } catch (error) {
+          errors.push('grupo ' + (index + 1) + ': ' + String(error.message || error));
+          results[index] = null;
+        }
+      }
     }));
-    if (!Array.isArray(results)) throw new Error('El Ayuntamiento no ha devuelto estimaciones en formato de lista.');
-    if (results.length === 1 && nodes.length > 2) {
-      throw new Error('La consulta agrupada no ha devuelto datos de todas las paradas. Hace falta conectar el proxy de datos.');
+    const completed = results.filter(Boolean);
+    if (!completed.length) {
+      throw new Error('No se pudo consultar ninguna tanda de estimaciones. ' + errors.slice(0, 3).join(' | '));
+    }
+    const observations = [];
+    let resultCount = 0;
+    for (const group of completed) {
+      resultCount += group.rows.length;
+      observations.push(...normalizeLiveObservations(group.nodes, group.rows));
     }
     return {
       fetchedAt: new Date().toISOString(),
       sourceType: 'Consulta directa al visor ISAENEXT',
-      stopCount: nodes.length,
-      resultCount: results.length,
-      observations: normalizeLiveObservations(nodes, results)
+      stopCount: validNodes.length,
+      resultCount,
+      completedGroups: completed.length,
+      totalGroups: chunks.length,
+      partial: errors.length > 0,
+      warnings: errors.slice(0, 5),
+      observations
     };
   }
 
@@ -491,6 +524,9 @@
       const vehicles = deduplicateLiveVehicles(snapshot);
       renderLiveVehicles(vehicles, snapshot);
       $('liveUpdated').textContent = 'Consulta: ' + new Date(snapshot.fetchedAt || Date.now()).toLocaleTimeString('es-ES');
+      if (snapshot.partial) {
+        setLiveStatus('Datos parciales: se han podido consultar ' + snapshot.completedGroups + ' de ' + snapshot.totalGroups + ' grupos de paradas. ' + (Array.isArray(snapshot.warnings) ? snapshot.warnings.slice(0, 2).join(' · ') : ''), 'warning');
+      }
     } catch (error) {
       console.error('No se pudieron consultar los autobuses de Burgos en directo:', error);
       $('liveBusCount').textContent = '—';
