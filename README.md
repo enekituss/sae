@@ -7,7 +7,7 @@ Web de consulta de líneas y vehículos Bizkaibus detectados por SIRI, con desti
 - Relación de la parada SIRI actual con un nombre del directorio GTFS.
 - Destino previsto cruzado con `trip_headsign` del GTFS.
 - Directorio de paradas (`paradas.html`) con búsqueda por ID y nombre.
-- **Bloque de vehículo y número corto del viaje** cuando estén publicados en `trips.txt`.
+- **Número de servicio inferido de SIRI:** en las referencias observadas, un código como `O9SI3411_341102_12` contiene el código de la línea seguido de un identificador de servicio de dos dígitos (`02` → Servicio 2). Se muestra como inferido del identificador de viaje para distinguirlo de un campo oficial explícito. También se conservan el bloque de vehículo y el nombre corto GTFS cuando existen.
 - **Próximas cinco paradas previstas** usando `stop_times.txt` del GTFS estático, asociadas con el viaje actual de cada vehículo.
 - Si GTFS-Realtime proporciona predicciones para esas paradas, se usan sus horas estimadas; si no, se conserva el horario publicado y se marca como tal.
 
