@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#f28c00">
   <title>Bizkaibus SAE · Spotter</title>
-  <meta name="description" content="Listado de líneas y vehículos Bizkaibus que están comunicando posición en el feed SIRI.">
+  <meta name="description" content="Listado de líneas Bizkaibus e identificadores de vehículos detectados en el feed SIRI.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -25,7 +25,7 @@
     <section class="summary" aria-label="Resumen">
       <div class="summary-copy">
         <h2>Vehículos en servicio</h2>
-        <p>Se muestran los vehículos que están apareciendo en el feed público en tiempo real.</p>
+        <p>Cada línea agrupa los vehículos detectados. En cada ficha se muestra el ID publicado por SIRI y la línea asociada.</p>
       </div>
       <div class="stats">
         <div class="stat"><strong id="vehicleCount">—</strong><span>vehículos activos</span></div>
@@ -52,7 +52,7 @@
 
     <footer>
       <span>Fuente: Open Data Bizkaia · Feed SIRI de posiciones de vehículos.</span>
-      <span>El contador recoge únicamente los vehículos presentes en el feed; no es el total de la flota.</span>
+      <span>Solo aparecen registros publicados por SIRI en la actualización; no representa necesariamente toda la flota.</span>
     </footer>
   </main>
 
