@@ -25,6 +25,22 @@ function formatTime(value) {
   });
 }
 
+function formatClock(value) {
+  if (!value) return 'Hora no disponible';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+}
+
+function vehicleSearchFields(vehicle) {
+  const nextStops = Array.isArray(vehicle.upcomingStops) ? vehicle.upcomingStops.map(stop => stop.name) : [];
+  return [
+    vehicle.id, vehicle.idType, vehicle.lineRef, vehicle.direction, vehicle.destination,
+    vehicle.destinationRef, vehicle.stop, vehicle.stopName, vehicle.journeyRef,
+    vehicle.blockId, vehicle.tripShortName, ...nextStops
+  ];
+}
+
 function setStatus(message, state) {
   $('statusText').textContent = message;
   $('dot').className = 'status-dot' + (state ? ' ' + state : '');
@@ -57,7 +73,7 @@ function render() {
   const matchingLines = allLines.filter(line => {
     const lineMatches = line.toLocaleLowerCase('es').includes(query);
     return !query || lineMatches || groups.get(line).some(v =>
-      [v.id, v.idType, v.lineRef, v.direction, v.destination, v.destinationRef, v.stop, v.stopName, v.journeyRef]
+      vehicleSearchFields(v)
         .some(value => String(value || '').toLocaleLowerCase('es').includes(query))
     );
   });
@@ -83,7 +99,7 @@ function render() {
     const allVehicles = groups.get(line);
     const matchingVehicles = allVehicles.filter(v => !query ||
       line.toLocaleLowerCase('es').includes(query) ||
-      [v.id, v.idType, v.lineRef, v.direction, v.destination, v.destinationRef, v.stop, v.stopName, v.journeyRef]
+      vehicleSearchFields(v)
         .some(value => String(value || '').toLocaleLowerCase('es').includes(query))
     );
     const isOpen = expandedLines.has(line) || Boolean(query);
@@ -111,9 +127,25 @@ function render() {
             <div class="vehicle-meta">
               <div><strong>${escapeHTML(vehicle.idType || 'ID de vehículo')}</strong><br>${escapeHTML(vehicle.id)}</div>
               <div><strong>Línea</strong><br>${escapeHTML(vehicle.line || line)}${vehicle.lineRef && vehicle.lineRef !== vehicle.line ? ' · ref. ' + escapeHTML(vehicle.lineRef) : ''}</div>
+              ${vehicle.blockId ? `<div><strong>Bloque de vehículo (GTFS)</strong><br>${escapeHTML(vehicle.blockId)}</div>` : ''}
+              ${vehicle.tripShortName ? `<div><strong>N.º corto del viaje (GTFS)</strong><br>${escapeHTML(vehicle.tripShortName)}</div>` : ''}
               <div><strong>Última posición comunicada</strong><br>${escapeHTML(formatTime(vehicle.time))}</div>
               ${vehicle.stop ? `<div><strong>Parada SIRI</strong><br><a class="stop-link" href="./paradas.html?id=${escapeHTML(encodeURIComponent(vehicle.stop))}">${escapeHTML(vehicle.stopName || 'Consultar nombre en el directorio')}</a> · ID ${escapeHTML(vehicle.stop)}</div>` : ''}
             </div>
+            ${Array.isArray(vehicle.upcomingStops) && vehicle.upcomingStops.length ? `
+              <div class="vehicle-upcoming">
+                <div class="upcoming-heading"><strong>Próximas paradas previstas</strong><span>Hasta ${vehicle.upcomingStops.length} paradas</span></div>
+                <ol>
+                  ${vehicle.upcomingStops.map(stop => `
+                    <li class="${stop.status ? 'has-stop-status' : ''}">
+                      <div class="upcoming-stop-name">${escapeHTML(stop.name || ('Parada ' + (stop.stopId || '')))}${stop.stopId ? ` <span>ID ${escapeHTML(stop.stopId)}</span>` : ''}</div>
+                      <div class="upcoming-stop-time">
+                        <time>${escapeHTML(formatClock(stop.arrivalTime || stop.departureTime))}</time>
+                        <small>${escapeHTML(stop.status || stop.timeSource || 'Horario GTFS')}</small>
+                      </div>
+                    </li>`).join('')}
+                </ol>
+              </div>` : ''}
           </article>`).join('')}
       </div>`;
     section.querySelector('.line-head').addEventListener('click', () => {
@@ -140,6 +172,19 @@ function applySnapshot(snapshot) {
     destination: String(v.destination || ''),
     destinationRef: String(v.destinationRef || ''),
     destinationSource: String(v.destinationSource || ''),
+    blockId: String(v.blockId || ''),
+    tripShortName: String(v.tripShortName || ''),
+    calendarServiceId: String(v.calendarServiceId || ''),
+    tripId: String(v.tripId || ''),
+    upcomingStops: Array.isArray(v.upcomingStops) ? v.upcomingStops.map(stop => ({
+      stopId: String(stop.stopId || ''),
+      stopSequence: stop.stopSequence ?? null,
+      name: String(stop.name || ''),
+      arrivalTime: String(stop.arrivalTime || ''),
+      departureTime: String(stop.departureTime || ''),
+      timeSource: String(stop.timeSource || ''),
+      status: String(stop.status || '')
+    })) : [],
     time: String(v.time || ''),
     stop: String(v.stop || ''),
     stopName: String(v.stopName || ''),
