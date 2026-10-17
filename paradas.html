@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f28c00">
-  <title>Directorio de paradas · Bizkaibus Spotter</title>
+  <meta name="theme-color" content="#17212b">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Directorio de paradas · Bizkaibus · SAE Spotter</title>
   <meta name="description" content="Consulta el identificador SIRI y el nombre de las paradas de Bizkaibus.">
   <link rel="stylesheet" href="styles.css?v=20261017e">
   <link rel="stylesheet" href="paradas.css?v=20261017e">
@@ -20,6 +24,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
   <script src="./auth-guard.js?v=20261017a"></script>
+  <script src="./pwa.js?v=20261018a" defer></script>
 
 </head>
 <body>
@@ -28,7 +33,8 @@
       <div class="eyebrow">SAE · BIZKAIBUS</div>
       <h1>Directorio de <span>paradas</span></h1>
       <p>Relaciona el ID de parada del feed SIRI con su nombre.</p>
-      <a class="back-link" href="./">← Volver a los vehículos</a>
+      <a class="back-link" href="./bizkaibus.html">← Volver a los vehículos</a>
+      <a class="city-switch" href="./index.html">Cambiar ciudad</a>
     </div>
     <div class="status" aria-live="polite">
       <span id="dot" class="status-dot"></span>
