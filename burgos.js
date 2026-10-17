@@ -219,7 +219,7 @@
       '_as_asac_isaenext_IsaenextWebPortlet_nodoIds': ids.join(',')
     }));
     if (!Array.isArray(results)) throw new Error('El Ayuntamiento no ha devuelto estimaciones en formato de lista.');
-    if (results.length < 2 && nodes.length > 2) {
+    if (results.length === 1 && nodes.length > 2) {
       throw new Error('La consulta agrupada no ha devuelto datos de todas las paradas. Hace falta conectar el proxy de datos.');
     }
     return {
@@ -422,8 +422,10 @@
       }).join('');
     }
 
-    if (!positioned.length) {
-      setLiveStatus('Conexión de estimaciones correcta, pero no se han podido reconstruir coordenadas de los vehículos con los datos recibidos. No se muestran marcadores falsos.', 'warning');
+    if (!vehicles.length) {
+      setLiveStatus('La fuente respondió, pero no devolvió estimaciones de vehículos para las paradas consultadas. Puede que no haya buses activos ahora o que ISAENEXT no esté publicando datos.', 'warning');
+    } else if (!positioned.length) {
+      setLiveStatus('La conexión de estimaciones funciona, pero no se han podido reconstruir coordenadas de los vehículos con suficiente fiabilidad. No se muestran marcadores falsos.', 'warning');
     } else {
       const located = vehicles.filter(v => v.position && String(v.position.source).includes('GPS publicado')).length;
       const estimated = positioned.length - located;
