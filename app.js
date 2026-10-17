@@ -137,10 +137,11 @@ function applySnapshot(snapshot) {
     line: String(v.line || 'Sin línea identificada'),
     lineRef: String(v.lineRef || ''),
     direction: String(v.direction || ''),
+    destination: String(v.destination || ''),
+    destinationRef: String(v.destinationRef || ''),
     time: String(v.time || ''),
     stop: String(v.stop || ''),
-      stopName: String(v.stopName || ''),
-      destinationRef: String(v.destinationRef || ''),
+    stopName: String(v.stopName || ''),
     journeyRef: String(v.journeyRef || ''),
     lat: v.lat ?? '',
     lon: v.lon ?? ''
