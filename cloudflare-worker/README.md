@@ -51,3 +51,12 @@ La respuesta de estimaciones puede incluir línea, destino, segundos estimados h
 Tras desplegar el Worker, prueba primero `/health`, después `/api/burgos/nodes` y por último `/api/burgos/estimates?stopId=200`. Si ISAENEXT responde con timeout o un formato distinto, el endpoint devuelve un error JSON en vez de inventar información.
 
 El proxy permite peticiones desde `https://enekituss.github.io` mediante CORS. Otros orígenes no reciben permiso CORS.
+
+
+## Datos en directo para el mapa de Burgos
+
+El Worker incluye ahora `GET /api/burgos/live`, que intenta consultar en una sola petición agrupada las estimaciones de ISAENEXT para las paradas municipales. La respuesta contiene la línea, el identificador de vehículo si se publica, el destino, los segundos y metros hasta una parada de referencia y la hora de consulta. La web usa coordenadas GPS únicamente si el servicio las devuelve; de no ser así, puede reconstruir una posición aproximada sobre el trazado GTFS a partir de la distancia al siguiente punto.
+
+Tras desplegar el Worker, su URL se puede introducir en el panel Burgos con el botón **Configurar conexión**. Basta con pegar el dominio base que termina en `workers.dev`, sin añadir `/api/burgos/live`. La URL se guarda en el navegador local. La conexión directa al servidor municipal se intenta primero si no hay proxy configurado.
+
+Prueba el endpoint en el navegador con `https://TU-WORKER.workers.dev/api/burgos/live`. La respuesta debe contener `observations`. Si el servidor municipal deja de admitir la consulta agrupada de IDs, el endpoint devuelve un error y la interfaz avisa; no inventa posiciones ni hace cientos de peticiones individuales automáticamente.
