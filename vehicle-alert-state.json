@@ -1,185 +1,80 @@
 {
-  "outbox": {},
-  "pendingRouteChanges": {
-    "2094": {
+  "outbox": {
+    "route_after_gap:4f911fb65dd34d7e194796a8": {
       "changed": [
         {
           "field": "destination",
           "label": "Destino",
-          "new": "BILBAO  (Aut.)",
-          "old": "BERMEO"
-        }
-      ],
-      "consecutiveChecks": 1,
-      "firstObservedAt": "2026-10-17T18:44:24+02:00",
-      "vehicleId": "2094"
-    },
-    "3296": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALDAKAO Ospital",
-          "old": "BASAURI"
-        }
-      ],
-      "consecutiveChecks": 1,
-      "firstObservedAt": "2026-10-17T18:44:24+02:00",
-      "vehicleId": "3296"
-    },
-    "3386": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "LARRABETZU"
-        }
-      ],
-      "consecutiveChecks": 1,
-      "firstObservedAt": "2026-10-17T18:44:24+02:00",
-      "vehicleId": "3386"
-    },
-    "7764": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TRAPAGA Elguero",
-          "old": "ERREPELEGA"
-        }
-      ],
-      "consecutiveChecks": 1,
-      "firstObservedAt": "2026-10-17T18:44:24+02:00",
-      "vehicleId": "7764"
-    },
-    "7811": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "ERREPELEGA"
-        }
-      ],
-      "consecutiveChecks": 1,
-      "firstObservedAt": "2026-10-17T18:44:24+02:00",
-      "vehicleId": "7811"
-    },
-    "8643": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GERNIKA",
+          "new": "GETXO",
           "old": "BILBAO"
         }
       ],
-      "consecutiveChecks": 1,
-      "firstObservedAt": "2026-10-17T18:44:24+02:00",
-      "vehicleId": "8643"
+      "destination": "GETXO",
+      "detectedAt": "2026-10-17T19:45+02:00",
+      "direction": "",
+      "eventId": "route_after_gap:4f911fb65dd34d7e194796a8",
+      "line": "A3414",
+      "queuedAt": "2026-10-17T19:45:55+02:00",
+      "type": "route_change_after_gap",
+      "vehicleId": "1512"
+    },
+    "route_after_gap:647e7f9a1be9e95754fce19b": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "MUSKIZ",
+          "old": "BILBAO"
+        }
+      ],
+      "destination": "MUSKIZ",
+      "detectedAt": "2026-10-17T19:45+02:00",
+      "direction": "",
+      "eventId": "route_after_gap:647e7f9a1be9e95754fce19b",
+      "line": "A3340",
+      "queuedAt": "2026-10-17T19:45:55+02:00",
+      "type": "route_change_after_gap",
+      "vehicleId": "7868"
+    },
+    "route_after_gap:a7345eba0d7edeb01d949b9a": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "ZEANURI",
+          "old": "BILBAO"
+        }
+      ],
+      "destination": "ZEANURI",
+      "detectedAt": "2026-10-17T19:45+02:00",
+      "direction": "",
+      "eventId": "route_after_gap:a7345eba0d7edeb01d949b9a",
+      "line": "A3917",
+      "queuedAt": "2026-10-17T19:45:55+02:00",
+      "type": "route_change_after_gap",
+      "vehicleId": "3311"
+    },
+    "route_after_gap:aacfeddb3dd8930e198e644d": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "CRUCES/GURUTZETA",
+          "old": "VALLE DE TRAPAGA"
+        }
+      ],
+      "destination": "CRUCES/GURUTZETA",
+      "detectedAt": "2026-10-17T19:45+02:00",
+      "direction": "",
+      "eventId": "route_after_gap:aacfeddb3dd8930e198e644d",
+      "line": "A3141",
+      "queuedAt": "2026-10-17T19:45:55+02:00",
+      "type": "route_change_after_gap",
+      "vehicleId": "7851"
     }
   },
-  "pendingVehicles": {
-    "1512": {
-      "alerted": false,
-      "consecutiveMissing": 0,
-      "firstMissingAt": "2026-10-17T18:44:24+02:00",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "1512",
-        "line": "A3414"
-      },
-      "lastSeenAt": "2026-10-17T16:42:48+00:00",
-      "notificationQueued": false,
-      "requiredMissing": 3
-    },
-    "2120": {
-      "alerted": false,
-      "consecutiveMissing": 0,
-      "firstMissingAt": "2026-10-17T18:44:24+02:00",
-      "lastKnown": {
-        "destination": "AIREPORTUA",
-        "direction": "",
-        "id": "2120",
-        "line": "A3247"
-      },
-      "lastSeenAt": "2026-10-17T16:42:48+00:00",
-      "notificationQueued": false,
-      "requiredMissing": 3
-    },
-    "3311": {
-      "alerted": false,
-      "consecutiveMissing": 0,
-      "firstMissingAt": "2026-10-17T18:40:03+02:00",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "3311",
-        "line": "A3917"
-      },
-      "lastSeenAt": "2026-10-17T16:31:35+00:00",
-      "notificationQueued": false,
-      "requiredMissing": 3
-    },
-    "3383": {
-      "alerted": false,
-      "consecutiveMissing": 0,
-      "firstMissingAt": "2026-10-17T18:40:03+02:00",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "3383",
-        "line": "A3632"
-      },
-      "lastSeenAt": "2026-10-17T16:31:35+00:00",
-      "notificationQueued": false,
-      "requiredMissing": 3
-    },
-    "7851": {
-      "alerted": false,
-      "consecutiveMissing": 0,
-      "firstMissingAt": "2026-10-17T18:44:24+02:00",
-      "lastKnown": {
-        "destination": "VALLE DE TRAPAGA",
-        "direction": "",
-        "id": "7851",
-        "line": "A3141"
-      },
-      "lastSeenAt": "2026-10-17T16:42:48+00:00",
-      "notificationQueued": false,
-      "requiredMissing": 3
-    },
-    "7868": {
-      "alerted": false,
-      "consecutiveMissing": 0,
-      "firstMissingAt": "2026-10-17T18:40:03+02:00",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "7868",
-        "line": "A3340"
-      },
-      "lastSeenAt": "2026-10-17T16:31:35+00:00",
-      "notificationQueued": false,
-      "requiredMissing": 3
-    },
-    "7871": {
-      "alerted": false,
-      "consecutiveMissing": 0,
-      "firstMissingAt": "2026-10-17T18:44:24+02:00",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "7871",
-        "line": "A3151"
-      },
-      "lastSeenAt": "2026-10-17T16:42:48+00:00",
-      "notificationQueued": false,
-      "requiredMissing": 3
-    }
-  },
+  "pendingRouteChanges": {},
+  "pendingVehicles": {},
   "schemaVersion": 1,
   "telegramUpdateOffset": 30217590
 }
