@@ -354,13 +354,25 @@ jobs:
               destination = value(journey, "DestinationName", "DestinationDisplay", "DestinationText", "JourneyEndName")
               destination_ref = value(journey, "DestinationRef")
               direction = value(journey, "DirectionName")
-              destination = destination or update.get("destination", "") or gtfs.get("headsign", "") or direction
+              destination_source = "SIRI" if destination else ""
+
+              if not destination and update.get("destination"):
+                  destination = update.get("destination", "")
+                  destination_source = "Actualizaciones SIRI"
+              if not destination and gtfs.get("headsign"):
+                  destination = gtfs.get("headsign", "")
+                  destination_source = "GTFS · horario"
+              if not destination and direction:
+                  destination = direction
+                  destination_source = "Sentido SIRI"
+
               destination_ref = destination_ref or update.get("destinationRef", "")
               direction = direction or update.get("direction", "")
               if not destination and destination_ref:
                   dest_stop = stop_index.get(destination_ref.lower())
                   if dest_stop:
                       destination = dest_stop.get("name", "")
+                      destination_source = "Directorio de paradas"
               if destination:
                   joined_destinations += 1
 
@@ -371,6 +383,7 @@ jobs:
                   "lineRef": line_ref,
                   "direction": direction,
                   "destination": destination,
+                  "destinationSource": destination_source,
                   "destinationRef": destination_ref,
                   "time": value(journey, "LocationRecordedAtTime", "RecordedAtTime") or value(activity, "RecordedAtTime", "ValidUntilTime"),
                   "stop": stop_id,
@@ -418,7 +431,12 @@ jobs:
 
           print("SIRI: " + str(len(activities)) + " actividades; vehículos procesados: " + str(len(vehicles)))
           print("Paradas conocidas: " + str(len(stops)) + "; vehículos enlazados con nombre de parada: " + str(joined_stops))
+          sources = {}
+          for vehicle in vehicles:
+              source = vehicle.get("destinationSource") or "sin destino"
+              sources[source] = sources.get(source, 0) + 1
           print("Destinos encontrados: " + str(joined_destinations) + "; referencias SIRI con datos de destino: " + str(len(trip_updates)))
+          print("Fuentes de destino: " + json.dumps(sources, ensure_ascii=False))
           PY
 
       - name: Guardar los datos públicos si han cambiado
@@ -430,5 +448,7 @@ jobs:
             echo "Los datos no han cambiado; no hay commit que crear."
           else
             git commit -m "Actualizar posiciones, paradas y destinos Bizkaibus"
-            git push
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
           fi
