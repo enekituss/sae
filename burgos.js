@@ -188,6 +188,9 @@
       $('tripCount').textContent = data.trips.length.toLocaleString('es-ES');
       $('lastUpdated').textContent = data.fetchedAt ? 'Descargado: ' + new Date(data.fetchedAt).toLocaleDateString('es-ES') : 'Datos pendientes';
       $('feedValidity').textContent = data.serviceStart && data.serviceEnd ? 'Fechas declaradas del calendario: ' + data.serviceStart + ' – ' + data.serviceEnd : 'El fichero no declara un periodo de vigencia.';
+      if (data.sourceUrl && data.producerUrl && data.sourceUrl !== data.producerUrl) {
+        $('sourceDescription').innerHTML = 'Publicación original: <a href="' + esc(data.producerUrl) + '" target="_blank" rel="noopener noreferrer">Ayuntamiento de Burgos</a> · Copia descargada desde <a href="https://mobilitydatabase.org/feeds/gtfs/mdb-3145" target="_blank" rel="noopener noreferrer">Mobility Database</a>.';
+      }
       buildNotice();
       // Si el último GTFS publicado no cubre la fecha actual, mostrar los
       // viajes que sí contiene como referencia en vez de dejar cada línea vacía.
