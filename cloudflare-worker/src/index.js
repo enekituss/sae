@@ -149,7 +149,7 @@ async function fetchBurgosLiveSnapshot() {
   if (!Array.isArray(batchPayload)) {
     throw new Error("ISAENEXT no devolvió una lista de estimaciones reconocible.");
   }
-  if (batchPayload.length < Math.min(2, nodes.length)) {
+  if (batchPayload.length === 1 && nodes.length > 2) {
     throw new Error("ISAENEXT no parece admitir la consulta conjunta de paradas; se evita lanzar cientos de peticiones individuales.");
   }
 
