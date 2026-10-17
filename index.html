@@ -2,90 +2,55 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f28c00">
-  <title>Bizkaibus SAE · Spotter</title>
-  <meta name="description" content="Listado de líneas Bizkaibus e identificadores de vehículos detectados en el feed SIRI.">
-  <link rel="stylesheet" href="styles.css?v=20261017k">
-
-  <style>
-    html.auth-check body { visibility: hidden; }
-    #logoutButton:hover { background: #2c3b49 !important; }
-    @media (max-width: 650px) {
-      #logoutButton { width: 100%; }
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17212b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SAE Spotter">
+  <title>Elegir ciudad · SAE Spotter</title>
+  <meta name="description" content="Elige qué red de autobuses quieres consultar: Burgos o Bizkaibus.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./hub.css?v=20261018a">
   <script>document.documentElement.classList.add('auth-check');</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
   <script src="./auth-guard.js?v=20261017a"></script>
-
+  <script src="./navigation.js?v=20261018a" defer></script>
+  <script src="./pwa.js?v=20261018a" defer></script>
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">
-      <div class="eyebrow">SAE · BIZKAIBUS</div>
-      <h1>Bizkaibus <span>Spotter</span></h1>
-      <p>Líneas y vehículos activos detectados por el SAE.</p>
+    <div>
+      <p class="eyebrow">PANEL DE TRANSPORTE · SAE</p>
+      <h1>SAE <span style="color:#b96500">Spotter</span></h1>
+      <p>Elige la red de autobuses que quieres consultar.</p>
     </div>
-    <div class="status" aria-live="polite">
-      <span id="dot" class="status-dot"></span>
-      <span id="statusText">Leyendo datos publicados…</span>
-    </div>
+    <div class="status">Sesión iniciada · Selección de red</div>
   </header>
-
   <main class="page">
-    <section class="summary" aria-label="Resumen">
-      <div class="summary-copy">
-        <h2>Vehículos en servicio</h2>
-        <p>Cada línea agrupa los vehículos detectados. En cada ficha se muestra el ID publicado por SIRI y la línea asociada.</p>
-      </div>
-      <div class="stats">
-        <div class="stat"><strong id="vehicleCount">—</strong><span>vehículos activos</span></div>
-        <div class="stat"><strong id="lineCount">—</strong><span>líneas detectadas</span></div>
-      </div>
+    <section class="intro">
+      <h2>¿Dónde consultamos hoy?</h2>
+      <p>El acceso y el inicio de sesión son comunes. La información de cada operador se mantiene separada para que puedas volver de una pantalla a otra sin perder el contexto.</p>
     </section>
-
-    <section class="list-panel">
-      <div class="toolbar">
-        <label class="searchbox">
-          <span aria-hidden="true">⌕</span>
-          <input id="search" type="search" placeholder="Buscar línea, vehículo o destino…" autocomplete="off">
-        </label>
-        <button id="refresh" type="button"><span aria-hidden="true">↻</span> Actualizar</button>
-      </div>
-      <div class="directory-shortcut"><a class="directory-link" href="./paradas.html">📍 Abrir directorio completo de paradas →</a><span>Consulta por nombre o ID SIRI</span></div>
-      <div class="list-heading">
-        <span>LÍNEAS Y VEHÍCULOS</span>
-        <span id="lastUpdated">Esperando primera actualización</span>
-      </div>
-      <div id="lines" class="lines" aria-live="polite">
-        <div class="message"><span class="spinner"></span> Cargando datos del SAE…</div>
-      </div>
+    <section class="choice-grid" aria-label="Redes de autobuses">
+      <a class="choice-card burgos" href="./burgos.html">
+        <div class="choice-icon" aria-hidden="true">🚌</div>
+        <h3>Autobuses urbanos de Burgos</h3>
+        <p>Consulta las líneas, sus recorridos y los horarios publicados para cada viaje y parada. La disponibilidad de GPS e identificación de vehículos en directo aún debe verificarse.</p>
+        <div class="choice-meta"><span class="pill">29 líneas en la fuente GTFS</span><span class="pill">Horarios por parada</span></div>
+        <div class="choice-go">Entrar en Burgos →</div>
+      </a>
+      <a class="choice-card bilbao" href="./bizkaibus.html">
+        <div class="choice-icon" aria-hidden="true">🚍</div>
+        <h3>Bilbao · Bizkaibus</h3>
+        <p>Abre el panel que ya teníamos, con los vehículos detectados por SIRI, línea, destino, posición publicada y próximas paradas.</p>
+        <div class="choice-meta"><span class="pill">Posiciones SIRI</span><span class="pill">Próximas paradas</span><span class="pill">Avisos configurados</span></div>
+        <div class="choice-go">Entrar en Bizkaibus →</div>
+      </a>
     </section>
-
-    <footer>
-      <span>Fuente: Open Data Bizkaia · Feed SIRI de posiciones de vehículos. La copia se renueva automáticamente; la frecuencia depende del planificador y del tiempo necesario para procesar el feed.</span>
-      <span>Las próximas horas se marcan como estimación en tiempo real solo si GTFS-RT publica una predicción; en caso contrario, se usa el horario GTFS.</span>
-    </footer>
+    <div class="notice"><strong>Importante:</strong> en Burgos no se mostrarán como autobuses en circulación los viajes que solo estén definidos en un horario. Los datos programados y los datos reales se distinguirán claramente.</div>
+    <footer>SAE Spotter · Aplicación de consulta para uso personal. Las horas de paso programadas no garantizan la llegada real del vehículo.</footer>
   </main>
-
-  <dialog id="upcomingDialog" class="upcoming-dialog" aria-labelledby="upcomingDialogTitle">
-    <div class="dialog-shell">
-      <header class="dialog-header">
-        <div>
-          <div class="dialog-kicker">Itinerario previsto</div>
-          <h2 id="upcomingDialogTitle">Próximas paradas</h2>
-          <p id="upcomingDialogSubtitle"></p>
-        </div>
-        <button id="upcomingDialogClose" class="dialog-close" type="button" aria-label="Cerrar itinerario">×</button>
-      </header>
-      <div id="upcomingDialogStops" class="dialog-content"></div>
-      <div class="dialog-footer">La hora puede proceder del horario GTFS o de una estimación GTFS-RT. Solo se identifica como estimación en tiempo real cuando el feed la proporciona.</div>
-    </div>
-  </dialog>
-
-  <script src="vehicles-data.js?v=20261017k"></script>
-  <script src="app.js?v=20261017l"></script>
 </body>
 </html>
