@@ -96,7 +96,7 @@ jobs:
               # En algunas actividades SIRI la línea no viene en LineRef,
               # pero sí aparece codificada al principio de VehicleJourneyRef (p. ej. trp_A3136_...).
               if not line and journey_ref:
-                  match = re.search(r"(?:^|_)([A-Z]\\d{3,4})(?:_|$)", journey_ref.upper())
+                  match = re.search(r"(?:^|_)([A-Z]\d{3,4})(?:_|$)", journey_ref.upper())
                   if match:
                       line = match.group(1)
               if not line:
@@ -138,7 +138,7 @@ jobs:
           }
           with open("vehicles.json", "w", encoding="utf-8") as handle:
               json.dump(snapshot, handle, ensure_ascii=False, indent=2)
-              handle.write("\\n")
+              handle.write("\n")
 
           print(f"Respuesta SIRI válida: {len(activities)} actividades; {len(vehicles)} registros procesados.")
           PY
