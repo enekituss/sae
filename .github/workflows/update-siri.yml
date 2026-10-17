@@ -805,6 +805,14 @@ jobs:
               age_seconds = (NOW - observed_at.astimezone(timezone.utc)).total_seconds()
               return -120 <= age_seconds <= 15 * 60
 
+          # Keep a fresh previous view for route comparisons and arrivals, but retain
+          # previous_by_id in full for departure tracking when a position timestamp goes stale.
+          previous_recent_by_id = {
+              vehicle_id: vehicle
+              for vehicle_id, vehicle in previous_by_id.items()
+              if has_recent_position(vehicle)
+          } if previous_snapshot_fresh else {}
+
           # A record left in SIRI with an old LocationRecordedAtTime is not enough to prove
           # that the vehicle is currently in service. If every identified vehicle is stale,
           # pause per-vehicle entry/exit detection and let the watchdog report the feed outage.
@@ -819,23 +827,15 @@ jobs:
                       for vehicle_id, vehicle in current_by_id.items()
                       if vehicle_id in recent_ids
                   }
-                  # Compare against vehicles that were also reporting a recent position,
-                  # not IDs left over in a stale snapshot from the previous service period.
-                  if previous_snapshot_fresh:
-                      previous_by_id = {
-                          vehicle_id: vehicle
-                          for vehicle_id, vehicle in previous_by_id.items()
-                          if has_recent_position(vehicle)
-                      }
+                  # Keep the last active reference only when the previous snapshot had
+                  # fresh position timestamps; don't replace it with stale remnants.
+                  if previous_recent_by_id:
+                      last_non_empty_vehicles = dict(previous_recent_by_id)
               else:
                   current_by_id = {}
                   previous_snapshot_fresh = False
+                  previous_recent_by_id = {}
                   print("Las posiciones SIRI de todos los vehículos tienen más de 15 minutos; se pausa la detección individual para evitar falsas salidas.")
-
-          # Keep the most recent non-empty fleet separately: vehicles.json may legitimately
-          # contain an empty snapshot overnight, but we still need to know which vehicles left.
-          if previous_snapshot_fresh and previous_by_id:
-              last_non_empty_vehicles = dict(previous_by_id)
 
           # Confirm newly appearing vehicles across two successful observations. The feed is
           # pull-based, so this is the earliest reliable signal available to this workflow.
@@ -879,7 +879,7 @@ jobs:
               # Start candidates only after a valid previous snapshot exists. This avoids
               # announcing the whole fleet as "new" when the workflow is first installed.
               for current_id, current_vehicle in current_by_id.items():
-                  if current_id in previous_by_id or current_id in pending_vehicles or current_id in pending_arrivals:
+                  if current_id in previous_recent_by_id or current_id in pending_vehicles or current_id in pending_arrivals:
                       continue
                   pending_arrivals[current_id] = {
                       "vehicleId": current_id,
@@ -994,7 +994,7 @@ jobs:
           ]
           if previous_snapshot_fresh and current_by_id:
               for current_id, current_vehicle in current_by_id.items():
-                  old_vehicle = previous_by_id.get(current_id)
+                  old_vehicle = previous_recent_by_id.get(current_id)
                   if not old_vehicle:
                       continue
                   changed_fields = []
