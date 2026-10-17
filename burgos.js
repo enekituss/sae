@@ -305,17 +305,23 @@
     const stopId = String(observation.stopId);
     const lineKey = normalizeLineKey(observation.line);
     let candidates = [];
-    for (const trip of data.trips) {
-      const route = data.routeById.get(String(trip.routeId));
-      if (!route) continue;
-      const routeKeys = [route.shortName, route.id].map(normalizeLineKey);
-      if (!routeKeys.includes(lineKey)) continue;
-      if (!(trip.stops || []).some(item => String(item[0]) === stopId)) continue;
-      const shape = data.shapeById && data.shapeById.get(String(trip.shapeId));
-      if (!shape) continue;
-      const score = destinationScore(observation.destination, trip.headsign);
-      candidates.push({ trip, score, shape });
+    if (data.liveTripIndex) {
+      candidates = data.liveTripIndex.get(lineKey + '|' + stopId) || [];
+    } else {
+      for (const trip of data.trips) {
+        const route = data.routeById.get(String(trip.routeId));
+        if (!route) continue;
+        const routeKeys = [route.shortName, route.id].map(normalizeLineKey);
+        if (!routeKeys.includes(lineKey)) continue;
+        if (!(trip.stops || []).some(item => String(item[0]) === stopId)) continue;
+        candidates.push({ trip, shape: data.shapeById && data.shapeById.get(String(trip.shapeId)) });
+      }
     }
+    candidates = candidates.filter(candidate => candidate.shape);
+    candidates = candidates.map(candidate => ({
+      ...candidate,
+      score: destinationScore(observation.destination, candidate.trip.headsign)
+    }));
     if (!candidates.length) return null;
     candidates.sort((a, b) => b.score - a.score);
     if (candidates[0].score === 0) {
@@ -602,6 +608,21 @@
       data.routeById = new Map(data.routes.map(r => [String(r.id),r]));
       data.shapeById = new Map((data.shapes || []).map(shape => [String(shape.id), shape]));
       data.trips = data.trips || [];
+      data.liveTripIndex = new Map();
+      for (const trip of data.trips) {
+        const route = data.routeById.get(String(trip.routeId));
+        const lineKeys = route ? [route.shortName, route.id].map(normalizeLineKey).filter(Boolean) : [];
+        for (const item of trip.stops || []) {
+          for (const lineKey of lineKeys) {
+            const key = lineKey + '|' + String(item[0]);
+            if (!data.liveTripIndex.has(key)) data.liveTripIndex.set(key, []);
+            data.liveTripIndex.get(key).push({
+              trip,
+              shape: data.shapeById.get(String(trip.shapeId))
+            });
+          }
+        }
+      }
       for (const trip of data.trips) {
         const route = data.routeById.get(String(trip.routeId));
         if (route) route.tripsCount += 1;
