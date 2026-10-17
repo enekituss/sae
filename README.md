@@ -17,6 +17,20 @@ Web de consulta de líneas y vehículos Bizkaibus detectados por SIRI, con desti
 - `service_id`: identifica un calendario de servicio (qué días funciona), no un número de servicio del autobús.
 - `trip_id` / SIRI `VehicleJourneyRef`: identifican el viaje concreto del autobús.
 
+## Alertas de cambios de ruta por Telegram
+
+La actualización automática compara dos snapshots consecutivos recientes para cada ID de vehículo SIRI. Si el mismo vehículo cambia de línea, destino o sentido, prepara una notificación individual de Telegram. Se ignoran altas/bajas de vehículos y cambios de campos vacíos, y no se generan alertas si el snapshot anterior tiene más de 20 minutos para evitar falsos avisos tras una interrupción del feed.
+
+**Importante:** esta alerta detecta cambios de línea/destino/sentido asignados en los datos SIRI. No detecta todavía una desviación geográfica del autobús respecto al trazado de su línea; para eso habría que comparar su posición GPS con los shapes del GTFS y aplicar un margen de tolerancia.
+
+Para activar Telegram:
+1. Crear un bot con [@BotFather](https://t.me/BotFather) usando `/newbot` y guardar su token de forma privada.
+2. Abrir el bot nuevo en Telegram, pulsar **Iniciar** y enviar `/start`.
+3. Obtener el ID del chat personal (por ejemplo, consultando `getUpdates` con el token en un entorno privado) o el ID del grupo al que se haya añadido el bot.
+4. En GitHub, abrir **Settings → Secrets and variables → Actions → New repository secret** y crear los secretos `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID`.
+
+El token no debe guardarse en el código ni publicarse. Hasta que estén configurados ambos secretos, la web y la actualización de datos seguirán funcionando; simplemente no se enviarán mensajes.
+
 ## Horarios de próximas paradas
 El flujo busca el viaje del vehículo en el GTFS de producción y cruza su secuencia con `stop_times.txt`. Las predicciones reales se leen del recurso oficial GTFS-Realtime Trip Updates (`FeedTripUpdates.pb`): sus actualizaciones `StopTimeUpdate` pueden incluir una hora absoluta de llegada/salida o un retraso respecto al horario. Si no hay una predicción actual, la web muestra el horario estático y lo diferencia visualmente. Esto evita presentar como tiempo real un horario que solo es planificado.
 
