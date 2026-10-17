@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: actualizar-feed-bizkaibus
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   refresh-feed:
@@ -41,6 +41,7 @@ jobs:
           python - <<'PY'
           import csv
           import io
+          import hashlib
           import json
           import os
           import re
@@ -741,41 +742,86 @@ jobs:
               "vehicles": vehicles,
           }
 
-          # Detect operational route assignment changes for the same SIRI vehicle ID.
-          # We intentionally do not compare VehicleJourneyRef: it changes on normal trip changes
-          # and would create noisy notifications even when the line/destination stays the same.
+          # Detect route changes and departures from the active SIRI feed.
+          # Telegram alerts are kept in a durable outbox until a successful send is acknowledged.
           def normalized_route_value(value):
               return re.sub(r"\s+", " ", str(value or "").strip()).casefold()
 
-          route_change_events = []
-          if previous_snapshot_fresh:
-              current_by_id = {}
-              for current_vehicle in vehicles:
-                  current_id = str(current_vehicle.get("id") or "").strip()
-                  if not current_id:
-                      continue
-                  # If an ID occurs more than once, keep the record with the most route metadata.
-                  score = sum(1 for field in ("line", "destination", "direction", "lineRef") if current_vehicle.get(field))
-                  prev = current_by_id.get(current_id)
-                  prev_score = sum(1 for field in ("line", "destination", "direction", "lineRef") if prev and prev.get(field))
-                  if prev is None or score > prev_score:
-                      current_by_id[current_id] = current_vehicle
+          def stable_event_id(prefix, payload):
+              serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+              return prefix + ":" + hashlib.sha256(serialized.encode("utf-8")).hexdigest()[:24]
 
+          STATE_PATH = "vehicle-alert-state.json"
+          alert_state = {"schemaVersion": 1, "pendingVehicles": {}, "outbox": {}}
+          if os.path.isfile(STATE_PATH):
+              try:
+                  with open(STATE_PATH, encoding="utf-8") as handle:
+                      loaded_state = json.load(handle)
+                  if isinstance(loaded_state, dict):
+                      alert_state["pendingVehicles"] = loaded_state.get("pendingVehicles", {})
+                      alert_state["outbox"] = loaded_state.get("outbox", {})
+              except Exception as exc:
+                  print("No se pudo leer el estado de alertas; se inicializará de nuevo: " + str(exc))
+          if not isinstance(alert_state.get("pendingVehicles"), dict):
+              alert_state["pendingVehicles"] = {}
+          if not isinstance(alert_state.get("outbox"), dict):
+              alert_state["outbox"] = {}
+
+          pending_vehicles = alert_state["pendingVehicles"]
+          outbox = alert_state["outbox"]
+          previous_by_id = {}
+          if previous_snapshot_fresh:
+              for previous_id, previous_vehicle in previous_vehicles.items():
+                  if previous_vehicle.get("idType") == "ID de vehículo":
+                      previous_by_id[previous_id] = previous_vehicle
+
+          current_by_id = {}
+          for current_vehicle in vehicles:
+              if current_vehicle.get("idType") != "ID de vehículo":
+                  continue
+              current_id = str(current_vehicle.get("id") or "").strip()
+              if not current_id:
+                  continue
+              score = sum(1 for field in ("line", "destination", "direction", "lineRef") if current_vehicle.get(field))
+              previous_choice = current_by_id.get(current_id)
+              previous_score = sum(1 for field in ("line", "destination", "direction", "lineRef") if previous_choice and previous_choice.get(field))
+              if previous_choice is None or score > previous_score:
+                  current_by_id[current_id] = current_vehicle
+
+          # If a previously missing vehicle reappears, cancel an undelivered absence alert:
+          # this is usually a temporary interruption of the live feed.
+          for vehicle_id in list(pending_vehicles):
+              if vehicle_id in current_by_id:
+                  candidate = pending_vehicles.pop(vehicle_id)
+                  queued_id = candidate.get("eventId")
+                  queued_event = outbox.get(queued_id) if queued_id else None
+                  if queued_event and queued_event.get("type") == "vehicle_missing":
+                      outbox.pop(queued_id, None)
+
+          # Retain pending states for a short window only; never discard a queued notification.
+          for vehicle_id, candidate in list(pending_vehicles.items()):
+              first_missing = parse_time(candidate.get("firstMissingAt"))
+              if first_missing and (NOW - first_missing).total_seconds() > 60 * 60 and not candidate.get("notificationQueued"):
+                  pending_vehicles.pop(vehicle_id, None)
+
+          route_change_count = 0
+          if previous_snapshot_fresh:
               route_fields = [
                   ("line", "Línea"),
                   ("destination", "Destino"),
                   ("direction", "Sentido"),
               ]
+              previous_stamp = str(previous_snapshot.get("fetchedAt") or "")
+              current_stamp = str(snapshot.get("fetchedAt") or "")
               for current_id, current_vehicle in current_by_id.items():
-                  old_vehicle = previous_vehicles.get(current_id)
+                  old_vehicle = previous_by_id.get(current_id)
                   if not old_vehicle:
                       continue
                   changed_fields = []
                   for field, label in route_fields:
                       old_value = str(old_vehicle.get(field) or "").strip()
                       new_value = str(current_vehicle.get(field) or "").strip()
-                      # Ignore empty-to-filled/filled-to-empty transitions, which are often
-                      # temporary missing metadata rather than a genuine route change.
+                      # Ignore missing metadata; compare only two actual published values.
                       if old_value and new_value and normalized_route_value(old_value) != normalized_route_value(new_value):
                           changed_fields.append({
                               "field": field,
@@ -784,21 +830,157 @@ jobs:
                               "new": new_value,
                           })
                   if changed_fields:
-                      route_change_events.append({
+                      event_payload = {
+                          "previousSnapshot": previous_stamp,
+                          "currentSnapshot": current_stamp,
                           "vehicleId": current_id,
-                          "line": str(current_vehicle.get("line") or ""),
-                          "destination": str(current_vehicle.get("destination") or ""),
-                          "direction": str(current_vehicle.get("direction") or ""),
                           "changed": changed_fields,
-                          "detectedAt": LOCAL_NOW.isoformat(timespec="minutes"),
-                      })
+                      }
+                      event_id = stable_event_id("route", event_payload)
+                      if event_id not in outbox:
+                          outbox[event_id] = {
+                              "eventId": event_id,
+                              "type": "route_change",
+                              "vehicleId": current_id,
+                              "line": str(current_vehicle.get("line") or ""),
+                              "destination": str(current_vehicle.get("destination") or ""),
+                              "direction": str(current_vehicle.get("direction") or ""),
+                              "changed": changed_fields,
+                              "detectedAt": LOCAL_NOW.isoformat(timespec="minutes"),
+                              "queuedAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                          }
+                      route_change_count += 1
 
-          events_file = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), "bizkaibus-route-changes.json")
-          with open(events_file, "w", encoding="utf-8") as handle:
-              json.dump(route_change_events, handle, ensure_ascii=False)
-          print("Cambios de línea/destino/sentido detectados: " + str(len(route_change_events)) +
-                ("." if previous_snapshot_fresh else " (sin comparar por falta de snapshot anterior reciente)."))
+          missing_confirmed_count = 0
+          current_count = len(current_by_id)
+          previous_count = len(previous_by_id)
+          if not previous_snapshot_fresh:
+              # After a long feed gap, don't infer that every old vehicle has left service.
+              for candidate in pending_vehicles.values():
+                  candidate["consecutiveMissing"] = 0
+              print("Detección de desapariciones pausada: el snapshot anterior no es reciente.")
+          elif current_count == 0:
+              # An empty live feed can be an outage or the end of the operating day.
+              # Seed candidates but do not count empty samples as proof of departure.
+              for vehicle_id, candidate in pending_vehicles.items():
+                  candidate["consecutiveMissing"] = 0
+                  candidate["requiredMissing"] = max(6, int(candidate.get("requiredMissing", 3)))
+              for vehicle_id, old_vehicle in previous_by_id.items():
+                  if vehicle_id not in pending_vehicles:
+                      pending_vehicles[vehicle_id] = {
+                          "lastKnown": {
+                              "id": vehicle_id,
+                              "line": old_vehicle.get("line", ""),
+                              "destination": old_vehicle.get("destination", ""),
+                              "direction": old_vehicle.get("direction", ""),
+                          },
+                          "lastSeenAt": str(previous_snapshot.get("fetchedAt") or ""),
+                          "firstMissingAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                          "consecutiveMissing": 0,
+                          "requiredMissing": 6,
+                          "notificationQueued": False,
+                          "alerted": False,
+                      }
+              print("Feed sin vehículos activos: no se cuentan estas consultas como confirmación de desaparición.")
+          else:
+              # A sudden fleet-wide reduction may be a partial feed. Seed candidates but
+              # require six consecutive non-empty samples before sending any of those alerts.
+              large_drop = previous_count >= 20 and current_count < max(5, int(previous_count * 0.4))
+              if large_drop:
+                  for candidate in pending_vehicles.values():
+                      candidate["consecutiveMissing"] = 0
+                      candidate["requiredMissing"] = max(6, int(candidate.get("requiredMissing", 3)))
+                  for vehicle_id, old_vehicle in previous_by_id.items():
+                      if vehicle_id not in current_by_id and vehicle_id not in pending_vehicles:
+                          pending_vehicles[vehicle_id] = {
+                              "lastKnown": {
+                                  "id": vehicle_id,
+                                  "line": old_vehicle.get("line", ""),
+                                  "destination": old_vehicle.get("destination", ""),
+                                  "direction": old_vehicle.get("direction", ""),
+                              },
+                              "lastSeenAt": str(previous_snapshot.get("fetchedAt") or ""),
+                              "firstMissingAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                              "consecutiveMissing": 0,
+                              "requiredMissing": 6,
+                              "notificationQueued": False,
+                              "alerted": False,
+                          }
+                  print("Reducción brusca del feed (" + str(previous_count) + " → " + str(current_count) +
+                        " vehículos): se aplicará una confirmación reforzada antes de avisar.")
+              else:
+                  # Advance existing absence candidates once for this successful non-empty poll.
+                  for vehicle_id, candidate in list(pending_vehicles.items()):
+                      if vehicle_id in current_by_id:
+                          continue
+                      if candidate.get("alerted") or candidate.get("notificationQueued"):
+                          continue
+                      candidate["consecutiveMissing"] = int(candidate.get("consecutiveMissing", 0)) + 1
+                      required = max(3, int(candidate.get("requiredMissing", 3)))
+                      if candidate["consecutiveMissing"] >= required:
+                          last_known = candidate.get("lastKnown", {})
+                          event_payload = {
+                              "vehicleId": vehicle_id,
+                              "firstMissingAt": candidate.get("firstMissingAt", ""),
+                          }
+                          event_id = stable_event_id("missing", event_payload)
+                          event = {
+                              "eventId": event_id,
+                              "type": "vehicle_missing",
+                              "vehicleId": vehicle_id,
+                              "line": last_known.get("line", ""),
+                              "destination": last_known.get("destination", ""),
+                              "direction": last_known.get("direction", ""),
+                              "lastSeenAt": candidate.get("lastSeenAt", ""),
+                              "firstMissingAt": candidate.get("firstMissingAt", ""),
+                              "detectedAt": LOCAL_NOW.isoformat(timespec="minutes"),
+                              "missingChecks": candidate["consecutiveMissing"],
+                              "queuedAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                          }
+                          outbox.setdefault(event_id, event)
+                          candidate["eventId"] = event_id
+                          candidate["notificationQueued"] = True
+                          missing_confirmed_count += 1
 
+                  # Start tracking vehicles that were present in the previous good snapshot
+                  # and are absent now. Three consecutive polls (about 15 minutes) are required.
+                  for vehicle_id, old_vehicle in previous_by_id.items():
+                      if vehicle_id in current_by_id or vehicle_id in pending_vehicles:
+                          continue
+                      pending_vehicles[vehicle_id] = {
+                          "lastKnown": {
+                              "id": vehicle_id,
+                              "line": old_vehicle.get("line", ""),
+                              "destination": old_vehicle.get("destination", ""),
+                              "direction": old_vehicle.get("direction", ""),
+                          },
+                          "lastSeenAt": str(previous_snapshot.get("fetchedAt") or ""),
+                          "firstMissingAt": LOCAL_NOW.isoformat(timespec="seconds"),
+                          "consecutiveMissing": 1,
+                          "requiredMissing": 3,
+                          "notificationQueued": False,
+                          "alerted": False,
+                      }
+
+          # Reappearance above resets tracking. Expired pending candidates are pruned,
+          # but queued alerts survive until Telegram accepts them.
+          for vehicle_id, candidate in list(pending_vehicles.items()):
+              first_missing = parse_time(candidate.get("firstMissingAt"))
+              if first_missing and (NOW - first_missing).total_seconds() > 60 * 60 and not candidate.get("notificationQueued"):
+                  pending_vehicles.pop(vehicle_id, None)
+
+          alert_state = {
+              "schemaVersion": 1,
+              "pendingVehicles": pending_vehicles,
+              "outbox": outbox,
+          }
+          with open(STATE_PATH, "w", encoding="utf-8") as handle:
+              json.dump(alert_state, handle, ensure_ascii=False, indent=2, sort_keys=True)
+              handle.write("\n")
+
+          print("Cambios de línea/destino/sentido detectados: " + str(route_change_count) + ".")
+          print("Desapariciones confirmadas para aviso: " + str(missing_confirmed_count) + ".")
+          print("Avisos pendientes en cola duradera: " + str(len(outbox)) + ".")
           # Save stops as a compact public dictionary as well as enriching every vehicle.
           if stops:
               with open("stops.json", "w", encoding="utf-8") as handle:
@@ -847,75 +1029,201 @@ jobs:
             git push origin HEAD:main
           fi
 
-      - name: Enviar alertas de cambios de ruta por Telegram
+      - name: Validar Telegram y enviar alertas pendientes
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        shell: bash
         run: |
           python - <<'PY'
           import json
           import os
+          import subprocess
           import sys
+          import time
           import urllib.error
           import urllib.request
 
-          events_file = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), "bizkaibus-route-changes.json")
-          try:
-              with open(events_file, encoding="utf-8") as handle:
-                  events = json.load(handle)
-          except Exception as exc:
-              print("No se pudo leer la lista de cambios de ruta: " + str(exc))
-              sys.exit(0)
-
-          if not events:
-              print("No hay cambios de línea/destino/sentido para notificar.")
-              sys.exit(0)
-
           token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
           chat_id = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
+          event_name = (os.environ.get("GITHUB_EVENT_NAME") or "").strip()
+          state_path = "vehicle-alert-state.json"
+
           if not token or not chat_id:
-              print("Cambios detectados (" + str(len(events)) + "), pero Telegram aún no está configurado. Añade los secretos TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en GitHub.")
-              sys.exit(0)
+              print("ERROR: faltan TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID en los secretos de Actions.")
+              sys.exit(1)
+
+          try:
+              with open(state_path, encoding="utf-8") as handle:
+                  state = json.load(handle)
+          except FileNotFoundError:
+              state = {"schemaVersion": 1, "pendingVehicles": {}, "outbox": {}}
+          except Exception as exc:
+              print("ERROR: no se pudo leer la cola de alertas: " + str(exc))
+              sys.exit(1)
+
+          pending = state.get("pendingVehicles", {})
+          outbox = state.get("outbox", {})
+          if not isinstance(pending, dict):
+              pending = {}
+          if not isinstance(outbox, dict):
+              outbox = {}
 
           def safe(value):
               return str(value or "No disponible").strip()
 
-          def message_for(event):
-              lines = [
-                  "🚌 CAMBIO DE RUTA DETECTADO",
-                  "Vehículo: " + safe(event.get("vehicleId")),
-              ]
-              labels = {"line": "Línea", "destination": "Destino", "direction": "Sentido"}
-              for item in event.get("changed", []):
-                  lines.append(labels.get(item.get("field"), safe(item.get("label"))) + ": " +
-                               safe(item.get("old")) + " → " + safe(item.get("new")))
-              lines.append("Hora: " + safe(event.get("detectedAt")))
-              lines.append("Consulta SAE: https://enekituss.github.io/sae/")
-              return "\n".join(lines)
-
-          endpoint = "https://api.telegram.org/bot" + token + "/sendMessage"
-          sent = 0
-          for event in events:
-              body = json.dumps({
-                  "chat_id": chat_id,
-                  "text": message_for(event),
-                  "disable_web_page_preview": True,
-              }).encode("utf-8")
+          def telegram_api(method, payload):
+              endpoint = "https://api.telegram.org/bot" + token + "/" + method
               request = urllib.request.Request(
-                  endpoint, data=body,
+                  endpoint,
+                  data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
                   headers={"Content-Type": "application/json"},
                   method="POST",
               )
               try:
                   with urllib.request.urlopen(request, timeout=15) as response:
-                      result = json.loads(response.read().decode("utf-8"))
-                  if not result.get("ok"):
-                      raise RuntimeError(str(result))
-                  sent += 1
+                      raw = response.read().decode("utf-8")
+              except urllib.error.HTTPError as exc:
+                  try:
+                      detail = json.loads(exc.read().decode("utf-8")).get("description", "")
+                  except Exception:
+                      detail = ""
+                  raise RuntimeError(method + " devolvió HTTP " + str(exc.code) + (": " + detail if detail else ""))
+              result = json.loads(raw)
+              if not result.get("ok"):
+                  raise RuntimeError(method + ": " + safe(result.get("description")))
+              return result.get("result", {})
+
+          try:
+              bot_info = telegram_api("getMe", {})
+              chat_info = telegram_api("getChat", {"chat_id": chat_id})
+              print("Token de Telegram validado para @" + safe(bot_info.get("username")) + ".")
+              print("Chat de destino validado (tipo " + safe(chat_info.get("type")) + ").")
+          except Exception as exc:
+              print("ERROR de conexión/configuración de Telegram: " + str(exc))
+              sys.exit(1)
+
+          if event_name == "workflow_dispatch":
+              try:
+                  telegram_api("sendMessage", {
+                      "chat_id": chat_id,
+                      "text": "✅ PRUEBA DE TELEGRAM — SAE Bizkaibus\nEl envío de mensajes desde GitHub Actions funciona correctamente.\nEsta prueba no significa que se haya detectado un cambio de ruta.",
+                      "disable_web_page_preview": True,
+                  })
+                  print("Prueba manual de Telegram enviada correctamente.")
               except Exception as exc:
-                  # Do not block the periodic data refresh when Telegram is unavailable.
-                  print("No se pudo enviar aviso de Telegram para el vehículo " +
-                        safe(event.get("vehicleId")) + ": " + str(exc))
-          print("Alertas Telegram enviadas: " + str(sent) + "/" + str(len(events)))
+                  print("ERROR: no se pudo enviar el mensaje de prueba: " + str(exc))
+                  sys.exit(1)
+
+          events = sorted(
+              outbox.values(),
+              key=lambda event: (str(event.get("queuedAt", "")), str(event.get("eventId", ""))),
+          )
+          if not events:
+              print("No hay avisos de ruta o desaparición pendientes. Telegram se ha validado correctamente.")
+              sys.exit(0)
+
+          def render_event(event):
+              vehicle_id = safe(event.get("vehicleId"))
+              if event.get("type") == "vehicle_missing":
+                  last_seen = safe(event.get("lastSeenAt"))
+                  if last_seen != "No disponible":
+                      try:
+                          from datetime import datetime
+                          last_seen_dt = datetime.fromisoformat(last_seen.replace("Z", "+00:00"))
+                          last_seen = last_seen_dt.strftime("%d/%m/%Y %H:%M")
+                      except Exception:
+                          pass
+                  lines = [
+                      "⚠️ VEHÍCULO SIN POSICIÓN EN EL FEED ACTIVO",
+                      "Vehículo: " + vehicle_id,
+                      "Última línea publicada: " + safe(event.get("line")),
+                      "Último destino publicado: " + safe(event.get("destination")),
+                      "Último sentido publicado: " + safe(event.get("direction")),
+                      "Última aparición: " + last_seen,
+                      "Confirmación: " + safe(event.get("missingChecks")) + " consultas consecutivas válidas.",
+                      "Importante: esto confirma que ha dejado de aparecer en el feed, no una baja administrativa; también puede ser fin de servicio o un fallo de publicación.",
+                      "Detectado: " + safe(event.get("detectedAt")),
+                  ]
+              else:
+                  lines = [
+                      "🚌 CAMBIO DE RUTA DETECTADO",
+                      "Vehículo: " + vehicle_id,
+                  ]
+                  labels = {"line": "Línea", "destination": "Destino", "direction": "Sentido"}
+                  for item in event.get("changed", []):
+                      label = labels.get(item.get("field"), safe(item.get("label")))
+                      lines.append(label + ": " + safe(item.get("old")) + " → " + safe(item.get("new")))
+                  lines.append("Hora: " + safe(event.get("detectedAt")))
+              return "\n".join(lines)
+
+          def render_batch(batch):
+              return "🚌 AVISOS SAE BIZKAIBUS (" + str(len(batch)) + ")\n\n" + "\n\n──────────\n\n".join(
+                  render_event(event) for event in batch
+              ) + "\n\nConsulta SAE: https://enekituss.github.io/sae/"
+
+          delivered_ids = []
+          failed_batches = []
+          max_batches_per_run = 10
+          batch_size = 5
+          selected_events = events[:max_batches_per_run * batch_size]
+          for offset in range(0, len(selected_events), batch_size):
+              batch = selected_events[offset:offset + batch_size]
+              try:
+                  telegram_api("sendMessage", {
+                      "chat_id": chat_id,
+                      "text": render_batch(batch),
+                      "disable_web_page_preview": True,
+                  })
+                  delivered_ids.extend(str(event.get("eventId")) for event in batch if event.get("eventId"))
+                  print("Telegram aceptó el lote de " + str(len(batch)) + " avisos.")
+              except Exception as exc:
+                  failed_batches.append((batch, str(exc)))
+                  print("ERROR al enviar un lote de avisos: " + str(exc))
+              if offset + batch_size < len(selected_events):
+                  time.sleep(1.1)
+
+          if delivered_ids:
+              for event_id in delivered_ids:
+                  event = outbox.pop(event_id, None)
+                  if not event:
+                      continue
+                  if event.get("type") == "vehicle_missing":
+                      vehicle_id = str(event.get("vehicleId") or "")
+                      candidate = pending.get(vehicle_id)
+                      if candidate and candidate.get("eventId") == event_id:
+                          candidate["alerted"] = True
+                          candidate["notificationQueued"] = False
+
+              state["schemaVersion"] = 1
+              state["pendingVehicles"] = pending
+              state["outbox"] = outbox
+              with open(state_path, "w", encoding="utf-8") as handle:
+                  json.dump(state, handle, ensure_ascii=False, indent=2, sort_keys=True)
+                  handle.write("\n")
+
+              try:
+                  subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                  subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                  subprocess.run(["git", "add", state_path], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                  diff = subprocess.run(["git", "diff", "--cached", "--quiet"], check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                  if diff.returncode == 1:
+                      subprocess.run(["git", "commit", "-m", "Confirmar alertas entregadas por Telegram"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                      subprocess.run(["git", "fetch", "origin", "main"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                      subprocess.run(["git", "rebase", "origin/main"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                      subprocess.run(["git", "push", "origin", "HEAD:main"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                      print("Estado de entrega guardado en GitHub.")
+                  elif diff.returncode != 0:
+                      raise RuntimeError("git diff devolvió el código " + str(diff.returncode))
+              except Exception as exc:
+                  print("ERROR al guardar la confirmación de entrega. Un aviso podría repetirse en el próximo intento: " + str(exc))
+                  sys.exit(1)
+
+          if len(events) > len(selected_events):
+              print("Quedan " + str(len(events) - len(selected_events)) + " avisos en cola para próximos ciclos.")
+          if failed_batches:
+              print("ERROR: " + str(len(failed_batches)) + " lote(s) no se pudieron enviar; permanecerán en cola para reintentar.")
+              sys.exit(1)
+          print("Proceso de alertas terminado. Avisos enviados: " + str(len(delivered_ids)) + "; pendientes restantes: " + str(len(outbox)) + ".")
           PY
-        continue-on-error: true
