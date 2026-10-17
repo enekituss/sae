@@ -1,99 +1,16 @@
+const DATA_FILE = './vehicles.json';
 const FEED = 'https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml';
-const FEED_URLS = [
-  { label: 'feed oficial', url: FEED },
-  { label: 'proxy AllOrigins', url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(FEED) },
-  { label: 'proxy CORSProxy', url: 'https://corsproxy.io/?url=' + encodeURIComponent(FEED) }
-];
-const REQUEST_TIMEOUT_MS = 8000;
 const REFRESH_MS = 30000;
+const REQUEST_TIMEOUT_MS = 8000;
 const $ = id => document.getElementById(id);
 
 let vehicles = [];
 let expandedLines = new Set();
 let lastSuccessfulUpdate = null;
-
-// SIRI normally declares a namespace, but tolerate XML responses without one too.
-function elements(root, name) {
-  if (!root) return [];
-  let found = [];
-  try { found = [...root.getElementsByTagNameNS('*', name)]; } catch (_) {}
-  return found.length ? found : [...root.getElementsByTagName(name)];
-}
-
-function text(el, name) {
-  const node = elements(el, name)[0];
-  return node ? node.textContent.trim() : '';
-}
-
-function firstText(el, names) {
-  for (const name of names) {
-    const value = text(el, name);
-    if (value) return value;
-  }
-  return '';
-}
-
-function parse(xml) {
-  const activities = elements(xml, 'VehicleActivity');
-  const result = [];
-
-  activities.forEach((activity, index) => {
-    const journey = elements(activity, 'MonitoredVehicleJourney')[0];
-    if (!journey) return;
-
-    // Do not discard an activity just because coordinates are absent: the goal
-    // of this page is to show the vehicle identifier and the line it is serving.
-    const vehicleId = firstText(journey, [
-      'VehicleRef', 'VehicleIdentifier', 'VehicleId', 'FleetNumber'
-    ]) || firstText(activity, [
-      'VehicleRef', 'VehicleIdentifier', 'VehicleId', 'FleetNumber'
-    ]);
-
-    const lineName = firstText(journey, [
-      'PublishedLineName', 'LineName', 'PublicLineCode', 'LinePublicNumber'
-    ]);
-    const lineRef = firstText(journey, ['LineRef', 'LineReference']);
-    const line = lineName || lineRef || firstText(activity, [
-      'PublishedLineName', 'LineName', 'LineRef', 'LineReference'
-    ]) || 'Sin línea identificada';
-
-    // VehicleRef is the vehicle's own identifier. VehicleJourneyRef is a trip
-    // identifier, so only use it as a fallback and label that in the interface.
-    const journeyRef = firstText(journey, [
-      'VehicleJourneyRef', 'DatedVehicleJourneyRef'
-    ]) || firstText(activity, ['VehicleJourneyRef', 'DatedVehicleJourneyRef']);
-    const id = vehicleId || journeyRef || ('ID no publicado · registro ' + (index + 1));
-    const idType = vehicleId ? 'ID de vehículo' : (journeyRef ? 'Referencia de viaje (sin ID de vehículo)' : 'Identificador no publicado');
-
-    const recordedTime = firstText(journey, [
-      'LocationRecordedAtTime', 'RecordedAtTime'
-    ]) || firstText(activity, ['RecordedAtTime', 'ValidUntilTime']);
-
-    result.push({
-      id,
-      idType,
-      line,
-      lineRef,
-      direction: firstText(journey, ['DestinationName', 'DestinationDisplay', 'DirectionName']),
-      time: recordedTime,
-      stop: firstText(journey, ['StopPointRef', 'StopPointName']),
-      journeyRef,
-      lat: firstText(journey, ['Latitude']),
-      lon: firstText(journey, ['Longitude'])
-    });
-  });
-
-  // Avoid showing the same vehicle twice if the feed contains duplicated activities.
-  const unique = new Map();
-  for (const vehicle of result) {
-    const key = vehicle.id + '|' + vehicle.line + '|' + vehicle.journeyRef;
-    if (!unique.has(key)) unique.set(key, vehicle);
-  }
-  return [...unique.values()];
-}
+let updateRunning = false;
 
 function escapeHTML(value) {
-  return String(value).replace(/[&<>"']/g, char => ({
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[char]);
 }
@@ -103,8 +20,8 @@ function formatTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString('es-ES', {
-    day: '2-digit', month: '2-digit', hour: '2-digit',
-    minute: '2-digit', second: '2-digit'
+    day: '2-digit', month: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
   });
 }
 
@@ -116,11 +33,12 @@ function setStatus(message, state) {
 function groupByLine(list) {
   const groups = new Map();
   for (const vehicle of list) {
-    if (!groups.has(vehicle.line)) groups.set(vehicle.line, []);
-    groups.get(vehicle.line).push(vehicle);
+    const line = vehicle.line || 'Sin línea identificada';
+    if (!groups.has(line)) groups.set(line, []);
+    groups.get(line).push(vehicle);
   }
   for (const group of groups.values()) {
-    group.sort((a, b) => a.id.localeCompare(b.id, undefined, {
+    group.sort((a, b) => String(a.id).localeCompare(String(b.id), undefined, {
       numeric: true, sensitivity: 'base'
     }));
   }
@@ -146,10 +64,18 @@ function render() {
 
   $('lines').innerHTML = '';
   if (!matchingLines.length) {
-    const message = !query && vehicles.length === 0
-      ? 'El feed se ha leído correctamente, pero no contiene registros de vehículos en esta actualización.'
-      : 'No hay líneas ni vehículos que coincidan con la búsqueda.';
-    $('lines').innerHTML = '<div class="message">' + message + '</div>';
+    let message;
+    if (query) {
+      message = 'No hay líneas ni vehículos que coincidan con la búsqueda.';
+    } else if (!lastSuccessfulUpdate) {
+      message = 'La primera descarga de datos SIRI todavía no se ha completado. La web leerá aquí la copia pública en cuanto termine la primera ejecución automática.';
+    } else {
+      message = 'La última consulta del feed no contiene registros de vehículos.';
+    }
+    $('lines').innerHTML = '<div class="message">' + escapeHTML(message) +
+      (!lastSuccessfulUpdate && !query
+        ? '<br><br><a href="https://github.com/enekituss/sae/actions" target="_blank" rel="noopener noreferrer">Ver / ejecutar la actualización de datos</a>'
+        : '') + '</div>';
     return;
   }
 
@@ -182,10 +108,10 @@ function render() {
               <div class="vehicle-direction">${escapeHTML(vehicle.direction || 'Sentido/destino no indicado')}</div>
             </div>
             <div class="vehicle-meta">
-              <div><strong>${escapeHTML(vehicle.idType)}</strong><br>${escapeHTML(vehicle.id)}</div>
-              <div><strong>Línea</strong><br>${escapeHTML(vehicle.line)}${vehicle.lineRef && vehicle.lineRef !== vehicle.line ? ' · ref. ' + escapeHTML(vehicle.lineRef) : ''}</div>
+              <div><strong>${escapeHTML(vehicle.idType || 'ID de vehículo')}</strong><br>${escapeHTML(vehicle.id)}</div>
+              <div><strong>Línea</strong><br>${escapeHTML(vehicle.line || line)}${vehicle.lineRef && vehicle.lineRef !== vehicle.line ? ' · ref. ' + escapeHTML(vehicle.lineRef) : ''}</div>
               <div><strong>Última posición comunicada</strong><br>${escapeHTML(formatTime(vehicle.time))}</div>
-              ${vehicle.stop && typeof vehicle.stop === 'string' ? `<div><strong>Referencia de parada</strong><br>${escapeHTML(vehicle.stop)}</div>` : ''}
+              ${vehicle.stop ? `<div><strong>Referencia de parada</strong><br>${escapeHTML(vehicle.stop)}</div>` : ''}
             </div>
           </article>`).join('')}
       </div>`;
@@ -198,85 +124,89 @@ function render() {
   }
 }
 
-async function fetchFeed(url) {
-  // AbortController corta la petición y también libera la interfaz si una URL no responde.
+// La web está alojada en GitHub Pages, por lo que el navegador no puede leer
+// necesariamente el XML de otro dominio (CORS). El flujo de GitHub Actions
+// consulta SIRI del lado del servidor y publica esta copia JSON en el mismo sitio.
+async function fetchSnapshot() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const response = await fetch(url, {
+    const url = new URL(DATA_FILE, window.location.href);
+    url.searchParams.set('_', String(Date.now()));
+    const response = await fetch(url.toString(), {
       cache: 'no-store',
       signal: controller.signal,
-      headers: { 'Accept': 'application/xml, text/xml, */*' }
+      headers: { 'Accept': 'application/json' }
     });
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    const body = await response.text();
-    const xml = new DOMParser().parseFromString(body, 'application/xml');
-    if (xml.getElementsByTagName('parsererror').length || !xml.documentElement) {
-      throw new Error('Respuesta XML no válida');
+    if (!response.ok) throw new Error('vehicles.json respondió HTTP ' + response.status);
+    const data = await response.json();
+    if (!data || !Array.isArray(data.vehicles)) {
+      throw new Error('El fichero de datos no tiene el formato esperado');
     }
-    const hasActivities = elements(xml, 'VehicleActivity').length > 0;
-    const isSiriResponse = /Siri|VehicleMonitoringDelivery|VehicleActivity/i.test(
-      xml.documentElement.nodeName + ' ' + body.slice(0, 1000)
-    );
-    if (!hasActivities && !isSiriResponse) throw new Error('La respuesta no parece contener datos SIRI');
-    return xml;
+    return data;
   } catch (error) {
-    if (error.name === 'AbortError') {
-      throw new Error('Tiempo de espera agotado (' + Math.round(REQUEST_TIMEOUT_MS / 1000) + ' s)');
-    }
+    if (error.name === 'AbortError') throw new Error('La copia de datos ha tardado demasiado en responder');
     throw error;
   } finally {
     clearTimeout(timeout);
   }
 }
+
 async function load() {
+  if (updateRunning) return;
+  updateRunning = true;
   $('refresh').disabled = true;
   $('refresh').innerHTML = '<span aria-hidden="true">↻</span> Cargando';
-  setStatus('Conectando con SIRI…', '');
+  setStatus('Leyendo datos publicados…', '');
 
   try {
-    let xml = null;
-    let usedSource = '';
-    const errors = [];
+    const snapshot = await fetchSnapshot();
+    vehicles = snapshot.vehicles.map(v => ({
+      id: String(v.id || 'ID no publicado'),
+      idType: String(v.idType || 'ID de vehículo'),
+      line: String(v.line || 'Sin línea identificada'),
+      lineRef: String(v.lineRef || ''),
+      direction: String(v.direction || ''),
+      time: String(v.time || ''),
+      stop: String(v.stop || ''),
+      journeyRef: String(v.journeyRef || ''),
+      lat: v.lat ?? '',
+      lon: v.lon ?? ''
+    }));
 
-    for (const source of FEED_URLS) {
-      try {
-        setStatus('Probando ' + source.label + '…', '');
-        xml = await fetchFeed(source.url);
-        usedSource = source.label;
-        break;
-      } catch (error) {
-        errors.push(source.label + ': ' + error.message);
-        console.warn('Falló ' + source.label + ':', error.message);
+    const fetchedAt = snapshot.fetchedAt ? new Date(snapshot.fetchedAt) : null;
+    lastSuccessfulUpdate = fetchedAt && !Number.isNaN(fetchedAt.getTime()) ? fetchedAt : null;
+    render();
+
+    if (!lastSuccessfulUpdate) {
+      $('lastUpdated').textContent = 'A la espera de la primera descarga SIRI';
+      setStatus('Pendiente de la primera consulta SIRI', '');
+    } else {
+      const ageMinutes = Math.max(0, Math.round((Date.now() - lastSuccessfulUpdate.getTime()) / 60000));
+      $('lastUpdated').textContent = 'SIRI consultado: ' + lastSuccessfulUpdate.toLocaleTimeString('es-ES') +
+        ' · ' + lastSuccessfulUpdate.toLocaleDateString('es-ES');
+      if (ageMinutes >= 15) {
+        setStatus('Copia de datos antigua · hace ' + ageMinutes + ' min', 'error');
+      } else {
+        setStatus('Datos disponibles · ' + vehicles.length + ' registros', 'ok');
       }
     }
-
-    if (!xml) throw new Error(errors.join(' · ') || 'Ninguna fuente ha respondido');
-
-    vehicles = parse(xml);
-    lastSuccessfulUpdate = new Date();
-    render();
-    $('lastUpdated').textContent = 'Actualizado a las ' + lastSuccessfulUpdate.toLocaleTimeString('es-ES');
-    setStatus('Conectado (' + usedSource + ') · ' + vehicles.length + ' registros', 'ok');
   } catch (error) {
-    console.error('No se pudo actualizar el feed Bizkaibus SIRI:', error);
-    setStatus('No se pudieron cargar los datos', 'error');
-    if (!lastSuccessfulUpdate) {
-      $('lines').innerHTML = `
-        <div class="message error">
-          <strong>El feed SIRI no ha respondido.</strong><br>
-          Se ha cancelado la conexión tras varios intentos para evitar que se quede cargando indefinidamente.
-          <br><br><span class="error-detail">${escapeHTML(error.message)}</span>
-          <br><br>Pulsa «Actualizar» para intentarlo de nuevo o abre el feed oficial directamente.
-          <br><br><a href="${FEED}" target="_blank" rel="noopener noreferrer">Abrir el feed oficial SIRI</a>
-        </div>`;
-      $('vehicleCount').textContent = '—';
-      $('lineCount').textContent = '—';
-      $('lastUpdated').textContent = 'Sin datos';
-    } else {
-      $('lastUpdated').textContent = 'Error al actualizar · datos anteriores de ' + lastSuccessfulUpdate.toLocaleTimeString('es-ES');
-    }
+    console.error('No se pudo leer la copia de datos de Bizkaibus:', error);
+    setStatus('No se han podido leer los datos', 'error');
+    $('lines').innerHTML = `
+      <div class="message error">
+        <strong>No se ha podido leer la copia de datos publicada.</strong><br>
+        Comprueba que GitHub Pages esté actualizado y que la tarea de actualización SIRI haya terminado.
+        <br><br><span>${escapeHTML(error.message)}</span>
+        <br><br><a href="https://github.com/enekituss/sae/actions" target="_blank" rel="noopener noreferrer">Abrir el estado de la actualización SIRI</a>
+        <br><br><a href="${FEED}" target="_blank" rel="noopener noreferrer">Abrir el feed oficial SIRI</a>
+      </div>`;
+    $('vehicleCount').textContent = '—';
+    $('lineCount').textContent = '—';
+    $('lastUpdated').textContent = 'Sin datos';
   } finally {
+    updateRunning = false;
     $('refresh').disabled = false;
     $('refresh').innerHTML = '<span aria-hidden="true">↻</span> Actualizar';
   }
