@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#17212b">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SAE Spotter">
+  <title>Bizkaibus · SAE Spotter</title>
+  <meta name="description" content="Listado de líneas Bizkaibus e identificadores de vehículos detectados en el feed SIRI.">
+  <link rel="stylesheet" href="styles.css?v=20261017k">
+
+  <style>
+    html.auth-check body { visibility: hidden; }
+    #logoutButton:hover { background: #2c3b49 !important; }
+    @media (max-width: 650px) {
+      #logoutButton { width: 100%; }
+    }
+  </style>
+  <script>document.documentElement.classList.add('auth-check');</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./auth-guard.js?v=20261017a"></script>
+  <script src="./pwa.js?v=20261018a" defer></script>
+
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="eyebrow">SAE · BILBAO</div>
+      <h1>Bizkaibus <span>Spotter</span></h1>
+      <p>Líneas y vehículos activos detectados por el SAE.</p>
+      <a class="city-switch" href="./index.html">← Cambiar ciudad</a>
+    </div>
+    <div class="status" aria-live="polite">
+      <span id="dot" class="status-dot"></span>
+      <span id="statusText">Leyendo datos publicados…</span>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="summary" aria-label="Resumen">
+      <div class="summary-copy">
+        <h2>Vehículos en servicio</h2>
+        <p>Cada línea agrupa los vehículos detectados. En cada ficha se muestra el ID publicado por SIRI y la línea asociada.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><strong id="vehicleCount">—</strong><span>vehículos activos</span></div>
+        <div class="stat"><strong id="lineCount">—</strong><span>líneas detectadas</span></div>
+      </div>
+    </section>
+
+    <section class="list-panel">
+      <div class="toolbar">
+        <label class="searchbox">
+          <span aria-hidden="true">⌕</span>
+          <input id="search" type="search" placeholder="Buscar línea, vehículo o destino…" autocomplete="off">
+        </label>
+        <button id="refresh" type="button"><span aria-hidden="true">↻</span> Actualizar</button>
+      </div>
+      <div class="directory-shortcut"><a class="directory-link" href="./paradas.html">📍 Abrir directorio completo de paradas →</a><span>Consulta por nombre o ID SIRI</span></div>
+      <div class="list-heading">
+        <span>LÍNEAS Y VEHÍCULOS</span>
+        <span id="lastUpdated">Esperando primera actualización</span>
+      </div>
+      <div id="lines" class="lines" aria-live="polite">
+        <div class="message"><span class="spinner"></span> Cargando datos del SAE…</div>
+      </div>
+    </section>
+
+    <footer>
+      <span>Fuente: Open Data Bizkaia · Feed SIRI de posiciones de vehículos. La copia se renueva automáticamente; la frecuencia depende del planificador y del tiempo necesario para procesar el feed.</span>
+      <span>Las próximas horas se marcan como estimación en tiempo real solo si GTFS-RT publica una predicción; en caso contrario, se usa el horario GTFS.</span>
+    </footer>
+  </main>
+
+  <dialog id="upcomingDialog" class="upcoming-dialog" aria-labelledby="upcomingDialogTitle">
+    <div class="dialog-shell">
+      <header class="dialog-header">
+        <div>
+          <div class="dialog-kicker">Itinerario previsto</div>
+          <h2 id="upcomingDialogTitle">Próximas paradas</h2>
+          <p id="upcomingDialogSubtitle"></p>
+        </div>
+        <button id="upcomingDialogClose" class="dialog-close" type="button" aria-label="Cerrar itinerario">×</button>
+      </header>
+      <div id="upcomingDialogStops" class="dialog-content"></div>
+      <div class="dialog-footer">La hora puede proceder del horario GTFS o de una estimación GTFS-RT. Solo se identifica como estimación en tiempo real cuando el feed la proporciona.</div>
+    </div>
+  </dialog>
+
+  <script src="vehicles-data.js?v=20261017k"></script>
+  <script src="app.js?v=20261017l"></script>
+</body>
+</html>
