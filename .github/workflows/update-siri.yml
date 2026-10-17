@@ -138,12 +138,11 @@ jobs:
           }
           with open("vehicles.json", "w", encoding="utf-8") as handle:
               json.dump(snapshot, handle, ensure_ascii=False, indent=2)
-              handle.write("\\n")
 
           with open("vehicles-data.js", "w", encoding="utf-8") as handle:
               handle.write("window.BIZKAIBUS_DATA = ")
               json.dump(snapshot, handle, ensure_ascii=False, separators=(",", ":"))
-              handle.write(";\\n")
+              handle.write(";")
 
           print(f"Respuesta SIRI válida: {len(activities)} actividades; {len(vehicles)} registros procesados.")
           PY
