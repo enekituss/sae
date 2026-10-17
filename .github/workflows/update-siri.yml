@@ -2,11 +2,8 @@ name: Actualizar posiciones Bizkaibus
 
 on:
   schedule:
-    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
+    - cron: "3-58/5 * * * *"
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/update-siri.yml"
 
 permissions:
   contents: write
