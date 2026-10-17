@@ -443,7 +443,7 @@ jobs:
                   active_gtfs_trip_ids.add("trp_" + ref)
               # SIRI JourneyRefs encode service-day seconds after the OP... token.
               # If the start is >= 24:00, GTFS times belong to the previous service date.
-              time_match = re.search(r"_OP[^_]+_(\\d{4,6})_", ref.upper())
+              time_match = re.search(r"_OP[^_]+_(\d{4,6})_", ref.upper())
               service_date = LOCAL_NOW.date()
               if time_match and int(time_match.group(1)) >= 86400:
                   service_date = service_date - timedelta(days=1)
@@ -475,7 +475,7 @@ jobs:
                           sequence = None
                       stop_obj = stops.get(stop_id) or stop_index.get(stop_id.lower())
                       if not stop_obj:
-                          numeric = re.fullmatch(r"0*(\\d+)", stop_id)
+                          numeric = re.fullmatch(r"0*(\d+)", stop_id)
                           if numeric:
                               stop_obj = stop_index.get(numeric.group(1))
                       service_date = service_date_by_trip.get(trip_id, LOCAL_NOW.date())
