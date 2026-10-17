@@ -7,6 +7,19 @@
   <title>Bizkaibus SAE · Spotter</title>
   <meta name="description" content="Listado de líneas Bizkaibus e identificadores de vehículos detectados en el feed SIRI.">
   <link rel="stylesheet" href="styles.css?v=20261017k">
+
+  <style>
+    html.auth-check body { visibility: hidden; }
+    #logoutButton:hover { background: #2c3b49 !important; }
+    @media (max-width: 650px) {
+      #logoutButton { width: 100%; }
+    }
+  </style>
+  <script>document.documentElement.classList.add('auth-check');</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./auth-guard.js?v=20261017a"></script>
+
 </head>
 <body>
   <header class="topbar">
