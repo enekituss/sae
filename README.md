@@ -55,12 +55,13 @@ Los mensajes describen altas y bajas **del feed publicado**, que es la evidencia
 
 ### Bot independiente para autobuses de Burgos
 
-El flujo `.github/workflows/telegram-burgos.yml` consulta el Worker municipal de Burgos cada cinco minutos y compara snapshots completos para evitar falsas alertas cuando la consulta falla o está incompleta.
+El Worker independiente `cloudflare-worker-burgos` programa `.github/workflows/telegram-burgos.yml` cada dos minutos. GitHub Actions mantiene además una programación de respaldo cada cinco minutos. El detector compara primero la lista completa `resourceVehicles` de todas las líneas y usa las estimaciones por parada solo como fuente alternativa. Así detecta altas en el feed, ausencias confirmadas y cambios publicados de línea, destino o sentido; si la consulta de flota está incompleta o falla, conserva el estado anterior para no generar falsas bajas.
 
 1. En [@BotFather](https://t.me/BotFather), crea un segundo bot con `/newbot` y guarda su token en privado.
 2. Abre el bot nuevo en Telegram y envíale `/start`.
 3. En el repositorio, entra en **Settings → Secrets and variables → Actions** y crea los secretos `BURGOS_TELEGRAM_BOT_TOKEN` (token del bot nuevo) y `BURGOS_TELEGRAM_CHAT_ID` (ID del chat personal donde tú recibirás avisos). No uses el ID del grupo comunitario salvo que quieras que todo el grupo reciba avisos comunes; cada miembro puede configurar su propia suscripción iniciando el bot en privado.
-4. En **Actions → Alertas Telegram · Autobuses de Burgos**, ejecuta **Run workflow** para la primera comprobación, o espera al siguiente ciclo programado.
+4. En Cloudflare, dentro del Worker independiente `burgos-sae-spotter`, crea el secreto `BURGOS_GITHUB_TOKEN` con permisos **Actions: Read and write** solamente sobre `enekituss/sae`; sirve para lanzar el detector cada dos minutos sin depender del Worker de Bizkaibus. Comprueba que `/health` devuelve `telegramScheduler.configured: true`.
+5. En **Actions → Alertas Telegram · Autobuses de Burgos**, ejecuta **Run workflow** para la primera comprobación, o espera al siguiente ciclo programado.
 
 Después, comparte el enlace [https://t.me/SAEBUR_bot](https://t.me/SAEBUR_bot) en tu grupo de comunidad. Los miembros deben pulsar **Iniciar** en el chat privado del bot para que se registren individualmente; no es necesario añadir el bot al grupo.
 
