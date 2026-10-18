@@ -24362,42 +24362,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "route_after_gap:2e98eb5a3517e0e18d3bef81": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALLARTA",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "GALLARTA",
-      "detectedAt": "2026-10-18T12:04+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:2e98eb5a3517e0e18d3bef81",
-      "line": "A3333",
-      "queuedAt": "2026-10-18T12:04:19+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7856"
-    },
-    "vehicle_returned:bbebd20ec5496b20dc742950": {
-      "destination": "DURANGO",
-      "detectedAt": "2026-10-18T12:04+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:bbebd20ec5496b20dc742950",
-      "lastKnown": {
-        "destination": "DURANGO",
-        "direction": "",
-        "id": "3373",
-        "line": "A3911"
-      },
-      "line": "A3911",
-      "queuedAt": "2026-10-18T12:04:19+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3373"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1733": {
@@ -24630,5 +24595,12 @@
     }
   },
   "schemaVersion": 1,
+  "telegramSubscriptions": {
+    "5333330154": {
+      "awaitingVehicleId": false,
+      "mode": "all",
+      "vehicleId": ""
+    }
+  },
   "telegramUpdateOffset": 30217590
 }
