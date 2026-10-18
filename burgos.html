@@ -75,7 +75,7 @@
       <details class="connection-settings">
         <summary>⚙ Configurar conexión</summary>
         <div class="connection-body">
-          <p class="connection-help">Para evitar los errores 403 de los proxies públicos, pega aquí la URL base del Worker de Cloudflare que está desplegado para SAE Spotter. Debe ser una URL HTTPS que normalmente termina en <code>.workers.dev</code>; no incluyas <code>/api/burgos/vehicles</code>.</p>
+          <p class="connection-help">La URL del Worker independiente de Burgos ya viene configurada automáticamente. Solo cambia este campo si en el futuro sustituyes la dirección del Worker; no añadas <code>/health</code> ni rutas de la API.</p>
           <div class="connection-row">
             <input id="workerUrlInput" type="url" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://burgos-sae-spotter.TU-SUBDOMINIO.workers.dev" aria-label="URL base del Worker de Cloudflare">
           </div>
@@ -83,7 +83,7 @@
             <button id="saveWorkerUrl" type="button">Guardar y comprobar</button>
             <button id="clearWorkerUrl" class="secondary" type="button">Borrar conexión guardada</button>
           </div>
-          <p class="connection-help" style="margin-top:10px">La URL se guarda solo en este navegador. Puedes copiarla desde Cloudflare → Workers & Pages → <code>burgos-sae-spotter</code> → Overview.</p>
+          <p class="connection-help" style="margin-top:10px">La URL predeterminada ya está incluida en SAE Spotter. Si guardas otra dirección, se conservará en este navegador hasta que la cambies o borres la configuración.</p>
         </div>
       </details>
       <div class="list-heading">
@@ -101,6 +101,6 @@
     </footer>
   </main>
 
-  <script src="./burgos-vehicles.js?v=20261018j"></script>
+  <script src="./burgos-vehicles.js?v=20261018k"></script>
 </body>
 </html>
