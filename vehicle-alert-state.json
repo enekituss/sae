@@ -27109,39 +27109,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:127fcebc407a0974357c9043": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T17:57+02:00",
-      "direction": "",
-      "eventId": "missing:127fcebc407a0974357c9043",
-      "firstMissingAt": "2026-10-18T17:53:02+02:00",
-      "lastSeenAt": "2026-10-18T17:49:27+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T17:57:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3365"
-    },
-    "route_after_gap:0a42614446edb1d33fd18252": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ-Cobaron",
-          "old": "PORTUGALETE"
-        }
-      ],
-      "destination": "MUSKIZ-Cobaron",
-      "detectedAt": "2026-10-18T17:57+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:0a42614446edb1d33fd18252",
-      "line": "A3321",
-      "queuedAt": "2026-10-18T17:57:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7880"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2096": {
@@ -27201,7 +27169,7 @@
       "requiredMissing": 2
     },
     "3365": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:127fcebc407a0974357c9043",
       "firstMissingAt": "2026-10-18T17:53:02+02:00",
@@ -27212,7 +27180,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T17:49:27+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "5039": {
