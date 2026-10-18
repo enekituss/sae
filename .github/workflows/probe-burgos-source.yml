@@ -18,6 +18,7 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
+          import json
           import re
           import urllib.parse
           import urllib.request
@@ -88,4 +89,22 @@ jobs:
                   for i in positions:
                       excerpt = text[max(0, i-180):i+360].replace("\n", " ")
                       print("SNIPPET", term, ":", excerpt[:520])
+          # Probe de los endpoints públicos de vehículos sin enviar tokens privados ni
+          # eludir el control del canal Pusher. Solo se leen estado, esquema y recuentos.
+          for line in ("1", "01", "2", "C1"):
+              endpoint = ROOT + "?action=vehiculos&line=" + urllib.parse.quote(line, safe="")
+              try:
+                  resolved, body = get(endpoint, 8)
+                  text_body = body.decode("utf-8", errors="replace")
+                  try:
+                      payload = json.loads(text_body)
+                      if isinstance(payload, list):
+                          sample_keys = sorted(payload[0].keys()) if payload and isinstance(payload[0], dict) else []
+                          print("VEHICLES_ENDPOINT:", line, "status=200", "count=", len(payload), "sample_keys=", sample_keys)
+                      else:
+                          print("VEHICLES_ENDPOINT:", line, "status=200", "json_type=", type(payload).__name__, "keys=", sorted(payload.keys()) if isinstance(payload, dict) else None)
+                  except Exception:
+                      print("VEHICLES_ENDPOINT:", line, "not_json=", text_body[:250])
+              except Exception as exc:
+                  print("VEHICLES_ENDPOINT_ERROR:", line, repr(exc))
           PY
