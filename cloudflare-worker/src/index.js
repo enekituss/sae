@@ -5,10 +5,11 @@ const WORKFLOWS = [
 ];
 const BRANCH = "main";
 const GITHUB_API = "https://api.github.com";
-// Ruta oficial vigente del portlet ISAENEXT. Las páginas públicas enlazan bajo /web/movilidad/.
-const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo";
+// URL canónica de Rutas en Directo que publica el portal de Movilidad.
+const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
 const BURGOS_VEHICLES_SOURCE = BURGOS_SOURCE;
-// Respaldo del dominio antiguo del Ayuntamiento; se mantiene separado de Bizkaibus.
+// Compatibilidad con las rutas /web/movilidad y el dominio municipal anterior.
+const BURGOS_VEHICLES_COMPAT_SOURCE = "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo";
 const BURGOS_VEHICLES_LEGACY_SOURCE = "https://www.aytoburgos.es/web/movilidad/rutas-en-directo";
 const BURGOS_LINES = [...Array.from({ length: 23 }, (_, i) => String(i + 1).padStart(2, "0")), "73", "87", "88", "89", "C1", "C2"];
 const ALLOWED_ORIGIN = "https://enekituss.github.io";
@@ -254,25 +255,36 @@ function isaenextURL(resource, extra = {}) {
 async function fetchIsaenextJson(url) {
   const originalUrl = new URL(url.toString());
   const candidates = [originalUrl];
+
+  // El portal oficial ha publicado el mismo módulo con dos rutas. Prueba ambas
+  // en el dominio canónico y deja el dominio antiguo como último respaldo.
   if (originalUrl.hostname === "movilidad.aytoburgos.es") {
+    const alternatePath = new URL(originalUrl.toString());
+    alternatePath.pathname = originalUrl.pathname.startsWith("/web/movilidad/")
+      ? originalUrl.pathname.replace("/web/movilidad/", "/")
+      : originalUrl.pathname.replace("/", "/web/movilidad/");
+    candidates.push(alternatePath);
+
     const legacyUrl = new URL(originalUrl.toString());
     legacyUrl.hostname = "www.aytoburgos.es";
+    legacyUrl.pathname = "/web/movilidad/rutas-en-directo";
     candidates.push(legacyUrl);
   }
-  const errors = [];
 
-  // El Ayuntamiento publica el directo en el portal /web/movilidad/.
-  // Se prueba primero el dominio canónico y luego el antiguo como respaldo.
+  const seen = new Set();
+  const errors = [];
   for (const candidate of candidates) {
+    if (seen.has(candidate.toString())) continue;
+    seen.add(candidate.toString());
     try {
       const response = await fetch(candidate.toString(), {
         method: "GET",
         headers: {
           "Accept": "application/json, text/plain, */*",
           "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter/1.0)",
-          "Referer": candidate.origin + "/web/movilidad/rutas-en-directo"
+          "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo"
         },
-        signal: AbortSignal.timeout(20000)
+        signal: AbortSignal.timeout(15000)
       });
       const body = await response.text();
       if (!response.ok) {
@@ -284,11 +296,11 @@ async function fetchIsaenextJson(url) {
         throw new Error("respuesta no JSON");
       }
     } catch (error) {
-      errors.push(candidate.hostname + ": " + (error?.message || String(error)));
+      errors.push(candidate.hostname + candidate.pathname + ": " + (error?.message || String(error)));
     }
   }
 
-  throw new Error("ISAENEXT falló en las fuentes oficiales de Burgos. " + errors.join(" | "));
+  throw new Error("ISAENEXT falló en las rutas oficiales de Burgos. " + errors.join(" | "));
 }
 
 
@@ -309,7 +321,7 @@ function isaenextVehiclesUrl(line, source = BURGOS_VEHICLES_SOURCE) {
 }
 
 async function fetchBurgosVehicles(line) {
-  const sources = [BURGOS_VEHICLES_SOURCE, BURGOS_VEHICLES_LEGACY_SOURCE];
+  const sources = [BURGOS_VEHICLES_SOURCE, BURGOS_VEHICLES_COMPAT_SOURCE, BURGOS_VEHICLES_LEGACY_SOURCE];
   const errors = [];
 
   // Prioriza la dirección actual de Movilidad y conserva la antigua como respaldo.
