@@ -12708,114 +12708,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:08a42b85112626579e698c6b": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T22:35+02:00",
-      "direction": "",
-      "eventId": "missing:08a42b85112626579e698c6b",
-      "firstMissingAt": "2026-10-18T22:31:07+02:00",
-      "lastSeenAt": "2026-10-18T22:27:53+02:00",
-      "line": "A3926",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T22:35:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3380"
-    },
-    "missing:7ac208748d9ca677b1b77010": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T22:35+02:00",
-      "direction": "",
-      "eventId": "missing:7ac208748d9ca677b1b77010",
-      "firstMissingAt": "2026-10-18T22:31:07+02:00",
-      "lastSeenAt": "2026-10-18T22:27:53+02:00",
-      "line": "A3631",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T22:35:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3265"
-    },
-    "missing:d21da9db7419bbb42c9d8d94": {
-      "destination": "LARRABETZU",
-      "detectedAt": "2026-10-18T22:35+02:00",
-      "direction": "",
-      "eventId": "missing:d21da9db7419bbb42c9d8d94",
-      "firstMissingAt": "2026-10-18T22:31:07+02:00",
-      "lastSeenAt": "2026-10-18T22:27:53+02:00",
-      "line": "A3223",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T22:35:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2113"
-    },
-    "missing:f01827e80bc0118e8772f56c": {
-      "destination": "GERNIKA",
-      "detectedAt": "2026-10-18T22:35+02:00",
-      "direction": "",
-      "eventId": "missing:f01827e80bc0118e8772f56c",
-      "firstMissingAt": "2026-10-18T22:31:07+02:00",
-      "lastSeenAt": "2026-10-18T22:27:53+02:00",
-      "line": "A3523",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T22:35:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8669"
-    },
-    "route:02787e2e9441f7ae920461f2": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "GALDAKAO Urreta"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T22:35+02:00",
-      "direction": "",
-      "eventId": "route:02787e2e9441f7ae920461f2",
-      "line": "A3631",
-      "queuedAt": "2026-10-18T22:35:09+02:00",
-      "type": "route_change",
-      "vehicleId": "3356"
-    },
-    "route:05c41cdae3c9fdcb396ce116": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "BARAKALDO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T22:35+02:00",
-      "direction": "",
-      "eventId": "route:05c41cdae3c9fdcb396ce116",
-      "line": "A3137",
-      "queuedAt": "2026-10-18T22:35:09+02:00",
-      "type": "route_change",
-      "vehicleId": "7811"
-    },
-    "route:16c7ebc4ed6a5fe587197bee": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALDAKAO",
-          "old": "Metro BOLUETA"
-        }
-      ],
-      "destination": "GALDAKAO",
-      "detectedAt": "2026-10-18T22:35+02:00",
-      "direction": "",
-      "eventId": "route:16c7ebc4ed6a5fe587197bee",
-      "line": "A3932",
-      "queuedAt": "2026-10-18T22:35:09+02:00",
-      "type": "route_change",
-      "vehicleId": "3388"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2079": {
       "consecutiveChecks": 1,
@@ -13052,7 +12945,7 @@
       "requiredMissing": 2
     },
     "2113": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:d21da9db7419bbb42c9d8d94",
       "firstMissingAt": "2026-10-18T22:31:07+02:00",
@@ -13063,7 +12956,7 @@
         "line": "A3223"
       },
       "lastSeenAt": "2026-10-18T22:27:53+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2120": {
@@ -13141,7 +13034,7 @@
       "requiredMissing": 2
     },
     "3265": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:7ac208748d9ca677b1b77010",
       "firstMissingAt": "2026-10-18T22:31:07+02:00",
@@ -13152,7 +13045,7 @@
         "line": "A3631"
       },
       "lastSeenAt": "2026-10-18T22:27:53+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3292": {
@@ -13306,7 +13199,7 @@
       "requiredMissing": 2
     },
     "3380": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:08a42b85112626579e698c6b",
       "firstMissingAt": "2026-10-18T22:31:07+02:00",
@@ -13317,7 +13210,7 @@
         "line": "A3926"
       },
       "lastSeenAt": "2026-10-18T22:27:53+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3381": {
@@ -13574,7 +13467,7 @@
       "requiredMissing": 2
     },
     "8669": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:f01827e80bc0118e8772f56c",
       "firstMissingAt": "2026-10-18T22:31:07+02:00",
@@ -13585,7 +13478,7 @@
         "line": "A3523"
       },
       "lastSeenAt": "2026-10-18T22:27:53+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8671": {
