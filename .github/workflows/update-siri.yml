@@ -1569,6 +1569,7 @@ jobs:
               if str(subscription.get("mode") or "all") == "off":
                   text += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro."
               text += "\n\n«Nueva entrada» avisa cuando un coche desaparecido vuelve a aparecer en el feed."
+              text += "\n\n⏱️ Las opciones se procesan en el siguiente ciclo automático, normalmente en unos dos minutos."
               telegram_api("sendMessage", {
                   "chat_id": destination_chat_id,
                   "text": text,
