@@ -20629,55 +20629,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:de73bfcd0bdfba917b8aaca1": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T08:25+02:00",
-      "direction": "",
-      "eventId": "missing:de73bfcd0bdfba917b8aaca1",
-      "firstMissingAt": "2026-10-18T08:21:00+02:00",
-      "lastSeenAt": "2026-10-18T08:17:58+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T08:25:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3296"
-    },
-    "route_after_gap:939e2f382c89a1594746e0cb": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SESTAO",
-          "old": "CABIECES"
-        }
-      ],
-      "destination": "SESTAO",
-      "detectedAt": "2026-10-18T08:25+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:939e2f382c89a1594746e0cb",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T08:25:00+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7857"
-    },
-    "vehicle_returned:fb9d3a975b17766661ac0a8f": {
-      "destination": "OROZKO Ibarra",
-      "detectedAt": "2026-10-18T08:25+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:fb9d3a975b17766661ac0a8f",
-      "lastKnown": {
-        "destination": "OROZKO Ibarra",
-        "direction": "",
-        "id": "3368",
-        "line": "A3613"
-      },
-      "line": "A3613",
-      "queuedAt": "2026-10-18T08:25:00+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3368"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1719": {
       "consecutiveChecks": 1,
@@ -20762,7 +20714,7 @@
       "requiredMissing": 2
     },
     "3296": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:de73bfcd0bdfba917b8aaca1",
       "firstMissingAt": "2026-10-18T08:21:00+02:00",
@@ -20773,7 +20725,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T08:17:58+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3375": {
