@@ -38,7 +38,7 @@ function vehicleUrl(line, base = BURGOS_SOURCE, filteredPath = false) {
   const timestamp = String(Date.now());
   const url = new URL(base);
   if (filteredPath) {
-    url.pathname = url.pathname.replace(/\\/+$/, "") + "/-/isaenext/filter/" + encodeURIComponent(line);
+    url.pathname = url.pathname + "/-/isaenext/filter/" + encodeURIComponent(line);
   }
   url.searchParams.set("p_p_id", PORTLET_ID);
   url.searchParams.set("p_p_lifecycle", "2");
