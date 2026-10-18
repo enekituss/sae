@@ -23766,68 +23766,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:e843b295fbde45aa278156f1": {
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-18T21:49+02:00",
-      "direction": "",
-      "eventId": "missing:e843b295fbde45aa278156f1",
-      "firstMissingAt": "2026-10-18T21:45:06+02:00",
-      "lastSeenAt": "2026-10-18T21:41:17+02:00",
-      "line": "A3916",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T21:49:06+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8663"
-    },
-    "missing:f59c6e949e26507359053f54": {
-      "destination": "OKONDO",
-      "detectedAt": "2026-10-18T21:49+02:00",
-      "direction": "",
-      "eventId": "missing:f59c6e949e26507359053f54",
-      "firstMissingAt": "2026-10-18T21:45:06+02:00",
-      "lastSeenAt": "2026-10-18T21:41:17+02:00",
-      "line": "A3341",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T21:49:06+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "5039"
-    },
-    "route_after_gap:4434e2e9237cdb35c0a0ba0d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "PORTUGALETE",
-          "old": "MUSKIZ"
-        }
-      ],
-      "destination": "PORTUGALETE",
-      "detectedAt": "2026-10-18T21:49+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:4434e2e9237cdb35c0a0ba0d",
-      "line": "A3321",
-      "queuedAt": "2026-10-18T21:49:06+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7864"
-    },
-    "vehicle_returned:eb753c8d61894e960afc66f4": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T21:49+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:eb753c8d61894e960afc66f4",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "2090",
-        "line": "A3247"
-      },
-      "line": "A3247",
-      "queuedAt": "2026-10-18T21:49:06+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2090"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1716": {
@@ -24093,7 +24032,7 @@
       "requiredMissing": 2
     },
     "5039": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:f59c6e949e26507359053f54",
       "firstMissingAt": "2026-10-18T21:45:06+02:00",
@@ -24104,7 +24043,7 @@
         "line": "A3341"
       },
       "lastSeenAt": "2026-10-18T21:41:17+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7814": {
@@ -24183,7 +24122,7 @@
       "requiredMissing": 2
     },
     "8663": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:e843b295fbde45aa278156f1",
       "firstMissingAt": "2026-10-18T21:45:06+02:00",
@@ -24194,7 +24133,7 @@
         "line": "A3916"
       },
       "lastSeenAt": "2026-10-18T21:41:17+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8680": {
