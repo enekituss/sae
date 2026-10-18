@@ -18,6 +18,7 @@
 
   let lineSnapshots = new Map();
   let staleLines = new Set();
+  const expandedLines = new Set();
   let lastSuccessfulUpdate = null;
   let updateRunning = false;
   let lastQueryHadSuccess = false;
@@ -178,8 +179,9 @@
     for (const line of matchingLines) {
       const lineVehicles = groups.get(line);
       const isStale = staleLines.has(line);
+      const isOpen = expandedLines.has(line) || Boolean(query);
       const section = document.createElement("section");
-      section.className = "line" + (query ? " open" : "");
+      section.className = "line" + (isOpen ? " open" : "");
       let cards = "";
       for (const vehicle of lineVehicles) {
         const destination = vehicle.destination
@@ -200,7 +202,7 @@
           "</div></article>";
       }
       section.innerHTML =
-        '<button class="line-head" type="button" aria-expanded="' + Boolean(query) +
+        '<button class="line-head" type="button" aria-expanded="' + isOpen +
         '" aria-label="Mostrar autobuses de ' + escapeHTML(displayLine(line)) + '">' +
         '<span class="line-leading"><span class="line-chevron" aria-hidden="true">›</span><span>' +
         '<span class="line-name">' + escapeHTML(displayLine(line)) + "</span>" +
@@ -211,8 +213,11 @@
         (lineVehicles.length === 1 ? " activo" : " activos") + "</span></button>" +
         '<div class="vehicles">' + cards + "</div>";
       section.querySelector(".line-head").addEventListener("click", () => {
-        section.classList.toggle("open");
-        section.querySelector(".line-head").setAttribute("aria-expanded", section.classList.contains("open") ? "true" : "false");
+        if (expandedLines.has(line)) expandedLines.delete(line);
+        else expandedLines.add(line);
+        const open = expandedLines.has(line) || Boolean($("search").value.trim());
+        section.classList.toggle("open", open);
+        section.querySelector(".line-head").setAttribute("aria-expanded", open ? "true" : "false");
       });
       container.appendChild(section);
     }
