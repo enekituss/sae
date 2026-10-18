@@ -27812,71 +27812,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:7ef842ae0471b51dabeb4fec": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T17:53+02:00",
-      "direction": "",
-      "eventId": "missing:7ef842ae0471b51dabeb4fec",
-      "firstMissingAt": "2026-10-18T17:49:03+02:00",
-      "lastSeenAt": "2026-10-18T17:45:16+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T17:53:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2089"
-    },
-    "route_after_gap:e4e13b6e7246a97042bebc45": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "PLENTZIA",
-          "old": "MUNGIA"
-        }
-      ],
-      "destination": "PLENTZIA",
-      "detectedAt": "2026-10-18T17:53+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:e4e13b6e7246a97042bebc45",
-      "line": "A3537",
-      "queuedAt": "2026-10-18T17:53:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2132"
-    },
-    "vehicle_returned:39488531d4c4062abfa84637": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T17:53+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:39488531d4c4062abfa84637",
-      "lastKnown": {
-        "destination": "BILBAO (Aut.)",
-        "direction": "",
-        "id": "8678",
-        "line": "A3915"
-      },
-      "line": "A3915",
-      "queuedAt": "2026-10-18T17:53:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "8678"
-    },
-    "vehicle_returned:fc3ec9328731ac43cc2fc28c": {
-      "destination": "OTXANDIO-UBIDE",
-      "detectedAt": "2026-10-18T17:53+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:fc3ec9328731ac43cc2fc28c",
-      "lastKnown": {
-        "destination": "OTXANDIO-UBIDE",
-        "direction": "",
-        "id": "3311",
-        "line": "A3925"
-      },
-      "line": "A3925",
-      "queuedAt": "2026-10-18T17:53:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3311"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2076": {
@@ -28002,7 +27938,7 @@
       "requiredMissing": 2
     },
     "2089": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:7ef842ae0471b51dabeb4fec",
       "firstMissingAt": "2026-10-18T17:49:03+02:00",
@@ -28013,7 +27949,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T17:45:16+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3365": {
