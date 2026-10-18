@@ -20,9 +20,9 @@ PORTLET_PREFIX = "_as_asac_isaenext_IsaenextWebPortlet_"
 OUTPUT = Path("burgos-vehicles.json")
 USER_AGENT = "Mozilla/5.0 (compatible; SAE-Spotter/1.0)"
 LINES = [f"{number:02d}" for number in range(1, 24)] + ["73", "87", "88", "89", "C1", "C2"]
-MAX_WORKERS = 5
-RETRIES = 3
-TIMEOUT_SECONDS = 20
+MAX_WORKERS = 8
+RETRIES = 2
+TIMEOUT_SECONDS = 10
 
 
 def first_text(item, *keys):
@@ -117,7 +117,7 @@ def fetch_line(line):
         except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError, ValueError) as exc:
             last_error = exc
             if attempt + 1 < RETRIES:
-                time.sleep(1 + attempt)
+                time.sleep(0.5 + attempt)
     raise RuntimeError(f"Línea {line}: {last_error}")
 
 
