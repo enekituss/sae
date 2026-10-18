@@ -110,6 +110,8 @@ jobs:
                   health = json.loads(response.read().decode("utf-8"))
               scheduler = health.get("telegramScheduler") or {}
               print("OK: Worker independiente de Burgos responde en /health.")
+              print("Versión API del Worker: " + str(health.get("apiVersion") or "sin marca de versión"))
+              print("Endpoints publicados: " + ", ".join(health.get("endpoints") or []))
               print("Programador BURGOS_GITHUB_TOKEN configurado: " + str(bool(scheduler.get("configured"))))
               print("Fuente declarada por el Worker: " + str(health.get("source") or "No indicada"))
               if not scheduler.get("configured"):
