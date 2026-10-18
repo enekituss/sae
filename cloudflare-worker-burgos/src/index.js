@@ -221,12 +221,13 @@ async function fetchLiveSnapshot() {
   }
   const nodes = nodesPayload.filter(node => readLiveNodeId(node));
   const chunks = [];
-  for (let i = 0; i < nodes.length; i += 50) chunks.push(nodes.slice(i, i + 50));
+  // 100 IDs still fit in a compact query string and halve the number of round trips.
+  for (let i = 0; i < nodes.length; i += 100) chunks.push(nodes.slice(i, i + 100));
 
   const results = new Array(chunks.length);
   const errors = [];
   let cursor = 0;
-  const concurrency = Math.min(5, chunks.length);
+  const concurrency = Math.min(8, chunks.length);
 
   await Promise.all(Array.from({ length: concurrency }, async () => {
     while (true) {
@@ -276,8 +277,36 @@ async function fetchLiveSnapshot() {
   };
 }
 
+const LIVE_CACHE_TTL_SECONDS = 300;
+const LIVE_REFRESH_AFTER_MS = 45 * 1000;
+let liveSnapshotRefreshPromise = null;
+
+async function refreshLiveSnapshotCache(cache, cacheRequest) {
+  if (liveSnapshotRefreshPromise) return liveSnapshotRefreshPromise;
+  const promise = (async () => {
+    const data = await fetchLiveSnapshot();
+    try {
+      await cache.put(cacheRequest, new Response(JSON.stringify(data), {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "public, max-age=" + LIVE_CACHE_TTL_SECONDS
+        }
+      }));
+    } catch {
+      // The fetched snapshot remains usable even if the edge cache is unavailable.
+    }
+    return data;
+  })();
+  liveSnapshotRefreshPromise = promise;
+  try {
+    return await promise;
+  } finally {
+    if (liveSnapshotRefreshPromise === promise) liveSnapshotRefreshPromise = null;
+  }
+}
+
 export default {
-  async fetch(request) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
@@ -305,21 +334,31 @@ export default {
       const cacheRequest = new Request(new URL("/__cache/burgos-live", url.origin).toString(), { method: "GET" });
       try {
         const cached = await cache.match(cacheRequest);
-        if (cached) return jsonResponse(request, { ...(await cached.json()), cacheHit: true }, 200, {
-          "Cache-Control": "public, max-age=8"
-        });
+        if (cached) {
+          const data = await cached.json();
+          const timestamp = Date.parse(data?.fetchedAt || "");
+          const ageMs = Number.isFinite(timestamp) ? Math.max(0, Date.now() - timestamp) : Infinity;
+          const stale = ageMs >= LIVE_REFRESH_AFTER_MS;
+
+          // Return the saved estimate snapshot immediately. When it gets old,
+          // refresh in the background rather than making users wait for all stops again.
+          if (stale && ctx?.waitUntil) {
+            ctx.waitUntil(refreshLiveSnapshotCache(cache, cacheRequest).catch(error => {
+              console.error("No se pudo actualizar la caché de estimaciones de Burgos:", error?.message || String(error));
+            }));
+          }
+          return jsonResponse(request, {
+            ...data,
+            cacheHit: true,
+            stale,
+            cacheAgeSeconds: Number.isFinite(ageMs) ? Math.round(ageMs / 1000) : null
+          }, 200, { "Cache-Control": "public, max-age=8" });
+        }
       } catch {
         // La caché es opcional.
       }
       try {
-        const data = await fetchLiveSnapshot();
-        try {
-          await cache.put(cacheRequest, new Response(JSON.stringify(data), {
-            headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=8" }
-          }));
-        } catch {
-          // No se interrumpe la consulta si la caché no está disponible.
-        }
+        const data = await refreshLiveSnapshotCache(cache, cacheRequest);
         return jsonResponse(request, data, 200, { "Cache-Control": "public, max-age=8" });
       } catch (error) {
         return jsonResponse(request, {
