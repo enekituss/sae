@@ -7,7 +7,9 @@
     "https://api.allorigins.win/raw?url=",
     "https://api.codetabs.com/v1/proxy?quest="
   ];
-  const WORKER_STORAGE_KEY = "saeBurgosRealtimeProxy";
+  // Worker dedicado a Burgos: viene configurado por defecto en el proyecto.
+  const DEFAULT_WORKER_URL = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev";
+  const WORKER_STORAGE_KEY = "saeBurgosDedicatedWorkerUrl";
   const ALL_LINES = [
     ...Array.from({length: 23}, (_, i) => String(i + 1).padStart(2, "0")),
     "73", "87", "88", "89", "C1", "C2"
@@ -293,9 +295,11 @@
 
   function getWorkerBaseUrl() {
     try {
-      return normalizeWorkerBase(localStorage.getItem(WORKER_STORAGE_KEY) || "");
+      // Una URL guardada permite sustituirla en el futuro; si no hay ninguna,
+      // utiliza automáticamente el Worker de Burgos incluido en este proyecto.
+      return normalizeWorkerBase(localStorage.getItem(WORKER_STORAGE_KEY) || DEFAULT_WORKER_URL);
     } catch {
-      return "";
+      return DEFAULT_WORKER_URL;
     }
   }
 
