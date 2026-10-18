@@ -19,6 +19,14 @@ Web de consulta de líneas y vehículos Bizkaibus detectados por SIRI, con desti
 
 ## Alertas de cambios de ruta por Telegram
 
+El bot tiene un menú personal por chat. Envía `/start` o `/menu` para elegir entre:
+
+- **Todos los avisos** de vehículos.
+- **Solo vehículos sin posición reciente** (posible fin de servicio; no confirma una baja administrativa).
+- **Solo cambios del campo línea**; los cambios únicamente de destino o sentido no entran en este filtro.
+- **Seguir un coche por ID**, indicando su identificador numérico. También se puede usar `/id 1101` para configurarlo directamente.
+
+Las preferencias se guardan por chat en `vehicle-alert-state.json`, así que los filtros de una persona no cambian los de las demás. El chat configurado en `TELEGRAM_CHAT_ID` conserva todos los avisos por defecto hasta que elija otra opción.
 La actualización automática compara snapshots consecutivos de SIRI y mantiene una cola persistente de avisos de Telegram:
 
 - **Entrada en el feed:** un vehículo con ID publicado que no estaba en el snapshot anterior debe aparecer en dos consultas válidas consecutivas separadas al menos dos minutos. La primera ejecución establece la referencia y no anuncia toda la flota como nueva.
