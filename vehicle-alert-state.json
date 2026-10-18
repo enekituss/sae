@@ -24890,39 +24890,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:7790e4d34c12c6f202f65ef3": {
-      "destination": "BALMASEDA Turtzioz-Artzentales",
-      "detectedAt": "2026-10-18T19:43+02:00",
-      "direction": "",
-      "eventId": "missing:7790e4d34c12c6f202f65ef3",
-      "firstMissingAt": "2026-10-18T19:39:49+02:00",
-      "lastSeenAt": "2026-10-18T19:37:37+02:00",
-      "line": "A0652",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T19:43:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "5017"
-    },
-    "route:0b6249a1b4e33adf2a107175": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "Metro BOLUETA",
-          "old": "GALDAKAO"
-        }
-      ],
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-18T19:43+02:00",
-      "direction": "",
-      "eventId": "route:0b6249a1b4e33adf2a107175",
-      "line": "A3932",
-      "queuedAt": "2026-10-18T19:43:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3332"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1714": {
@@ -25110,7 +25078,7 @@
       "requiredMissing": 2
     },
     "5017": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:7790e4d34c12c6f202f65ef3",
       "firstMissingAt": "2026-10-18T19:39:49+02:00",
@@ -25121,7 +25089,7 @@
         "line": "A0652"
       },
       "lastSeenAt": "2026-10-18T19:37:37+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7853": {
