@@ -17599,122 +17599,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:0823e5f2a774ac39ada028e1": {
-      "destination": "LEKEITIO",
-      "detectedAt": "2026-10-18T22:13+02:00",
-      "direction": "",
-      "eventId": "missing:0823e5f2a774ac39ada028e1",
-      "firstMissingAt": "2026-10-18T22:09:07+02:00",
-      "lastSeenAt": "2026-10-18T22:05:28+02:00",
-      "line": "A3512",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T22:13:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8649"
-    },
-    "missing:65392a7c849f1d071ee37490": {
-      "destination": "BARAKALDO",
-      "detectedAt": "2026-10-18T22:13+02:00",
-      "direction": "",
-      "eventId": "missing:65392a7c849f1d071ee37490",
-      "firstMissingAt": "2026-10-18T22:09:07+02:00",
-      "lastSeenAt": "2026-10-18T22:05:28+02:00",
-      "line": "A3137",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T22:13:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7872"
-    },
-    "route:2b750bc0d34294ccfa20ff39": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "LUTXANA"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T22:13+02:00",
-      "direction": "",
-      "eventId": "route:2b750bc0d34294ccfa20ff39",
-      "line": "A3129",
-      "queuedAt": "2026-10-18T22:13:07+02:00",
-      "type": "route_change",
-      "vehicleId": "7876"
-    },
-    "route:7894a8b400a5ae6e571d8c74": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ARRIGORRIAGA",
-          "old": "GALDAKAO Ospitalea"
-        }
-      ],
-      "destination": "ARRIGORRIAGA",
-      "detectedAt": "2026-10-18T22:13+02:00",
-      "direction": "",
-      "eventId": "route:7894a8b400a5ae6e571d8c74",
-      "line": "A3641",
-      "queuedAt": "2026-10-18T22:13:07+02:00",
-      "type": "route_change",
-      "vehicleId": "3365"
-    },
-    "route:c387d54fca3c7b90ed942f80": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T22:13+02:00",
-      "direction": "",
-      "eventId": "route:c387d54fca3c7b90ed942f80",
-      "line": "A3115",
-      "queuedAt": "2026-10-18T22:13:07+02:00",
-      "type": "route_change",
-      "vehicleId": "7830"
-    },
-    "route_after_gap:27810e79e8bface44ba89f8b": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "VALLE DE TRAPAGA",
-          "old": "CRUCES/GURUTZETA"
-        }
-      ],
-      "destination": "VALLE DE TRAPAGA",
-      "detectedAt": "2026-10-18T22:13+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:27810e79e8bface44ba89f8b",
-      "line": "A3141",
-      "queuedAt": "2026-10-18T22:13:07+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7878"
-    },
-    "vehicle_returned:8a09f7b3d62f7b6eeac035ca": {
-      "destination": "BAKIO (Aut.)",
-      "detectedAt": "2026-10-18T22:13+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:8a09f7b3d62f7b6eeac035ca",
-      "lastKnown": {
-        "destination": "BAKIO (Aut.)",
-        "direction": "",
-        "id": "2096",
-        "line": "A3518"
-      },
-      "line": "A3518",
-      "queuedAt": "2026-10-18T22:13:07+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2096"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "7813": {
@@ -17953,7 +17838,7 @@
       "requiredMissing": 2
     },
     "7872": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:65392a7c849f1d071ee37490",
       "firstMissingAt": "2026-10-18T22:09:07+02:00",
@@ -17964,7 +17849,7 @@
         "line": "A3137"
       },
       "lastSeenAt": "2026-10-18T22:05:28+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7886": {
@@ -17983,7 +17868,7 @@
       "requiredMissing": 2
     },
     "8649": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:0823e5f2a774ac39ada028e1",
       "firstMissingAt": "2026-10-18T22:09:07+02:00",
@@ -17994,7 +17879,7 @@
         "line": "A3512"
       },
       "lastSeenAt": "2026-10-18T22:05:28+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8652": {
@@ -18125,10 +18010,14 @@
       "vehicleId": ""
     },
     "5333330154": {
-      "awaitingVehicleId": true,
+      "awaitingVehicleId": false,
       "mode": "vehicle",
-      "vehicleId": "7830"
+      "vehicleId": "7830",
+      "vehicleIds": [
+        "7830",
+        "7815"
+      ]
     }
   },
-  "telegramUpdateOffset": 30217620
+  "telegramUpdateOffset": 30217621
 }
