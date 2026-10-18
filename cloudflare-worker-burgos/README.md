@@ -24,7 +24,7 @@ Abre la URL `workers.dev` asignada por Cloudflare:
 
 La URL del Worker se introduce en SAE Spotter → Burgos → **Configurar conexión**. Pega la URL base, sin añadir rutas.
 
-La fuente de flota es el recurso público `resourceVehicles`; las próximas paradas se obtienen del recurso `resourceEstimations` por parada. La página asocia las estimaciones al ID de vehículo y la línea y elige la parada con menor tiempo estimado no negativo. Las estimaciones pueden no estar disponibles para todos los coches; el visor no inventa paradas. Solo se permite CORS para `https://enekituss.github.io`.
+El monitor utiliza el endpoint oficial `https://movilidad.aytoburgos.es/es/rutas-en-directo` con `p_p_resource_id=resourceEstimations`, consultando cada línea mediante `_as_asac_isaenext_IsaenextWebPortlet_line` y los IDs publicados por `resourceNodes`. Compara los IDs, la línea, el destino y el sentido entre snapshots completos. Si una consulta falla o la respuesta es parcial, conserva el estado anterior y no genera alertas falsas. Las estimaciones pueden no estar disponibles para todos los coches. Solo se permite CORS para `https://enekituss.github.io`.
 
 ## Requisitos del bot de Telegram
 
