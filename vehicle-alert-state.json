@@ -25289,34 +25289,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:a03bc838cd964cae431a2b76": {
-      "destination": "GALDAKAO Urreta",
-      "detectedAt": "2026-10-18T20:09+02:00",
-      "direction": "",
-      "eventId": "missing:a03bc838cd964cae431a2b76",
-      "firstMissingAt": "2026-10-18T20:05:04+02:00",
-      "lastSeenAt": "2026-10-18T20:01:41+02:00",
-      "line": "A3631",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:09:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3354"
-    },
-    "missing:aa90e415c1c345c43e381606": {
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T20:09+02:00",
-      "direction": "",
-      "eventId": "missing:aa90e415c1c345c43e381606",
-      "firstMissingAt": "2026-10-18T20:05:04+02:00",
-      "lastSeenAt": "2026-10-18T20:01:41+02:00",
-      "line": "A3451",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:09:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1721"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1731": {
@@ -25415,7 +25388,7 @@
       "requiredMissing": 2
     },
     "1721": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:aa90e415c1c345c43e381606",
       "firstMissingAt": "2026-10-18T20:05:04+02:00",
@@ -25426,7 +25399,7 @@
         "line": "A3451"
       },
       "lastSeenAt": "2026-10-18T20:01:41+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2076": {
@@ -25502,7 +25475,7 @@
       "requiredMissing": 2
     },
     "3354": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a03bc838cd964cae431a2b76",
       "firstMissingAt": "2026-10-18T20:05:04+02:00",
@@ -25513,7 +25486,7 @@
         "line": "A3631"
       },
       "lastSeenAt": "2026-10-18T20:01:41+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3386": {
