@@ -33,7 +33,6 @@ jobs:
         env:
           BURGOS_TELEGRAM_BOT_TOKEN: ${{ secrets.BURGOS_TELEGRAM_BOT_TOKEN }}
           BURGOS_TELEGRAM_CHAT_ID: ${{ secrets.BURGOS_TELEGRAM_CHAT_ID }}
-          BURGOS_WORKER_URL: https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev
         shell: bash
         run: |
           python - <<'PY'
@@ -434,7 +433,8 @@ jobs:
                   "https://movilidad.aytoburgos.es/rutas-en-directo/-/isaenext/filter/" + line,
                   "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo/-/isaenext/filter/" + line,
                   "https://www.aytoburgos.es/web/movilidad/rutas-en-directo/-/isaenext/filter/" + line,
-                  "https://movilidad.aytoburgos.es/rutas-en-directo"
+                  "https://programaseducativos.aytoburgos.es/web/movilidad/rutas-en-directo/-/isaenext/filter/" + line,
+                  "https://programaseducativos.aytoburgos.es/en/web/movilidad/rutas-en-directo/-/isaenext/filter/" + line
               ]
               errors = []
               for base_url in candidate_urls:
@@ -528,7 +528,9 @@ jobs:
                   official_pages = [
                       "https://movilidad.aytoburgos.es/rutas-en-directo",
                       "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
-                      "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
+                      "https://www.aytoburgos.es/web/movilidad/rutas-en-directo",
+                      "https://programaseducativos.aytoburgos.es/en/web/movilidad/rutas-en-directo",
+                      "https://programaseducativos.aytoburgos.es/fr/web/movilidad/rutas-en-directo"
                   ]
 
                   def fetch_direct_isaenext(resource, extra=None):
@@ -662,71 +664,9 @@ jobs:
                   current = {}
                   snapshot_ok = False
 
-          # Última alternativa: estimaciones del Worker, solo si la consulta oficial directa falla.
-          if not snapshot_ok:
-              try:
-                  request = urllib.request.Request(
-                      WORKER_URL + "/api/burgos/live",
-                      headers={"Accept": "application/json", "User-Agent": "SAE-Spotter-Burgos-Telegram/1.0"}
-                  )
-                  try:
-                      with urllib.request.urlopen(request, timeout=110) as response:
-                          payload = json.loads(response.read().decode("utf-8"))
-                  except urllib.error.HTTPError as exc:
-                      raw_error = exc.read().decode("utf-8", errors="replace").strip()
-                      detail = ""
-                      try:
-                          error_payload = json.loads(raw_error)
-                          if isinstance(error_payload, dict):
-                              detail = clean(error_payload.get("error"))
-                      except Exception:
-                          pass
-                      detail = detail or raw_error[:500]
-                      raise RuntimeError("HTTP " + str(exc.code) + " en /api/burgos/live: " + detail) from exc
-
-                  observations = payload.get("observations") if isinstance(payload, dict) else None
-                  if not isinstance(observations, list):
-                      raise RuntimeError(clean(payload.get("error")) if isinstance(payload, dict) else "la API no devolvió una lista de estimaciones.")
-                  completed_groups = int(payload.get("completedGroups") or 0)
-                  total_groups = int(payload.get("totalGroups") or 0)
-                  if payload.get("partial") or (total_groups and completed_groups < total_groups):
-                      warnings = payload.get("warnings") or []
-                      raise RuntimeError("estimaciones incompletas (" + str(completed_groups) + "/" + str(total_groups) + " grupos): " + "; ".join(map(str, warnings[:3])))
-
-                  candidate_current = {}
-                  candidate_eta = {}
-                  for observation in observations:
-                      if not isinstance(observation, dict):
-                          continue
-                      vehicle_id = clean(observation.get("vehicleId") or observation.get("vehicle") or observation.get("vehicle_id"))
-                      if not vehicle_id or vehicle_id == "0":
-                          continue
-                      vehicle = normalise_vehicle({
-                          "id": vehicle_id,
-                          "lineId": observation.get("line"),
-                          "destination": observation.get("destination"),
-                          "direction": observation.get("direction")
-                      })
-                      if not vehicle:
-                          continue
-                      try:
-                          eta_score = float(observation.get("seconds"))
-                      except (TypeError, ValueError):
-                          eta_score = float("inf")
-                      if vehicle_id not in candidate_current or eta_score < candidate_eta.get(vehicle_id, float("inf")):
-                          candidate_current[vehicle_id] = vehicle
-                          candidate_eta[vehicle_id] = eta_score
-
-                  if observations and not candidate_current:
-                      raise RuntimeError("hay estimaciones pero ninguna incluye ID de vehículo.")
-                  current = candidate_current
-                  snapshot_ok = True
-                  print("Snapshot de Burgos válido mediante estimaciones oficiales: " + str(len(current)) + " coches identificados (" + str(len(observations)) + " observaciones).")
-              except Exception as exc:
-                  source_errors.append("estimaciones del Worker: " + str(exc))
-                  current = {}
-                  snapshot_ok = False
-
+          # Mantén Burgos independiente: no hay fallback al Worker compartido con Bizkaibus.
+          # Si todas las fuentes municipales directas fallan, se conserva el estado
+          # anterior y no se generan alertas falsas.
           if not snapshot_ok:
               print("AVISO: no se ha podido obtener un snapshot completo de Burgos; no se recalcularán las alertas: " + " || ".join(source_errors))
           if snapshot_ok:
