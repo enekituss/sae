@@ -125,6 +125,157 @@ async function fetchSnapshot() {
   };
 }
 
+
+// ISAENEXT devuelve estimaciones por parada, no siempre una parada siguiente
+// explícita dentro de resourceVehicles. Estas observaciones permiten asociar
+// cada coche con su próxima parada y el tiempo/distancia estimados.
+const BURGOS_LIVE_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
+
+function liveUrl(resource, extra = {}) {
+  const url = new URL(BURGOS_LIVE_SOURCE);
+  url.searchParams.set("p_p_id", PORTLET_ID);
+  url.searchParams.set("p_p_lifecycle", "2");
+  url.searchParams.set("p_p_state", "normal");
+  url.searchParams.set("p_p_mode", "view");
+  url.searchParams.set("p_p_cacheability", "cacheLevelPage");
+  url.searchParams.set("p_p_resource_id", resource);
+  for (const [key, value] of Object.entries(extra)) url.searchParams.set(key, value);
+  return url;
+}
+
+async function fetchLiveJson(url) {
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "Accept": "application/json, text/plain, */*",
+      "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
+      "Referer": BURGOS_LIVE_SOURCE
+    },
+    signal: AbortSignal.timeout(12000)
+  });
+  const body = await response.text();
+  if (!response.ok) throw new Error("ISAENEXT respondió HTTP " + response.status + ".");
+  try { return JSON.parse(body); }
+  catch { throw new Error("ISAENEXT no devolvió JSON reconocible."); }
+}
+
+function readLiveNodeId(node) {
+  return String(node?.num ?? node?.id ?? node?.stopId ?? node?.nodeId ??
+    node?.nodoId ?? node?.idNodo ?? node?.numNodo ?? "").trim();
+}
+
+function normalizeLiveObservations(nodes, results) {
+  const nodeById = new Map(nodes.map(node => [readLiveNodeId(node), node]));
+  const observations = [];
+  const rows = Array.isArray(results) ? results : [];
+
+  rows.forEach((result, resultIndex) => {
+    const explicitId = readLiveNodeId(result);
+    let stopId = explicitId;
+    let node = nodeById.get(explicitId) || null;
+
+    // Algunas versiones no devuelven el ID de la parada en cada objeto,
+    // pero devuelven un resultado por nodo y mantienen el mismo orden.
+    if (!node && rows.length === nodes.length && nodes[resultIndex]) {
+      node = nodes[resultIndex];
+      stopId = readLiveNodeId(node);
+    }
+    if (!node) node = result;
+
+    const routeGroups = result?.routeEstimationByNode || result?.routes || [];
+    for (const routeGroup of routeGroups) {
+      const line = String(routeGroup?.line ?? routeGroup?.route ?? routeGroup?.lineName ?? "").trim();
+      const estimates = routeGroup?.publicEstimationVHExts ||
+        routeGroup?.estimations || routeGroup?.buses || [];
+      for (const item of estimates) {
+        const id = String(item?.vehicle ?? item?.vehicleId ?? item?.vehicle_id ?? "").trim();
+        const secondsRaw = item?.seconds;
+        const metersRaw = item?.meters;
+        const secondsNum = secondsRaw === null || secondsRaw === undefined || secondsRaw === "" ? NaN : Number(secondsRaw);
+        const metersNum = metersRaw === null || metersRaw === undefined || metersRaw === "" ? NaN : Number(metersRaw);
+        const lat = Number(item?.lat ?? item?.latitude);
+        const lon = Number(item?.lon ?? item?.lng ?? item?.longitude);
+        observations.push({
+          vehicleId: id && id !== "0" ? id : "",
+          line,
+          destination: String(item?.destination ?? "").trim(),
+          seconds: Number.isFinite(secondsNum) ? secondsNum : null,
+          meters: Number.isFinite(metersNum) ? metersNum : null,
+          stopId,
+          stopName: String(node?.name ?? node?.stop_name ?? node?.nombre ?? "").trim(),
+          stopLat: Number(node?.lat ?? node?.latitude),
+          stopLon: Number(node?.lng ?? node?.lon ?? node?.longitude),
+          vehicleLat: Number.isFinite(lat) && lat >= 42 && lat <= 43 ? lat : null,
+          vehicleLon: Number.isFinite(lon) && lon >= -4 && lon <= -3 ? lon : null
+        });
+      }
+    }
+  });
+  return observations;
+}
+
+async function fetchLiveSnapshot() {
+  const nodesPayload = await fetchLiveJson(liveUrl("resourceNodes"));
+  if (!Array.isArray(nodesPayload) || !nodesPayload.length) {
+    throw new Error("ISAENEXT no devolvió la lista de paradas.");
+  }
+  const nodes = nodesPayload.filter(node => readLiveNodeId(node));
+  const chunks = [];
+  for (let i = 0; i < nodes.length; i += 50) chunks.push(nodes.slice(i, i + 50));
+
+  const results = new Array(chunks.length);
+  const errors = [];
+  let cursor = 0;
+  const concurrency = Math.min(5, chunks.length);
+
+  await Promise.all(Array.from({ length: concurrency }, async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= chunks.length) return;
+      const chunk = chunks[index];
+      try {
+        const payload = await fetchLiveJson(liveUrl("resourceEstimations", {
+          "_as_asac_isaenext_IsaenextWebPortlet_tipo": "1",
+          "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": chunk.map(readLiveNodeId).join(",")
+        }));
+        if (!Array.isArray(payload)) throw new Error("respuesta de estimaciones no reconocible");
+        if (payload.length === 1 && chunk.length > 2) {
+          throw new Error("ISAENEXT sólo devolvió un resultado para un grupo de " + chunk.length + " paradas");
+        }
+        results[index] = { nodes: chunk, rows: payload };
+      } catch (error) {
+        results[index] = null;
+        errors.push("grupo " + (index + 1) + ": " + (error?.message || String(error)));
+      }
+    }
+  }));
+
+  const complete = results.filter(Boolean);
+  if (!complete.length) {
+    throw new Error("No se pudo consultar ninguna tanda de estimaciones. " + errors.slice(0, 3).join(" | "));
+  }
+  const observations = [];
+  let resultCount = 0;
+  for (const result of complete) {
+    resultCount += result.rows.length;
+    observations.push(...normalizeLiveObservations(result.nodes, result.rows));
+  }
+
+  return {
+    ok: true,
+    fetchedAt: new Date().toISOString(),
+    source: BURGOS_LIVE_SOURCE,
+    sourceType: "ISAENEXT · estimaciones por parada",
+    stopCount: nodes.length,
+    resultCount,
+    completedGroups: complete.length,
+    totalGroups: chunks.length,
+    partial: errors.length > 0,
+    warnings: errors.slice(0, 5),
+    observations
+  };
+}
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
@@ -145,8 +296,39 @@ export default {
         service: "SAE Spotter · proxy independiente de Burgos",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
-        endpoints: ["/api/burgos/vehicles", "/api/burgos/vehicles?line=01"]
+        endpoints: ["/api/burgos/vehicles", "/api/burgos/vehicles?line=01", "/api/burgos/live"]
       });
+    }
+
+    if (url.pathname === "/api/burgos/live") {
+      const cache = caches.default;
+      const cacheRequest = new Request(new URL("/__cache/burgos-live", url.origin).toString(), { method: "GET" });
+      try {
+        const cached = await cache.match(cacheRequest);
+        if (cached) return jsonResponse(request, { ...(await cached.json()), cacheHit: true }, 200, {
+          "Cache-Control": "public, max-age=8"
+        });
+      } catch {
+        // La caché es opcional.
+      }
+      try {
+        const data = await fetchLiveSnapshot();
+        try {
+          await cache.put(cacheRequest, new Response(JSON.stringify(data), {
+            headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=8" }
+          }));
+        } catch {
+          // No se interrumpe la consulta si la caché no está disponible.
+        }
+        return jsonResponse(request, data, 200, { "Cache-Control": "public, max-age=8" });
+      } catch (error) {
+        return jsonResponse(request, {
+          ok: false,
+          error: error?.message || "No se pudieron consultar las estimaciones de Burgos.",
+          source: BURGOS_LIVE_SOURCE,
+          fetchedAt: new Date().toISOString()
+        }, 502);
+      }
     }
 
     if (url.pathname !== "/api/burgos/vehicles") {
