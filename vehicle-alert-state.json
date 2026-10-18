@@ -25718,45 +25718,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:fb5234dbd0b6e4deeb0f0324": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T11:29+02:00",
-      "direction": "",
-      "eventId": "missing:fb5234dbd0b6e4deeb0f0324",
-      "firstMissingAt": "2026-10-18T11:25:02+02:00",
-      "lastSeenAt": "2026-10-18T11:21:28+02:00",
-      "line": "A3925",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T11:29:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3353"
-    },
-    "route_after_gap:e24284e606400477993b60ab": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3335",
-          "old": "A3135"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-18T11:29+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:e24284e606400477993b60ab",
-      "line": "A3335",
-      "queuedAt": "2026-10-18T11:29:00+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7815"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1719": {
@@ -25880,7 +25842,7 @@
       "requiredMissing": 2
     },
     "3353": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:fb5234dbd0b6e4deeb0f0324",
       "firstMissingAt": "2026-10-18T11:25:02+02:00",
@@ -25891,7 +25853,7 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-18T11:21:28+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "5017": {
