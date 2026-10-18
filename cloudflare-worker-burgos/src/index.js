@@ -34,9 +34,12 @@ function jsonResponse(request, data, status = 200, extra = {}) {
   });
 }
 
-function vehicleUrl(line, base = BURGOS_SOURCE) {
+function vehicleUrl(line, base = BURGOS_SOURCE, filteredPath = false) {
   const timestamp = String(Date.now());
   const url = new URL(base);
+  if (filteredPath) {
+    url.pathname = url.pathname.replace(/\\/+$/, "") + "/-/isaenext/filter/" + encodeURIComponent(line);
+  }
   url.searchParams.set("p_p_id", PORTLET_ID);
   url.searchParams.set("p_p_lifecycle", "2");
   url.searchParams.set("p_p_state", "normal");
@@ -51,21 +54,18 @@ function vehicleUrl(line, base = BURGOS_SOURCE) {
 }
 
 async function fetchVehiclesForLine(line) {
-  const targetUrl = vehicleUrl(line, BURGOS_SOURCE).toString();
+  const filteredUrl = vehicleUrl(line, BURGOS_SOURCE, true).toString();
   const attempts = [
-    ...BURGOS_SOURCE_FALLBACKS.map(base => ({
-      label: new URL(base).host,
-      url: vehicleUrl(line, base).toString(),
-      timeoutMs: 5000
-    })),
+    { label: "ISAENEXT canonical", url: vehicleUrl(line, BURGOS_SOURCE).toString(), timeoutMs: 4000 },
+    { label: "ISAENEXT ruta de línea", url: filteredUrl, timeoutMs: 4000 },
     {
       label: "AllOrigins",
-      url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl),
+      url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(filteredUrl),
       timeoutMs: 8000
     },
     {
       label: "CodeTabs",
-      url: "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl),
+      url: "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(filteredUrl),
       timeoutMs: 8000
     }
   ];
@@ -78,7 +78,7 @@ async function fetchVehiclesForLine(line) {
         headers: {
           "Accept": "application/json, text/plain, */*",
           "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
-          "Referer": BURGOS_SOURCE
+          "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo/-/isaenext/filter/" + encodeURIComponent(line)
         },
         signal: AbortSignal.timeout(attempt.timeoutMs)
       });
@@ -109,7 +109,7 @@ async function fetchVehiclesForLine(line) {
       errors.push(attempt.label + ": " + (error?.message || String(error)));
     }
   }
-  throw new Error("No se pudo consultar la línea " + line + " en las fuentes municipales/proxies: " + errors.join(" | "));
+  throw new Error("No se pudo consultar la línea " + line + " en ISAENEXT/proxies: " + errors.join(" | "));
 }
 
 async function fetchSnapshot() {
