@@ -631,7 +631,7 @@ jobs:
                           lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)
                   lines.append("Destino actual: " + destination)
                   lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))
-              return "\\n".join(lines) + "\\n\\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
+              return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
 
           # Freeze the intended recipients per event so retrying a failed send cannot
           # unexpectedly broadcast an old alert to somebody who joined later.
