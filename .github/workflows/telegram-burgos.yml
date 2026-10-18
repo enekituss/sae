@@ -474,13 +474,11 @@ jobs:
                       official_current[vehicle_id] = vehicle
                       official_eta[vehicle_id] = eta
 
-              if not official_current:
-                  raise RuntimeError(
-                      "la respuesta no identifica ningún autobús con ID numérico; no se trata como snapshot vacío"
-                  )
+              # Una respuesta completa puede contener cero autobuses (por horario o fin de servicio).
+              # El estado vacío se confirma mediante varias consultas antes de anunciar desapariciones.
               current = official_current
               snapshot_ok = True
-              snapshot_source = "isaenext_estimations"
+              snapshot_source = "isaenext_estimations_by_line"
               print(
                   "Snapshot del SAE oficial por estimaciones: " + str(len(current)) +
                   " autobuses identificados; " + str(len(observations)) + " observaciones; " +
@@ -491,12 +489,13 @@ jobs:
               current = {}
               snapshot_ok = False
 
-          # Segunda opción: consultar directamente el SAE oficial mediante resourceNodes y resourceEstimations.
+          # Segunda opción: consultar el endpoint exacto del SAE, por línea.
+          # Se usa /es/rutas-en-directo y line=<línea>; los IDs de paradas vienen del propio SAE.
           if not snapshot_ok:
               try:
                   official_pages = [
+                      "https://movilidad.aytoburgos.es/es/rutas-en-directo",
                       "https://movilidad.aytoburgos.es/rutas-en-directo",
-                      "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
                       "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
                   ]
 
@@ -520,84 +519,83 @@ jobs:
                                   "Accept": "application/json, text/plain, */*",
                                   "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
                                   "Cache-Control": "no-cache",
-                                  "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo",
+                                  "Pragma": "no-cache",
+                                  "Referer": "https://movilidad.aytoburgos.es/es/rutas-en-directo",
                                   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
                               }
                           )
                           try:
-                              with urllib.request.urlopen(request, timeout=8) as response:
+                              with urllib.request.urlopen(request, timeout=15) as response:
                                   payload = json.loads(response.read().decode("utf-8"))
                               return payload
                           except Exception as exc:
                               errors.append(urllib.parse.urlparse(page).netloc + ": " + str(exc)[:120])
-                      raise RuntimeError(resource + " no respondió en las fuentes oficiales: " + " || ".join(errors))
+                      raise RuntimeError(resource + " no respondió en el SAE: " + " || ".join(errors))
 
                   nodes_payload = fetch_direct_isaenext("resourceNodes")
                   if not isinstance(nodes_payload, list) or not nodes_payload:
                       raise RuntimeError("resourceNodes no devolvió una lista de paradas.")
-                  nodes = [
-                      node for node in nodes_payload
-                      if isinstance(node, dict) and clean(node.get("num") or node.get("id") or node.get("stopId") or node.get("nodeId"))
-                  ]
-                  if not nodes:
-                      raise RuntimeError("no se encontraron IDs de paradas en resourceNodes.")
 
                   def direct_stop_id(node):
                       return clean(node.get("num") or node.get("id") or node.get("stopId") or node.get("nodeId") or node.get("nodoId") or node.get("idNodo") or node.get("numNodo"))
 
-                  chunks = [nodes[index:index + 40] for index in range(0, len(nodes), 40)]
+                  nodes = []
+                  seen_node_ids = set()
+                  for node in nodes_payload:
+                      if not isinstance(node, dict):
+                          continue
+                      stop_id = direct_stop_id(node)
+                      if stop_id and stop_id not in seen_node_ids:
+                          seen_node_ids.add(stop_id)
+                          nodes.append(node)
+                  if not nodes:
+                      raise RuntimeError("resourceNodes no devolvió IDs de paradas reconocibles.")
 
-                  def fetch_estimation_chunk(chunk):
-                      stop_ids = [direct_stop_id(node) for node in chunk]
+                  all_stop_ids = [direct_stop_id(node) for node in nodes]
+                  if len(",".join(all_stop_ids)) > 6500:
+                      raise RuntimeError("La lista completa de IDs de parada excede el tamaño prudente de la consulta.")
+                  stops_by_id = {direct_stop_id(node): node for node in nodes}
+                  burgos_lines = [f"{number:02d}" for number in range(1, 24)] + ["73", "87", "88", "89", "C1", "C2"]
+
+                  def canonical_line(value):
+                      value = clean(value).upper().replace("LÍNEA", "").replace("LINEA", "").strip()
+                      if value.startswith("L") and len(value) > 1 and value[1:].isdigit():
+                          value = value[1:]
+                      token = value.split()[0].split("-")[0] if value else ""
+                      if token.isdigit():
+                          return str(int(token))
+                      return token
+
+                  def fetch_line_estimations(line):
                       payload = fetch_direct_isaenext("resourceEstimations", {
+                          "_as_asac_isaenext_IsaenextWebPortlet_line": line,
                           "_as_asac_isaenext_IsaenextWebPortlet_tipo": "1",
-                          "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": ",".join(stop_ids)
+                          "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": ",".join(all_stop_ids)
                       })
                       if not isinstance(payload, list):
-                          raise RuntimeError("resourceEstimations no devolvió una lista.")
-                      if len(payload) == 1 and len(chunk) > 2:
-                          raise RuntimeError("solo devolvió una parada para un grupo de " + str(len(chunk)) + " IDs.")
-                      return chunk, payload
+                          raise RuntimeError("resourceEstimations no devolvió una lista para la línea " + line)
+                      if len(payload) == 1 and len(nodes) > 2:
+                          raise RuntimeError("resourceEstimations devolvió una sola parada para " + str(len(nodes)) + " IDs; la consulta podría estar incompleta")
+                      line_current = {}
+                      observation_count = 0
+                      requested_line = canonical_line(line)
 
-                  chunk_results = {}
-                  chunk_errors = []
-                  with ThreadPoolExecutor(max_workers=5) as executor:
-                      futures = {executor.submit(fetch_estimation_chunk, chunk): index for index, chunk in enumerate(chunks)}
-                      for future in as_completed(futures):
-                          index = futures[future]
-                          try:
-                              chunk_results[index] = future.result()
-                          except Exception as exc:
-                              chunk_errors.append("grupo " + str(index + 1) + ": " + str(exc))
-
-                  if chunk_errors or len(chunk_results) != len(chunks):
-                      raise RuntimeError(
-                          str(len(chunk_errors)) + "/" + str(len(chunks)) + " grupos fallaron. "
-                          + " | ".join(chunk_errors[:4])
-                      )
-
-                  stops_by_id = {direct_stop_id(node): node for node in nodes}
-                  candidate_current = {}
-                  candidate_eta = {}
-                  total_observations = 0
-
-                  for index in range(len(chunks)):
-                      chunk, rows = chunk_results[index]
-                      total_observations += len(rows)
-                      for row_index, result in enumerate(rows):
+                      for row_index, result in enumerate(payload):
                           if not isinstance(result, dict):
                               continue
                           explicit_stop_id = direct_stop_id(result)
                           stop = stops_by_id.get(explicit_stop_id)
-                          if stop is None and len(rows) == len(chunk) and row_index < len(chunk):
-                              stop = chunk[row_index]
+                          if stop is None and len(payload) == len(nodes) and row_index < len(nodes):
+                              stop = nodes[row_index]
                           route_groups = result.get("routeEstimationByNode") or result.get("routes") or []
                           if not isinstance(route_groups, list):
                               continue
                           for route_group in route_groups:
                               if not isinstance(route_group, dict):
                                   continue
-                              line = clean(route_group.get("line") or route_group.get("route") or route_group.get("lineName"))
+                              raw_line = clean(route_group.get("line") or route_group.get("route") or route_group.get("lineName"))
+                              if raw_line and canonical_line(raw_line) != requested_line:
+                                  continue
                               estimates = route_group.get("publicEstimationVHExts") or route_group.get("estimations") or route_group.get("buses") or []
                               if not isinstance(estimates, list):
                                   continue
@@ -607,9 +605,10 @@ jobs:
                                   vehicle_id = clean(item.get("vehicle") or item.get("vehicleId") or item.get("vehicle_id"))
                                   if not vehicle_id or vehicle_id == "0":
                                       continue
+                                  observation_count += 1
                                   vehicle = normalise_vehicle({
                                       "id": vehicle_id,
-                                      "lineId": line,
+                                      "lineId": raw_line or line,
                                       "destination": item.get("destination") or route_group.get("destination"),
                                       "direction": item.get("direction") or route_group.get("direction")
                                   })
@@ -619,23 +618,46 @@ jobs:
                                       eta_score = float(item.get("seconds"))
                                   except (TypeError, ValueError):
                                       eta_score = float("inf")
-                                  if vehicle_id not in candidate_current or eta_score < candidate_eta.get(vehicle_id, float("inf")):
-                                      candidate_current[vehicle_id] = vehicle
-                                      candidate_eta[vehicle_id] = eta_score
+                                  previous_eta = line_current.get(vehicle_id, {}).get("_eta", float("inf"))
+                                  if vehicle_id not in line_current or eta_score < previous_eta:
+                                      line_current[vehicle_id] = {**vehicle, "_eta": eta_score}
+                      print("SAE Burgos línea " + line + ": respuesta válida; " + str(len(line_current)) + " autobuses con ID y " + str(observation_count) + " observaciones.")
+                      return line_current
 
-                  if not candidate_current:
+                  line_rows = {}
+                  line_errors = []
+                  with ThreadPoolExecutor(max_workers=5) as executor:
+                      futures = {executor.submit(fetch_line_estimations, line): line for line in burgos_lines}
+                      for future in as_completed(futures):
+                          line = futures[future]
+                          try:
+                              line_rows[line] = future.result()
+                          except Exception as exc:
+                              line_errors.append("línea " + line + ": " + str(exc))
+
+                  if line_errors or len(line_rows) != len(burgos_lines):
                       raise RuntimeError(
-                          "resourceEstimations respondió, pero no identificó autobuses por ID; no se considera una flota vacía"
+                          str(len(line_errors)) + "/" + str(len(burgos_lines)) + " líneas no respondieron. "
+                          + " | ".join(line_errors[:5])
                       )
+
+                  candidate_current = {}
+                  candidate_eta = {}
+                  for line in burgos_lines:
+                      for vehicle_id, vehicle in line_rows[line].items():
+                          eta_score = vehicle.pop("_eta", float("inf"))
+                          if vehicle_id not in candidate_current or eta_score < candidate_eta.get(vehicle_id, float("inf")):
+                              candidate_current[vehicle_id] = vehicle
+                              candidate_eta[vehicle_id] = eta_score
+
                   current = candidate_current
                   snapshot_ok = True
-                  snapshot_source = "isaenext_estimations"
-                  print("Snapshot de Burgos válido mediante estimaciones oficiales directas: " + str(len(current)) + " coches identificados en " + str(len(nodes)) + " paradas (" + str(total_observations) + " resultados de estimación).")
+                  snapshot_source = "isaenext_estimations_by_line"
+                  print("Snapshot completo del SAE oficial: " + str(len(current)) + " autobuses identificados en " + str(len(line_rows)) + " líneas, consultando resourceEstimations con line=<línea>.")
               except Exception as exc:
-                  source_errors.append("estimaciones oficiales directas: " + str(exc))
+                  source_errors.append("SAE oficial resourceEstimations por línea: " + str(exc))
                   current = {}
                   snapshot_ok = False
-
 
           if not snapshot_ok:
               # Tercera opción: usar el recurso resourceVehicles del Worker como respaldo.
