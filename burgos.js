@@ -73,6 +73,7 @@
 
   // ---- Seguimiento en directo de Burgos ----
   const BURGOS_LIVE_SOURCE = 'https://movilidad.aytoburgos.es/rutas-en-directo';
+  const BURGOS_VEHICLES_SOURCE = 'https://www.aytoburgos.es/web/movilidad/rutas-en-directo';
   const BURGOS_PORTLET = 'as_asac_isaenext_IsaenextWebPortlet';
   const BURGOS_PROXY_STORAGE = 'saeBurgosRealtimeProxy';
   const LIVE_REFRESH_MS = 25000;
@@ -281,6 +282,51 @@
     return response;
   }
 
+
+  function normalizePublishedVehiclesSnapshot(response) {
+    const rawVehicles = Array.isArray(response.vehicles) ? response.vehicles : [];
+    const observations = rawVehicles.map(bus => {
+      const vehicleId = String(bus.id ?? bus.vehicleId ?? bus.vehicle_id ?? '').trim();
+      const line = String(bus.lineId ?? bus.line ?? bus.lineName ?? response.line ?? '').trim();
+      const destination = String(bus.destination ?? bus.destino ?? bus.destinationName ?? bus.headsign ?? 'Destino no publicado').trim();
+      const latValue = Number(bus.lat ?? bus.latitude);
+      const lonValue = Number(bus.lng ?? bus.lon ?? bus.longitude);
+      const secondsValue = Number(bus.seconds ?? bus.segundos ?? bus.nextStopSeconds);
+      const metersValue = Number(bus.meters ?? bus.distanceToNextStop);
+      const stopId = String(bus.paradaProxima ?? bus.nextNodeId ?? bus.nextStop ?? bus.stopId ?? bus.stop_id ?? '').trim();
+      const stopName = String(bus.nextStopName ?? bus.paradaProximaName ?? bus.stopName ?? '').trim();
+      return {
+        vehicleId,
+        line,
+        destination: destination || 'Destino no publicado',
+        direction: String(bus.direction ?? bus.sentido ?? '').trim(),
+        seconds: Number.isFinite(secondsValue) && secondsValue >= 0 ? secondsValue : null,
+        meters: Number.isFinite(metersValue) && metersValue >= 0 ? metersValue : null,
+        vehicleLat: Number.isFinite(latValue) && latValue >= 42 && latValue <= 43 ? latValue : null,
+        vehicleLon: Number.isFinite(lonValue) && lonValue >= -4 && lonValue <= -3 ? lonValue : null,
+        vehiclePositionSource: 'Coordenadas publicadas por resourceVehicles',
+        stopId,
+        stopName
+      };
+    }).filter(vehicle => vehicle.vehicleId && vehicle.line);
+
+    return {
+      ...response,
+      stopCount: 0,
+      resultCount: rawVehicles.length,
+      sourceType: response.sourceType || 'ISAENEXT · resourceVehicles por línea',
+      observations
+    };
+  }
+
+  async function proxyVehicleSnapshot(base) {
+    const response = await jsonGet(base + '/api/burgos/vehicles');
+    if (!Array.isArray(response.vehicles)) {
+      throw new Error(response.error || 'El proxy no ha devuelto los vehículos por línea.');
+    }
+    return normalizePublishedVehiclesSnapshot(response);
+  }
+
   function normalizeLineKey(value) {
     return norm(value).replace(/^linea\s*/, '').replace(/^l(?=\d)/, '').replace(/^[0]+(?=\d)/, '').replace(/[^\da-z]/g, '');
   }
@@ -392,7 +438,11 @@
 
   function locateLiveVehicle(observation) {
     if (Number.isFinite(observation.vehicleLat) && Number.isFinite(observation.vehicleLon)) {
-      return { lat: observation.vehicleLat, lon: observation.vehicleLon, source: 'GPS publicado por ISAENEXT' };
+      return {
+        lat: observation.vehicleLat,
+        lon: observation.vehicleLon,
+        source: observation.vehiclePositionSource || 'GPS publicado por ISAENEXT'
+      };
     }
     if (!Number.isFinite(observation.stopLat) || !Number.isFinite(observation.stopLon)) return null;
     if (!Number.isFinite(observation.meters) || observation.meters < 0 || observation.meters > 12000) return null;
@@ -524,17 +574,22 @@
     liveRefreshRunning = true;
     $('liveRefresh').disabled = true;
     $('liveRefresh').textContent = 'Consultando…';
-    setLiveStatus('Consultando la fuente municipal de estimaciones…', '');
+    setLiveStatus('Consultando autobuses activos por línea en ISAENEXT…', '');
     try {
       let snapshot;
       let directError = null;
       const base = liveProxyBase();
       if (base) {
         try {
-          snapshot = await proxyLiveSnapshot(base);
-        } catch (error) {
-          directError = error;
-          console.warn('No se pudo consultar el Worker guardado; se prueba la fuente directa:', error);
+          snapshot = await proxyVehicleSnapshot(base);
+        } catch (vehicleError) {
+          console.warn('No se pudo consultar resourceVehicles por línea; se usará la API de estimaciones como respaldo:', vehicleError);
+          try {
+            snapshot = await proxyLiveSnapshot(base);
+          } catch (error) {
+            directError = error;
+            console.warn('No se pudo consultar el Worker guardado; se prueba la fuente directa:', error);
+          }
         }
       }
       if (!snapshot) {
@@ -550,7 +605,10 @@
       renderLiveVehicles(vehicles, snapshot);
       $('liveUpdated').textContent = 'Consulta: ' + new Date(snapshot.fetchedAt || Date.now()).toLocaleTimeString('es-ES');
       if (snapshot.partial) {
-        setLiveStatus('Datos parciales: se han podido consultar ' + snapshot.completedGroups + ' de ' + snapshot.totalGroups + ' grupos de paradas. ' + (Array.isArray(snapshot.warnings) ? snapshot.warnings.slice(0, 2).join(' · ') : ''), 'warning');
+        const completed = Number.isFinite(Number(snapshot.lineCount)) ? snapshot.lineCount : snapshot.completedGroups;
+        const total = Number.isFinite(Number(snapshot.totalLines)) ? snapshot.totalLines : snapshot.totalGroups;
+        const unit = snapshot.sourceType && snapshot.sourceType.includes('resourceVehicles') ? 'líneas' : 'grupos de paradas';
+        setLiveStatus('Datos parciales: se han podido consultar ' + completed + ' de ' + total + ' ' + unit + '. ' + (Array.isArray(snapshot.warnings) ? snapshot.warnings.slice(0, 2).join(' · ') : ''), 'warning');
       }
     } catch (error) {
       console.error('No se pudieron consultar los autobuses de Burgos en directo:', error);
