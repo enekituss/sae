@@ -425,7 +425,7 @@ jobs:
           # Primera opción: leer la fuente oficial del SAE (resourceNodes/resourceEstimations)
           # a través del Worker de Burgos. No se confunde una estimación sin ID con una flota vacía.
           try:
-              live_url = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev/api/burgos/live"
+              live_url = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev/api/burgos/live?fresh=1"
               live_request = urllib.request.Request(
                   live_url,
                   headers={
