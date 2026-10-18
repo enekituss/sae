@@ -701,8 +701,8 @@
   });
   $("clearWorkerUrl").addEventListener("click", async () => {
     try { localStorage.removeItem(WORKER_STORAGE_KEY); } catch {}
-    $("workerUrlInput").value = "";
-    setStatus("Conexión eliminada · se probarán los proxies de respaldo.", "");
+    $("workerUrlInput").value = DEFAULT_WORKER_URL;
+    setStatus("URL predeterminada del Worker de Burgos restaurada.", "");
     await load();
   });
 
