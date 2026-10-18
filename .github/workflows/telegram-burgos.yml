@@ -419,148 +419,79 @@ jobs:
 
           snapshot_ok = False
           current = {}
+          snapshot_source = ""
           source_errors = []
 
-          # Primera opción: el Worker exclusivo de Burgos expone una instantánea completa
-          # de resourceVehicles y evita depender de conexiones directas inestables desde Actions.
+          # Primera opción: leer la fuente oficial del SAE (resourceNodes/resourceEstimations)
+          # a través del Worker de Burgos. No se confunde una estimación sin ID con una flota vacía.
           try:
-              worker_url = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev/api/burgos/vehicles"
-              worker_request = urllib.request.Request(
-                  worker_url,
+              live_url = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev/api/burgos/live"
+              live_request = urllib.request.Request(
+                  live_url,
                   headers={
                       "Accept": "application/json",
                       "Cache-Control": "no-cache",
                       "User-Agent": "SAE-Spotter-Burgos-Telegram/1.0"
                   }
               )
-              with urllib.request.urlopen(worker_request, timeout=180) as response:
-                  worker_payload = json.loads(response.read().decode("utf-8"))
-              if not isinstance(worker_payload, dict) or worker_payload.get("ok") is not True:
-                  raise RuntimeError("el Worker de Burgos no devolvió una respuesta válida")
-              worker_vehicles = worker_payload.get("vehicles")
-              if not isinstance(worker_vehicles, list):
-                  raise RuntimeError("el Worker no devolvió la lista de vehículos")
-              expected_lines = int(worker_payload.get("totalLines") or 0)
-              completed_lines = int(worker_payload.get("lineCount") or 0)
-              if worker_payload.get("partial") or (expected_lines and completed_lines != expected_lines):
+              with urllib.request.urlopen(live_request, timeout=90) as response:
+                  live_payload = json.loads(response.read().decode("utf-8"))
+              if not isinstance(live_payload, dict) or live_payload.get("ok") is not True:
+                  raise RuntimeError(str(live_payload.get("error") or "el SAE no devolvió una respuesta válida"))
+              observations = live_payload.get("observations")
+              if not isinstance(observations, list):
+                  raise RuntimeError("el SAE no devolvió la lista de estimaciones por parada")
+              expected_groups = int(live_payload.get("totalGroups") or 0)
+              completed_groups = int(live_payload.get("completedGroups") or 0)
+              if live_payload.get("partial") or (expected_groups and completed_groups != expected_groups):
                   raise RuntimeError(
-                      "instantánea parcial del Worker (" + str(completed_lines) + "/" + str(expected_lines) + " líneas)"
+                      "estimaciones parciales (" + str(completed_groups) + "/" + str(expected_groups) + " grupos)"
                   )
-              worker_current = {}
-              for raw_vehicle in worker_vehicles:
-                  if not isinstance(raw_vehicle, dict):
+              cache_age = live_payload.get("cacheAgeSeconds")
+              if live_payload.get("stale") and cache_age is not None and float(cache_age) > 240:
+                  raise RuntimeError("la caché del SAE tiene más de 4 minutos; se conserva el último estado confirmado")
+
+              official_current = {}
+              official_eta = {}
+              for observation in observations:
+                  if not isinstance(observation, dict):
                       continue
-                  vehicle = normalise_vehicle(raw_vehicle)
-                  if vehicle:
-                      worker_current[vehicle["id"]] = vehicle
-              if len(worker_current) != len(worker_vehicles):
-                  raise RuntimeError("algún vehículo del Worker no contiene un ID reconocible")
-              current = worker_current
+                  vehicle_id = clean(observation.get("vehicleId") or observation.get("vehicle") or observation.get("vehicle_id"))
+                  line = clean(observation.get("line") or observation.get("route") or observation.get("lineName"))
+                  if not vehicle_id or vehicle_id == "0" or not line:
+                      continue
+                  vehicle = normalise_vehicle({
+                      "id": vehicle_id,
+                      "lineId": line,
+                      "destination": observation.get("destination"),
+                      "direction": observation.get("direction")
+                  })
+                  try:
+                      eta = float(observation.get("seconds"))
+                  except (TypeError, ValueError):
+                      eta = float("inf")
+                  if vehicle_id not in official_current or eta < official_eta.get(vehicle_id, float("inf")):
+                      official_current[vehicle_id] = vehicle
+                      official_eta[vehicle_id] = eta
+
+              if not official_current:
+                  raise RuntimeError(
+                      "la respuesta no identifica ningún autobús con ID numérico; no se trata como snapshot vacío"
+                  )
+              current = official_current
               snapshot_ok = True
-              print("Snapshot completo de Burgos desde su Worker independiente: " + str(len(current)) + " coches; " + str(completed_lines) + "/" + str(expected_lines) + " líneas.")
+              snapshot_source = "isaenext_estimations"
+              print(
+                  "Snapshot del SAE oficial por estimaciones: " + str(len(current)) +
+                  " autobuses identificados; " + str(len(observations)) + " observaciones; " +
+                  str(completed_groups) + "/" + str(expected_groups) + " grupos completos."
+              )
           except Exception as exc:
-              source_errors.append("Worker independiente de Burgos: " + str(exc))
+              source_errors.append("SAE oficial resourceNodes/resourceEstimations vía Worker: " + str(exc))
               current = {}
               snapshot_ok = False
 
-          # Segundo respaldo: consultar resourceVehicles directamente por cada línea municipal.
-          if not snapshot_ok:
-              try:
-                  burgos_lines = [f"{number:02d}" for number in range(1, 24)] + ["73", "87", "88", "89", "C1", "C2"]
-                  official_pages = [
-                      "https://movilidad.aytoburgos.es/rutas-en-directo",
-                      "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
-                      "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
-                  ]
-
-                  def fetch_burgos_vehicle_line(line):
-                      timestamp = str(int(time.time() * 1000))
-                      params = {
-                          "p_p_id": "as_asac_isaenext_IsaenextWebPortlet",
-                          "p_p_lifecycle": "2",
-                          "p_p_state": "normal",
-                          "p_p_mode": "view",
-                          "p_p_cacheability": "cacheLevelPage",
-                          "p_p_resource_id": "resourceVehicles",
-                          "_as_asac_isaenext_IsaenextWebPortlet_formDate": timestamp,
-                          "_as_asac_isaenext_IsaenextWebPortlet_line": line,
-                          "_as_asac_isaenext_IsaenextWebPortlet_label": line,
-                          "_t": timestamp
-                      }
-                      errors = []
-                      for page in official_pages:
-                          url = page + "?" + urllib.parse.urlencode(params)
-                          request = urllib.request.Request(
-                              url,
-                              headers={
-                                  "Accept": "application/json, text/plain, */*",
-                                  "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
-                                  "Cache-Control": "no-cache",
-                                  "Pragma": "no-cache",
-                                  "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo",
-                                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-                              }
-                          )
-                          try:
-                              with urllib.request.urlopen(request, timeout=4) as response:
-                                  payload = json.loads(response.read().decode("utf-8"))
-                              if not isinstance(payload, list):
-                                  raise RuntimeError("resourceVehicles no devolvió una lista")
-                              rows = []
-                              for raw in payload:
-                                  if not isinstance(raw, dict):
-                                      continue
-                                  vehicle_id = clean(raw.get("id") or raw.get("vehicleId") or raw.get("vehicle_id") or raw.get("vehicle"))
-                                  if not vehicle_id or vehicle_id == "0":
-                                      continue
-                                  item = dict(raw)
-                                  item["id"] = vehicle_id
-                                  item["lineId"] = clean(raw.get("lineId") or raw.get("line") or raw.get("route") or raw.get("ruta") or line)
-                                  rows.append(item)
-                              return rows
-                          except urllib.error.HTTPError as exc:
-                              try:
-                                  body = exc.read().decode("utf-8", errors="replace").strip()
-                              except Exception:
-                                  body = ""
-                              errors.append(str(exc.code) + "@" + urllib.parse.urlparse(page).netloc + (": " + body[:100] if body else ""))
-                          except Exception as exc:
-                              errors.append(urllib.parse.urlparse(page).netloc + ": " + str(exc)[:120])
-                      raise RuntimeError("línea " + line + ": " + " || ".join(errors[:4]))
-
-                  line_rows = {}
-                  line_errors = []
-                  with ThreadPoolExecutor(max_workers=5) as executor:
-                      futures = {executor.submit(fetch_burgos_vehicle_line, line): line for line in burgos_lines}
-                      for future in as_completed(futures):
-                          line = futures[future]
-                          try:
-                              line_rows[line] = future.result()
-                          except Exception as exc:
-                              line_errors.append(str(exc))
-
-                  if line_errors or len(line_rows) != len(burgos_lines):
-                      raise RuntimeError(
-                          str(len(line_errors)) + "/" + str(len(burgos_lines)) + " líneas no respondieron. "
-                          + " | ".join(line_errors[:5])
-                      )
-
-                  candidate_current = {}
-                  for line in burgos_lines:
-                      for raw_vehicle in line_rows.get(line, []):
-                          vehicle = normalise_vehicle(raw_vehicle)
-                          if vehicle:
-                              candidate_current[vehicle["id"]] = vehicle
-
-                  current = candidate_current
-                  snapshot_ok = True
-                  print("Snapshot completo de Burgos mediante resourceVehicles: " + str(len(current)) + " coches en " + str(len(line_rows)) + " líneas.")
-              except Exception as exc:
-                  source_errors.append("resourceVehicles por línea: " + str(exc))
-                  current = {}
-                  snapshot_ok = False
-
-          # Tercer respaldo: estimaciones oficiales por parada solo si fallan las dos fuentes de flota.
+          # Segunda opción: consultar directamente el SAE oficial mediante resourceNodes y resourceEstimations.
           if not snapshot_ok:
               try:
                   official_pages = [
@@ -594,7 +525,7 @@ jobs:
                               }
                           )
                           try:
-                              with urllib.request.urlopen(request, timeout=4) as response:
+                              with urllib.request.urlopen(request, timeout=8) as response:
                                   payload = json.loads(response.read().decode("utf-8"))
                               return payload
                           except Exception as exc:
@@ -694,12 +625,154 @@ jobs:
 
                   current = candidate_current
                   snapshot_ok = True
+                  snapshot_source = "isaenext_estimations"
                   print("Snapshot de Burgos válido mediante estimaciones oficiales directas: " + str(len(current)) + " coches identificados en " + str(len(nodes)) + " paradas (" + str(total_observations) + " resultados de estimación).")
               except Exception as exc:
                   source_errors.append("estimaciones oficiales directas: " + str(exc))
                   current = {}
                   snapshot_ok = False
 
+
+          if not snapshot_ok:
+              # Tercera opción: usar el recurso resourceVehicles del Worker como respaldo.
+              try:
+                  worker_url = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev/api/burgos/vehicles"
+                  worker_request = urllib.request.Request(
+                      worker_url,
+                      headers={
+                          "Accept": "application/json",
+                          "Cache-Control": "no-cache",
+                          "User-Agent": "SAE-Spotter-Burgos-Telegram/1.0"
+                      }
+                  )
+                  with urllib.request.urlopen(worker_request, timeout=180) as response:
+                      worker_payload = json.loads(response.read().decode("utf-8"))
+                  if not isinstance(worker_payload, dict) or worker_payload.get("ok") is not True:
+                      raise RuntimeError("el Worker de Burgos no devolvió una respuesta válida")
+                  worker_vehicles = worker_payload.get("vehicles")
+                  if not isinstance(worker_vehicles, list):
+                      raise RuntimeError("el Worker no devolvió la lista de vehículos")
+                  expected_lines = int(worker_payload.get("totalLines") or 0)
+                  completed_lines = int(worker_payload.get("lineCount") or 0)
+                  if worker_payload.get("partial") or (expected_lines and completed_lines != expected_lines):
+                      raise RuntimeError(
+                          "instantánea parcial del Worker (" + str(completed_lines) + "/" + str(expected_lines) + " líneas)"
+                      )
+                  worker_current = {}
+                  for raw_vehicle in worker_vehicles:
+                      if not isinstance(raw_vehicle, dict):
+                          continue
+                      vehicle = normalise_vehicle(raw_vehicle)
+                      if vehicle:
+                          worker_current[vehicle["id"]] = vehicle
+                  if len(worker_current) != len(worker_vehicles):
+                      raise RuntimeError("algún vehículo del Worker no contiene un ID reconocible")
+                  current = worker_current
+                  snapshot_ok = True
+                  snapshot_source = "isaenext_vehicles"
+                  print("Snapshot completo de Burgos desde su Worker independiente: " + str(len(current)) + " coches; " + str(completed_lines) + "/" + str(expected_lines) + " líneas.")
+              except Exception as exc:
+                  source_errors.append("Worker independiente de Burgos: " + str(exc))
+                  current = {}
+                  snapshot_ok = False
+
+          # Cuarta opción: consultar resourceVehicles directamente por línea como último respaldo.
+          if not snapshot_ok:
+              try:
+                  burgos_lines = [f"{number:02d}" for number in range(1, 24)] + ["73", "87", "88", "89", "C1", "C2"]
+                  official_pages = [
+                      "https://movilidad.aytoburgos.es/rutas-en-directo",
+                      "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
+                      "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
+                  ]
+
+                  def fetch_burgos_vehicle_line(line):
+                      timestamp = str(int(time.time() * 1000))
+                      params = {
+                          "p_p_id": "as_asac_isaenext_IsaenextWebPortlet",
+                          "p_p_lifecycle": "2",
+                          "p_p_state": "normal",
+                          "p_p_mode": "view",
+                          "p_p_cacheability": "cacheLevelPage",
+                          "p_p_resource_id": "resourceVehicles",
+                          "_as_asac_isaenext_IsaenextWebPortlet_formDate": timestamp,
+                          "_as_asac_isaenext_IsaenextWebPortlet_line": line,
+                          "_as_asac_isaenext_IsaenextWebPortlet_label": line,
+                          "_t": timestamp
+                      }
+                      errors = []
+                      for page in official_pages:
+                          url = page + "?" + urllib.parse.urlencode(params)
+                          request = urllib.request.Request(
+                              url,
+                              headers={
+                                  "Accept": "application/json, text/plain, */*",
+                                  "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+                                  "Cache-Control": "no-cache",
+                                  "Pragma": "no-cache",
+                                  "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo",
+                                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                              }
+                          )
+                          try:
+                              with urllib.request.urlopen(request, timeout=4) as response:
+                                  payload = json.loads(response.read().decode("utf-8"))
+                              if not isinstance(payload, list):
+                                  raise RuntimeError("resourceVehicles no devolvió una lista")
+                              rows = []
+                              for raw in payload:
+                                  if not isinstance(raw, dict):
+                                      continue
+                                  vehicle_id = clean(raw.get("id") or raw.get("vehicleId") or raw.get("vehicle_id") or raw.get("vehicle"))
+                                  if not vehicle_id or vehicle_id == "0":
+                                      continue
+                                  item = dict(raw)
+                                  item["id"] = vehicle_id
+                                  item["lineId"] = clean(raw.get("lineId") or raw.get("line") or raw.get("route") or raw.get("ruta") or line)
+                                  rows.append(item)
+                              return rows
+                          except urllib.error.HTTPError as exc:
+                              try:
+                                  body = exc.read().decode("utf-8", errors="replace").strip()
+                              except Exception:
+                                  body = ""
+                              errors.append(str(exc.code) + "@" + urllib.parse.urlparse(page).netloc + (": " + body[:100] if body else ""))
+                          except Exception as exc:
+                              errors.append(urllib.parse.urlparse(page).netloc + ": " + str(exc)[:120])
+                      raise RuntimeError("línea " + line + ": " + " || ".join(errors[:4]))
+
+                  line_rows = {}
+                  line_errors = []
+                  with ThreadPoolExecutor(max_workers=5) as executor:
+                      futures = {executor.submit(fetch_burgos_vehicle_line, line): line for line in burgos_lines}
+                      for future in as_completed(futures):
+                          line = futures[future]
+                          try:
+                              line_rows[line] = future.result()
+                          except Exception as exc:
+                              line_errors.append(str(exc))
+
+                  if line_errors or len(line_rows) != len(burgos_lines):
+                      raise RuntimeError(
+                          str(len(line_errors)) + "/" + str(len(burgos_lines)) + " líneas no respondieron. "
+                          + " | ".join(line_errors[:5])
+                      )
+
+                  candidate_current = {}
+                  for line in burgos_lines:
+                      for raw_vehicle in line_rows.get(line, []):
+                          vehicle = normalise_vehicle(raw_vehicle)
+                          if vehicle:
+                              candidate_current[vehicle["id"]] = vehicle
+
+                  current = candidate_current
+                  snapshot_ok = True
+                  snapshot_source = "isaenext_vehicles"
+                  print("Snapshot completo de Burgos mediante resourceVehicles: " + str(len(current)) + " coches en " + str(len(line_rows)) + " líneas.")
+              except Exception as exc:
+                  source_errors.append("resourceVehicles por línea: " + str(exc))
+                  current = {}
+                  snapshot_ok = False
 
           # Mantén Burgos independiente: no hay fallback al Worker compartido con Bizkaibus.
           # Si todas las fuentes municipales directas fallan, se conserva el estado
