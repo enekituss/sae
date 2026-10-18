@@ -26086,83 +26086,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:0e95d492f92e6d9ad6a0c95c": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T19:50+02:00",
-      "direction": "",
-      "eventId": "missing:0e95d492f92e6d9ad6a0c95c",
-      "firstMissingAt": "2026-10-18T19:47:01+02:00",
-      "lastSeenAt": "2026-10-18T19:43:26+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T19:50:26+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2090"
-    },
-    "missing:369d21ddf898515c04e424bc": {
-      "destination": "ZEBERIO",
-      "detectedAt": "2026-10-18T19:50+02:00",
-      "direction": "",
-      "eventId": "missing:369d21ddf898515c04e424bc",
-      "firstMissingAt": "2026-10-18T19:47:01+02:00",
-      "lastSeenAt": "2026-10-18T19:43:26+02:00",
-      "line": "A3928",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T19:50:26+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3360"
-    },
-    "missing:f2b243e2860643681fc8e7cb": {
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-18T19:50+02:00",
-      "direction": "",
-      "eventId": "missing:f2b243e2860643681fc8e7cb",
-      "firstMissingAt": "2026-10-18T19:47:01+02:00",
-      "lastSeenAt": "2026-10-18T19:43:26+02:00",
-      "line": "A3916",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T19:50:26+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8661"
-    },
-    "route_after_gap:34af980ef28deb517623d9d0": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CABIECES",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "CABIECES",
-      "detectedAt": "2026-10-18T19:50+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:34af980ef28deb517623d9d0",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T19:50:26+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7857"
-    },
-    "route_after_gap:e6d99c4e4007bbdea4a560b8": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ La Arena",
-          "old": "GETXO"
-        }
-      ],
-      "destination": "MUSKIZ La Arena",
-      "detectedAt": "2026-10-18T19:50+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:e6d99c4e4007bbdea4a560b8",
-      "line": "A3338",
-      "queuedAt": "2026-10-18T19:50:26+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7874"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1102": {
@@ -26335,7 +26259,7 @@
       "requiredMissing": 2
     },
     "2090": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:0e95d492f92e6d9ad6a0c95c",
       "firstMissingAt": "2026-10-18T19:47:01+02:00",
@@ -26346,7 +26270,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T19:43:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2138": {
@@ -26393,7 +26317,7 @@
       "requiredMissing": 2
     },
     "3360": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:369d21ddf898515c04e424bc",
       "firstMissingAt": "2026-10-18T19:47:01+02:00",
@@ -26404,7 +26328,7 @@
         "line": "A3928"
       },
       "lastSeenAt": "2026-10-18T19:43:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3372": {
@@ -26437,7 +26361,7 @@
       "requiredMissing": 2
     },
     "8661": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:f2b243e2860643681fc8e7cb",
       "firstMissingAt": "2026-10-18T19:47:01+02:00",
@@ -26448,7 +26372,7 @@
         "line": "A3916"
       },
       "lastSeenAt": "2026-10-18T19:43:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8680": {
