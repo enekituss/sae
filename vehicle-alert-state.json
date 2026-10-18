@@ -25937,75 +25937,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:01ff85830b25c6977d903ceb": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-18T15:35+02:00",
-      "direction": "",
-      "eventId": "missing:01ff85830b25c6977d903ceb",
-      "firstMissingAt": "2026-10-18T15:31:02+02:00",
-      "lastSeenAt": "2026-10-18T15:27:47+02:00",
-      "line": "A2161",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T15:35:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2061"
-    },
-    "route:24da85b188af2ea3fed29cae": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "LEIOA",
-          "old": "MUNGIA"
-        }
-      ],
-      "destination": "LEIOA",
-      "detectedAt": "2026-10-18T15:35+02:00",
-      "direction": "",
-      "eventId": "route:24da85b188af2ea3fed29cae",
-      "line": "A3531",
-      "queuedAt": "2026-10-18T15:35:03+02:00",
-      "type": "route_change",
-      "vehicleId": "2130"
-    },
-    "route:2ca30090eda7f8f93d3caf4a": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CRUCES/GURUTZETA",
-          "old": "GETXO"
-        }
-      ],
-      "destination": "CRUCES/GURUTZETA",
-      "detectedAt": "2026-10-18T15:35+02:00",
-      "direction": "",
-      "eventId": "route:2ca30090eda7f8f93d3caf4a",
-      "line": "A3471",
-      "queuedAt": "2026-10-18T15:35:03+02:00",
-      "type": "route_change",
-      "vehicleId": "1731"
-    },
-    "route:87fa9d73bca7f1f009db7178": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "GALLARTA"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T15:35+02:00",
-      "direction": "",
-      "eventId": "route:87fa9d73bca7f1f009db7178",
-      "line": "A3333",
-      "queuedAt": "2026-10-18T15:35:03+02:00",
-      "type": "route_change",
-      "vehicleId": "7856"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3265": {
@@ -26052,7 +25984,7 @@
       "requiredMissing": 2
     },
     "2061": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:01ff85830b25c6977d903ceb",
       "firstMissingAt": "2026-10-18T15:31:02+02:00",
@@ -26063,7 +25995,7 @@
         "line": "A2161"
       },
       "lastSeenAt": "2026-10-18T15:27:47+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2102": {
