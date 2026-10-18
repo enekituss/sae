@@ -305,7 +305,42 @@ async function refreshLiveSnapshotCache(cache, cacheRequest) {
   }
 }
 
+async function dispatchBurgosTelegramWorkflow(env) {
+  const token = String(env?.BURGOS_GITHUB_TOKEN || "").trim();
+  if (!token) {
+    console.warn("Falta BURGOS_GITHUB_TOKEN: Telegram Burgos queda con el respaldo programado de GitHub Actions.");
+    return;
+  }
+
+  const endpoint = "https://api.github.com/repos/enekituss/sae/actions/workflows/telegram-burgos.yml/dispatches";
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Accept": "application/vnd.github+json",
+      "Authorization": "Bearer " + token,
+      "Content-Type": "application/json",
+      "User-Agent": "SAE-Spotter-Burgos/1.0",
+      "X-GitHub-Api-Version": "2022-11-28"
+    },
+    body: JSON.stringify({ ref: "main" })
+  });
+
+  if (response.status !== 204) {
+    const detail = (await response.text()).slice(0, 500);
+    throw new Error("GitHub workflow dispatch HTTP " + response.status + (detail ? ": " + detail : ""));
+  }
+  console.log("Comprobación Telegram Burgos lanzada en GitHub Actions.");
+}
+
 export default {
+  async scheduled(controller, env, ctx) {
+    const task = dispatchBurgosTelegramWorkflow(env).catch(error => {
+      console.error("No se pudo lanzar la comprobación Telegram de Burgos:", error?.message || String(error));
+    });
+    if (ctx?.waitUntil) ctx.waitUntil(task);
+    else await task;
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
@@ -325,6 +360,7 @@ export default {
         service: "SAE Spotter · proxy independiente de Burgos",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
+        telegramScheduler: { configured: Boolean(env?.BURGOS_GITHUB_TOKEN), cadence: "*/2 * * * *" },
         endpoints: ["/api/burgos/vehicles", "/api/burgos/vehicles?line=01", "/api/burgos/live"]
       });
     }
