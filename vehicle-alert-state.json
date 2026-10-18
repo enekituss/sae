@@ -23259,117 +23259,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:8ef202c065acfa2ee8361dae": {
-      "destination": "ZARATAMO",
-      "detectedAt": "2026-10-18T21:17+02:00",
-      "direction": "",
-      "eventId": "missing:8ef202c065acfa2ee8361dae",
-      "firstMissingAt": "2026-10-18T21:13:09+02:00",
-      "lastSeenAt": "2026-10-18T21:09:21+02:00",
-      "line": "A3632",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T21:17:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3293"
-    },
-    "route:49a3399d703a0f376de87a17": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CRUCES/GURUTZETA",
-          "old": "VALLE DE TRAPAGA"
-        }
-      ],
-      "destination": "CRUCES/GURUTZETA",
-      "detectedAt": "2026-10-18T21:17+02:00",
-      "direction": "",
-      "eventId": "route:49a3399d703a0f376de87a17",
-      "line": "A3141",
-      "queuedAt": "2026-10-18T21:17:09+02:00",
-      "type": "route_change",
-      "vehicleId": "7878"
-    },
-    "route:57575193ffe8881c1fdd1c52": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3926",
-          "old": "A3923"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "EIBAR (Aut.)",
-          "old": "BILBAO (Aut.)"
-        }
-      ],
-      "destination": "EIBAR (Aut.)",
-      "detectedAt": "2026-10-18T21:17+02:00",
-      "direction": "",
-      "eventId": "route:57575193ffe8881c1fdd1c52",
-      "line": "A3926",
-      "queuedAt": "2026-10-18T21:17:09+02:00",
-      "type": "route_change",
-      "vehicleId": "3381"
-    },
-    "route:899f528f04172137dadd4c40": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ERRIGOITI",
-          "old": "EREÑO"
-        }
-      ],
-      "destination": "ERRIGOITI",
-      "detectedAt": "2026-10-18T21:17+02:00",
-      "direction": "",
-      "eventId": "route:899f528f04172137dadd4c40",
-      "line": "A3534",
-      "queuedAt": "2026-10-18T21:17:09+02:00",
-      "type": "route_change",
-      "vehicleId": "8680"
-    },
-    "route:e51ece94ac9e4cfbd89afb99": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "PLENTZIA (Metro)",
-          "old": "GORLIZ"
-        }
-      ],
-      "destination": "PLENTZIA (Metro)",
-      "detectedAt": "2026-10-18T21:17+02:00",
-      "direction": "",
-      "eventId": "route:e51ece94ac9e4cfbd89afb99",
-      "line": "A3499",
-      "queuedAt": "2026-10-18T21:17:09+02:00",
-      "type": "route_change",
-      "vehicleId": "1715"
-    },
-    "route_after_gap:6d8c3c88e55e671a4b698401": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUNGIA",
-          "old": "PLENTZIA"
-        }
-      ],
-      "destination": "MUNGIA",
-      "detectedAt": "2026-10-18T21:17+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:6d8c3c88e55e671a4b698401",
-      "line": "A3537",
-      "queuedAt": "2026-10-18T21:17:09+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2132"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1714": {
@@ -23518,7 +23408,7 @@
       "requiredMissing": 2
     },
     "3293": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:8ef202c065acfa2ee8361dae",
       "firstMissingAt": "2026-10-18T21:13:09+02:00",
@@ -23529,7 +23419,7 @@
         "line": "A3632"
       },
       "lastSeenAt": "2026-10-18T21:09:21+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3319": {
