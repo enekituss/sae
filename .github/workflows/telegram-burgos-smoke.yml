@@ -103,7 +103,7 @@ jobs:
                   worker_base + "/api/burgos/vehicles?line=01",
                   headers={"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "SAE-Burgos-Diagnostics/1.0"}
               )
-              with urllib.request.urlopen(request, timeout=22) as response:
+              with urllib.request.urlopen(request, timeout=45) as response:
                   payload = json.loads(response.read().decode("utf-8"))
               if payload.get("ok") is not True or not isinstance(payload.get("vehicles"), list):
                   raise RuntimeError(str(payload.get("error") or "respuesta sin lista de vehículos"))
