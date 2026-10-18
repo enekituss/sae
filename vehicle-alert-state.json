@@ -26351,86 +26351,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:107b6bb6566f7ac6b9453b20": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T20:01+02:00",
-      "direction": "",
-      "eventId": "missing:107b6bb6566f7ac6b9453b20",
-      "firstMissingAt": "2026-10-18T19:57:01+02:00",
-      "lastSeenAt": "2026-10-18T19:53:21+02:00",
-      "line": "A3247",
-      "missingChecks": 4,
-      "queuedAt": "2026-10-18T20:01:08+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2076"
-    },
-    "missing:db2f4e6dae7d15e9d3986c44": {
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-18T20:01+02:00",
-      "direction": "",
-      "eventId": "missing:db2f4e6dae7d15e9d3986c44",
-      "firstMissingAt": "2026-10-18T19:57:01+02:00",
-      "lastSeenAt": "2026-10-18T19:53:21+02:00",
-      "line": "A3916",
-      "missingChecks": 4,
-      "queuedAt": "2026-10-18T20:01:08+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8661"
-    },
-    "route:bcc1f7504d749cacde7359ac": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "VALLE DE TRAPAGA",
-          "old": "CRUCES/GURUTZETA"
-        }
-      ],
-      "destination": "VALLE DE TRAPAGA",
-      "detectedAt": "2026-10-18T20:01+02:00",
-      "direction": "",
-      "eventId": "route:bcc1f7504d749cacde7359ac",
-      "line": "A3141",
-      "queuedAt": "2026-10-18T20:01:08+02:00",
-      "type": "route_change",
-      "vehicleId": "7878"
-    },
-    "route:ca8f95fead0ab331dcbb77cd": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "MUSKIZ"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T20:01+02:00",
-      "direction": "",
-      "eventId": "route:ca8f95fead0ab331dcbb77cd",
-      "line": "A3336",
-      "queuedAt": "2026-10-18T20:01:08+02:00",
-      "type": "route_change",
-      "vehicleId": "7824"
-    },
-    "vehicle_returned:f093c6f6f381b73d83d9cdff": {
-      "destination": "BERANGO (Artea)",
-      "detectedAt": "2026-10-18T20:01+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:f093c6f6f381b73d83d9cdff",
-      "lastKnown": {
-        "destination": "AREETA/LAS ARENAS",
-        "direction": "",
-        "id": "1723",
-        "line": "A3451"
-      },
-      "line": "A3422",
-      "queuedAt": "2026-10-18T20:01:08+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "1723"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2051": {
       "consecutiveChecks": 1,
@@ -26499,7 +26420,7 @@
       "requiredMissing": 2
     },
     "2076": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 4,
       "eventId": "missing:107b6bb6566f7ac6b9453b20",
       "firstMissingAt": "2026-10-18T19:57:01+02:00",
@@ -26510,7 +26431,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T19:53:21+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2138": {
@@ -26588,7 +26509,7 @@
       "requiredMissing": 2
     },
     "8661": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 4,
       "eventId": "missing:db2f4e6dae7d15e9d3986c44",
       "firstMissingAt": "2026-10-18T19:57:01+02:00",
@@ -26599,7 +26520,7 @@
         "line": "A3916"
       },
       "lastSeenAt": "2026-10-18T19:53:21+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
