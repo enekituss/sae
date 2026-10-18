@@ -26257,37 +26257,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "missing:d038586c936772db6c9eedfe": {
-      "destination": "SESTAO",
-      "detectedAt": "2026-10-18T16:33+02:00",
-      "direction": "",
-      "eventId": "missing:d038586c936772db6c9eedfe",
-      "firstMissingAt": "2026-10-18T16:29:01+02:00",
-      "lastSeenAt": "2026-10-18T16:25:41+02:00",
-      "line": "A3335",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T16:33:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7866"
-    },
-    "vehicle_returned:06b3dad0188c19a44642a0e6": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T16:33+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:06b3dad0188c19a44642a0e6",
-      "lastKnown": {
-        "destination": "GALDAKAO Ospitalea",
-        "direction": "",
-        "id": "3364",
-        "line": "A3641"
-      },
-      "line": "A3641",
-      "queuedAt": "2026-10-18T16:33:03+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3364"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1723": {
@@ -26462,7 +26432,7 @@
       "requiredMissing": 2
     },
     "7866": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:d038586c936772db6c9eedfe",
       "firstMissingAt": "2026-10-18T16:29:01+02:00",
@@ -26473,7 +26443,7 @@
         "line": "A3335"
       },
       "lastSeenAt": "2026-10-18T16:25:41+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8678": {
