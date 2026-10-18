@@ -48,7 +48,7 @@ El flujo `.github/workflows/telegram-burgos.yml` consulta el Worker municipal de
 
 1. En [@BotFather](https://t.me/BotFather), crea un segundo bot con `/newbot` y guarda su token en privado.
 2. Abre el bot nuevo en Telegram y envíale `/start`.
-3. En el repositorio, entra en **Settings → Secrets and variables → Actions** y crea los secretos `BURGOS_TELEGRAM_BOT_TOKEN` (token del bot nuevo) y `BURGOS_TELEGRAM_CHAT_ID` (ID del chat principal; puede ser el mismo ID personal o de grupo que usas para Bizkaibus).
+3. En el repositorio, entra en **Settings → Secrets and variables → Actions** y crea los secretos `BURGOS_TELEGRAM_BOT_TOKEN` (token del bot nuevo) y `BURGOS_TELEGRAM_CHAT_ID` (ID del chat personal donde tú recibirás avisos). No uses el ID del grupo comunitario salvo que quieras que todo el grupo reciba avisos comunes; cada miembro puede configurar su propia suscripción iniciando el bot en privado.
 4. En **Actions → Alertas Telegram · Autobuses de Burgos**, ejecuta **Run workflow** para la primera comprobación, o espera al siguiente ciclo programado.
 
 Después, comparte el enlace [https://t.me/SAEBUR_bot](https://t.me/SAEBUR_bot) en tu grupo de comunidad. Los miembros deben pulsar **Iniciar** en el chat privado del bot para que se registren individualmente; no es necesario añadir el bot al grupo.
