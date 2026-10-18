@@ -26962,71 +26962,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:c6ebcd68e2be9c61306c92c0": {
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-18T10:21+02:00",
-      "direction": "",
-      "eventId": "missing:c6ebcd68e2be9c61306c92c0",
-      "firstMissingAt": "2026-10-18T10:17:00+02:00",
-      "lastSeenAt": "2026-10-18T10:13:24+02:00",
-      "line": "A3932",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T10:21:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3295"
-    },
-    "route:990cc32e58c9b926d6aa1287": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "GETXO (Azkorri)"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T10:21+02:00",
-      "direction": "",
-      "eventId": "route:990cc32e58c9b926d6aa1287",
-      "line": "A3411",
-      "queuedAt": "2026-10-18T10:21:01+02:00",
-      "type": "route_change",
-      "vehicleId": "1112"
-    },
-    "vehicle_returned:5799c04ed31caeef80ad6d46": {
-      "destination": "LEMOIZ Armintza",
-      "detectedAt": "2026-10-18T10:21+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:5799c04ed31caeef80ad6d46",
-      "lastKnown": {
-        "destination": "AREETA (Artea)",
-        "direction": "",
-        "id": "1721",
-        "line": "A3422"
-      },
-      "line": "A3451",
-      "queuedAt": "2026-10-18T10:21:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "1721"
-    },
-    "vehicle_returned:e5ad54f017a48ff546ad9cb0": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T10:21+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:e5ad54f017a48ff546ad9cb0",
-      "lastKnown": {
-        "destination": "BILBAO (Aut.)",
-        "direction": "",
-        "id": "8678",
-        "line": "A3915"
-      },
-      "line": "A3915",
-      "queuedAt": "2026-10-18T10:21:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "8678"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "3386": {
       "consecutiveChecks": 1,
@@ -27113,7 +27049,7 @@
       "requiredMissing": 2
     },
     "3295": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:c6ebcd68e2be9c61306c92c0",
       "firstMissingAt": "2026-10-18T10:17:00+02:00",
@@ -27124,7 +27060,7 @@
         "line": "A3932"
       },
       "lastSeenAt": "2026-10-18T10:13:24+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3364": {
