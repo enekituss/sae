@@ -25093,123 +25093,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:6ba368f1ea89cb9ada6f3bc3": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T11:59+02:00",
-      "direction": "",
-      "eventId": "missing:6ba368f1ea89cb9ada6f3bc3",
-      "firstMissingAt": "2026-10-18T11:55:02+02:00",
-      "lastSeenAt": "2026-10-18T11:51:23+02:00",
-      "line": "A3122",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T11:59:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7833"
-    },
-    "route:0a3bfa126c7ae4172b1f05c5": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3513",
-          "old": "A3523"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "LEKEITIO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T11:59+02:00",
-      "direction": "",
-      "eventId": "route:0a3bfa126c7ae4172b1f05c5",
-      "line": "A3513",
-      "queuedAt": "2026-10-18T11:59:00+02:00",
-      "type": "route_change",
-      "vehicleId": "8671"
-    },
-    "route:24424db2b7f0722f5e3299b8": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3422",
-          "old": "A3451"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BERANGO (Artea)",
-          "old": "AREETA/LAS ARENAS"
-        }
-      ],
-      "destination": "BERANGO (Artea)",
-      "detectedAt": "2026-10-18T11:59+02:00",
-      "direction": "",
-      "eventId": "route:24424db2b7f0722f5e3299b8",
-      "line": "A3422",
-      "queuedAt": "2026-10-18T11:59:00+02:00",
-      "type": "route_change",
-      "vehicleId": "1723"
-    },
-    "route:d7a6eb43555735d35d69d5a5": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ZEANURI",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "ZEANURI",
-      "detectedAt": "2026-10-18T11:59+02:00",
-      "direction": "",
-      "eventId": "route:d7a6eb43555735d35d69d5a5",
-      "line": "A3917",
-      "queuedAt": "2026-10-18T11:59:00+02:00",
-      "type": "route_change",
-      "vehicleId": "3382"
-    },
-    "route:d95d76b492ce45093eb470cc": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "PLENTZIA",
-          "old": "MUNGIA"
-        }
-      ],
-      "destination": "PLENTZIA",
-      "detectedAt": "2026-10-18T11:59+02:00",
-      "direction": "",
-      "eventId": "route:d95d76b492ce45093eb470cc",
-      "line": "A3537",
-      "queuedAt": "2026-10-18T11:59:00+02:00",
-      "type": "route_change",
-      "vehicleId": "2132"
-    },
-    "route_after_gap:5397bbf117e3e8421da0513e": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ-Cobaron",
-          "old": "PORTUGALETE"
-        }
-      ],
-      "destination": "MUSKIZ-Cobaron",
-      "detectedAt": "2026-10-18T11:59+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:5397bbf117e3e8421da0513e",
-      "line": "A3321",
-      "queuedAt": "2026-10-18T11:59:00+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7880"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "3352": {
       "consecutiveChecks": 2,
@@ -25410,7 +25294,7 @@
       "requiredMissing": 2
     },
     "7833": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:6ba368f1ea89cb9ada6f3bc3",
       "firstMissingAt": "2026-10-18T11:55:02+02:00",
@@ -25421,7 +25305,7 @@
         "line": "A3122"
       },
       "lastSeenAt": "2026-10-18T11:51:23+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8681": {
