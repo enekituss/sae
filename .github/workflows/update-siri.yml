@@ -950,8 +950,8 @@ jobs:
                       "detectedAt": LOCAL_NOW.isoformat(timespec="minutes"),
                       "queuedAt": LOCAL_NOW.isoformat(timespec="seconds"),
                   })
-              elif candidate.get("alerted"):
-                  # Close the loop if a previously reported vehicle comes back on the same route.
+              elif candidate.get("alerted") or candidate.get("notificationQueued"):
+                  # Notify re-entry even if the pending disappearance alert had not yet reached a subscriber.
                   event_payload = {
                       "vehicleId": vehicle_id,
                       "firstMissingAt": candidate.get("firstMissingAt", ""),
