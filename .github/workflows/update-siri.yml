@@ -1522,17 +1522,9 @@ jobs:
               state_dirty = True
               print("Actualizaciones de Telegram procesadas hasta el ID " + str(highest_processed_update) + ".")
 
-          if event_name == "workflow_dispatch":
-              try:
-                  telegram_api("sendMessage", {
-                      "chat_id": chat_id,
-                      "text": "✅ PRUEBA DE TELEGRAM — SAE Bizkaibus\nEl envío de mensajes desde GitHub Actions funciona correctamente.\nEsta prueba no significa que se haya detectado un cambio de ruta.",
-                      "disable_web_page_preview": True,
-                  })
-                  print("Prueba manual de Telegram enviada correctamente.")
-              except Exception as exc:
-                  print("ERROR: no se pudo enviar el mensaje de prueba: " + str(exc))
-                  sys.exit(1)
+          # No enviar mensajes de prueba en workflow_dispatch: el Worker usa
+          # ese evento para actualizar el feed periódicamente. Telegram solo debe
+          # recibir avisos reales generados por cambios confirmados en vehículos.
 
           events = sorted(
               outbox.values(),
