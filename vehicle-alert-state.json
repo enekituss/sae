@@ -26775,57 +26775,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:a9557aa201ccf41e559d4678": {
-      "destination": "AREETA (Artea)",
-      "detectedAt": "2026-10-18T11:07+02:00",
-      "direction": "",
-      "eventId": "missing:a9557aa201ccf41e559d4678",
-      "firstMissingAt": "2026-10-18T11:03:00+02:00",
-      "lastSeenAt": "2026-10-18T10:59:49+02:00",
-      "line": "A3422",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T11:07:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1718"
-    },
-    "route_after_gap:39eb050350ec71b555407475": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CABIECES",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "CABIECES",
-      "detectedAt": "2026-10-18T11:07+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:39eb050350ec71b555407475",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T11:07:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7867"
-    },
-    "route_after_gap:54981d24afd2cc4ad976f6d6": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "LA ARBOLEDA"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T11:07+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:54981d24afd2cc4ad976f6d6",
-      "line": "A3333",
-      "queuedAt": "2026-10-18T11:07:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7856"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2130": {
@@ -26883,7 +26833,7 @@
   },
   "pendingVehicles": {
     "1718": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a9557aa201ccf41e559d4678",
       "firstMissingAt": "2026-10-18T11:03:00+02:00",
@@ -26894,7 +26844,7 @@
         "line": "A3422"
       },
       "lastSeenAt": "2026-10-18T10:59:49+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2089": {
