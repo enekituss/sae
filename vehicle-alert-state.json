@@ -24577,132 +24577,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:1470df0130df383c2c136b0e": {
-      "destination": "LEMOIZ Armintza",
-      "detectedAt": "2026-10-18T09:25+02:00",
-      "direction": "",
-      "eventId": "entered:1470df0130df383c2c136b0e",
-      "firstObservedAt": "2026-10-18T09:23:00+02:00",
-      "line": "A3451",
-      "queuedAt": "2026-10-18T09:25:00+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "1723"
-    },
-    "entered:20e59739c37f362f416986cf": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T09:25+02:00",
-      "direction": "",
-      "eventId": "entered:20e59739c37f362f416986cf",
-      "firstObservedAt": "2026-10-18T09:23:00+02:00",
-      "line": "A3641",
-      "queuedAt": "2026-10-18T09:25:00+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "3365"
-    },
-    "entered:8ef1429f895ba11dc327517d": {
-      "destination": "CRUCES/GURUTZETA",
-      "detectedAt": "2026-10-18T09:25+02:00",
-      "direction": "",
-      "eventId": "entered:8ef1429f895ba11dc327517d",
-      "firstObservedAt": "2026-10-18T09:21:01+02:00",
-      "line": "A3522",
-      "queuedAt": "2026-10-18T09:25:00+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "2138"
-    },
-    "missing:93931602e510ef8b6df111b9": {
-      "destination": "OROZKO Uribiarte",
-      "detectedAt": "2026-10-18T09:25+02:00",
-      "direction": "",
-      "eventId": "missing:93931602e510ef8b6df111b9",
-      "firstMissingAt": "2026-10-18T09:21:01+02:00",
-      "lastSeenAt": "2026-10-18T09:17:28+02:00",
-      "line": "A3613",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T09:25:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3387"
-    },
-    "route:6c3f11c417ddc42129261f4c": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AIREPORTUA",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T09:25+02:00",
-      "direction": "",
-      "eventId": "route:6c3f11c417ddc42129261f4c",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T09:25:00+02:00",
-      "type": "route_change",
-      "vehicleId": "2076"
-    },
-    "route:8d8102b76878a09dad05108c": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "Metro BOLUETA",
-          "old": "GALDAKAO Ospital"
-        }
-      ],
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-18T09:25+02:00",
-      "direction": "",
-      "eventId": "route:8d8102b76878a09dad05108c",
-      "line": "A3932",
-      "queuedAt": "2026-10-18T09:25:00+02:00",
-      "type": "route_change",
-      "vehicleId": "3305"
-    },
-    "route_after_gap:2edc58004eb4f2a14c7358c6": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3911",
-          "old": "A3913"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "DURANGO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:25+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:2edc58004eb4f2a14c7358c6",
-      "line": "A3911",
-      "queuedAt": "2026-10-18T09:25:00+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3372"
-    },
-    "route_after_gap:d20f24959001bd6c520ccef7": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TRAPAGARAN",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "TRAPAGARAN",
-      "detectedAt": "2026-10-18T09:25+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:d20f24959001bd6c520ccef7",
-      "line": "A3332",
-      "queuedAt": "2026-10-18T09:25:00+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7861"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "7815": {
@@ -24799,7 +24674,7 @@
       "requiredMissing": 2
     },
     "3387": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:93931602e510ef8b6df111b9",
       "firstMissingAt": "2026-10-18T09:21:01+02:00",
@@ -24810,7 +24685,7 @@
         "line": "A3613"
       },
       "lastSeenAt": "2026-10-18T09:17:28+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7886": {
