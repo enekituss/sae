@@ -26207,57 +26207,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:6dfe0abe4b38239b093388f0": {
-      "destination": "ZEBERIO",
-      "detectedAt": "2026-10-18T13:53+02:00",
-      "direction": "",
-      "eventId": "missing:6dfe0abe4b38239b093388f0",
-      "firstMissingAt": "2026-10-18T13:49:00+02:00",
-      "lastSeenAt": "2026-10-18T13:45:43+02:00",
-      "line": "A3928",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T13:53:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3360"
-    },
-    "route:027d0fe1f610a79a0302d040": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GORLIZ",
-          "old": "PLENTZIA (Metro)"
-        }
-      ],
-      "destination": "GORLIZ",
-      "detectedAt": "2026-10-18T13:53+02:00",
-      "direction": "",
-      "eventId": "route:027d0fe1f610a79a0302d040",
-      "line": "A3499",
-      "queuedAt": "2026-10-18T13:53:00+02:00",
-      "type": "route_change",
-      "vehicleId": "1715"
-    },
-    "route_after_gap:a29813fcb6f86450b5b36321": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CABIECES",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "CABIECES",
-      "detectedAt": "2026-10-18T13:53+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:a29813fcb6f86450b5b36321",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T13:53:00+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7857"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1761": {
@@ -26416,7 +26366,7 @@
       "requiredMissing": 2
     },
     "3360": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:6dfe0abe4b38239b093388f0",
       "firstMissingAt": "2026-10-18T13:49:00+02:00",
@@ -26427,7 +26377,7 @@
         "line": "A3928"
       },
       "lastSeenAt": "2026-10-18T13:45:43+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3365": {
