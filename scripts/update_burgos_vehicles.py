@@ -3,6 +3,7 @@
 
 El resultado es una copia estática consumible desde GitHub Pages. Así el navegador
 no consulta directamente al Ayuntamiento ni depende de CORS/Cloudflare Worker.
+Este script está conectado a la actualización automática de autobuses de Burgos.
 """
 import concurrent.futures
 import json
