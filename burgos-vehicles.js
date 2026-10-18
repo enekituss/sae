@@ -348,9 +348,10 @@
     }
   }
 
-  function saveNextStopCache() {
+  function saveNextStopCache(sourceFetchedAt = "") {
     try {
-      nextStopCachedAt = Date.now();
+      const sourceTime = Date.parse(sourceFetchedAt);
+      nextStopCachedAt = Number.isFinite(sourceTime) ? sourceTime : Date.now();
       localStorage.setItem(NEXTSTOP_CACHE_KEY, JSON.stringify({
         savedAt: nextStopCachedAt,
         entries: [...nextStopByVehicle.entries()]
@@ -407,7 +408,7 @@
         }
 
         nextStopByVehicle = next;
-        saveNextStopCache();
+        saveNextStopCache(payload.fetchedAt);
         itineraryByVehicle.clear();
         console.info("SAE Burgos: próxima parada localizada para", next.size,
           "combinaciones vehículo/línea;",
