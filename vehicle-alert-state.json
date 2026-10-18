@@ -26962,78 +26962,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "route:393332247d82a337ef0c384c": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "Metro BOLUETA",
-          "old": "GALDAKAO"
-        }
-      ],
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-18T20:03+02:00",
-      "direction": "",
-      "eventId": "route:393332247d82a337ef0c384c",
-      "line": "A3932",
-      "queuedAt": "2026-10-18T20:03:07+02:00",
-      "type": "route_change",
-      "vehicleId": "3388"
-    },
-    "route:ee6e9e0e9f9ec1156ea8f66b": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO  (Aut.)",
-          "old": "BERMEO"
-        }
-      ],
-      "destination": "BILBAO  (Aut.)",
-      "detectedAt": "2026-10-18T20:03+02:00",
-      "direction": "",
-      "eventId": "route:ee6e9e0e9f9ec1156ea8f66b",
-      "line": "A3527",
-      "queuedAt": "2026-10-18T20:03:07+02:00",
-      "type": "route_change",
-      "vehicleId": "2125"
-    },
-    "route_after_gap:d7616b241be53ea3dac30e32": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "BASAURI S.Miguel"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T20:03+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:d7616b241be53ea3dac30e32",
-      "line": "A3632",
-      "queuedAt": "2026-10-18T20:03:07+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3292"
-    },
-    "vehicle_returned:4fd70f57abc9a92208e23f24": {
-      "destination": "ARRIGORRIAGA",
-      "detectedAt": "2026-10-18T20:03+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:4fd70f57abc9a92208e23f24",
-      "lastKnown": {
-        "destination": "ZEBERIO",
-        "direction": "",
-        "id": "3360",
-        "line": "A3928"
-      },
-      "line": "A3928",
-      "queuedAt": "2026-10-18T20:03:07+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3360"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2051": {
       "consecutiveChecks": 2,
