@@ -25835,57 +25835,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:57b244e66a3f0a951cffd18b": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T12:57+02:00",
-      "direction": "",
-      "eventId": "missing:57b244e66a3f0a951cffd18b",
-      "firstMissingAt": "2026-10-18T12:53:00+02:00",
-      "lastSeenAt": "2026-10-18T12:49:44+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T12:57:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3296"
-    },
-    "route:447b32734231c4ab8b28e705": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO (Aut.)",
-          "old": "BAKIO (Aut.)"
-        }
-      ],
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T12:57+02:00",
-      "direction": "",
-      "eventId": "route:447b32734231c4ab8b28e705",
-      "line": "A3518",
-      "queuedAt": "2026-10-18T12:57:02+02:00",
-      "type": "route_change",
-      "vehicleId": "2096"
-    },
-    "route_after_gap:98577462e80c25a2b2bdff35": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GETXO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "GETXO",
-      "detectedAt": "2026-10-18T12:57+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:98577462e80c25a2b2bdff35",
-      "line": "A3411",
-      "queuedAt": "2026-10-18T12:57:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "1102"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3383": {
@@ -25958,7 +25908,7 @@
       "requiredMissing": 2
     },
     "3296": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:57b244e66a3f0a951cffd18b",
       "firstMissingAt": "2026-10-18T12:53:00+02:00",
@@ -25969,7 +25919,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T12:49:44+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3386": {
