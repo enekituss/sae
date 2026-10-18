@@ -24647,92 +24647,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:0e675cb0ee564d03fa244173": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T09:27+02:00",
-      "direction": "",
-      "eventId": "missing:0e675cb0ee564d03fa244173",
-      "firstMissingAt": "2026-10-18T09:23:00+02:00",
-      "lastSeenAt": "2026-10-18T09:19:54+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T09:27:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2079"
-    },
-    "missing:56552c4b058f0c319b86e145": {
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-18T09:27+02:00",
-      "direction": "",
-      "eventId": "missing:56552c4b058f0c319b86e145",
-      "firstMissingAt": "2026-10-18T09:23:00+02:00",
-      "lastSeenAt": "2026-10-18T09:19:54+02:00",
-      "line": "A3916",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T09:27:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8663"
-    },
-    "route:678a5079a71bcf7579f3d0eb": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3335",
-          "old": "A3135"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-18T09:27+02:00",
-      "direction": "",
-      "eventId": "route:678a5079a71bcf7579f3d0eb",
-      "line": "A3335",
-      "queuedAt": "2026-10-18T09:27:02+02:00",
-      "type": "route_change",
-      "vehicleId": "7862"
-    },
-    "route:92ff78c80df2f61c194c07d5": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SESTAO",
-          "old": "CABIECES"
-        }
-      ],
-      "destination": "SESTAO",
-      "detectedAt": "2026-10-18T09:27+02:00",
-      "direction": "",
-      "eventId": "route:92ff78c80df2f61c194c07d5",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T09:27:02+02:00",
-      "type": "route_change",
-      "vehicleId": "7815"
-    },
-    "vehicle_returned:937d23ba0594659450692cf2": {
-      "destination": "OROZKO Uribiarte",
-      "detectedAt": "2026-10-18T09:27+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:937d23ba0594659450692cf2",
-      "lastKnown": {
-        "destination": "OROZKO Uribiarte",
-        "direction": "",
-        "id": "3387",
-        "line": "A3613"
-      },
-      "line": "A3613",
-      "queuedAt": "2026-10-18T09:27:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3387"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2120": {
       "consecutiveChecks": 1,
@@ -24786,7 +24701,7 @@
   },
   "pendingVehicles": {
     "2079": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:0e675cb0ee564d03fa244173",
       "firstMissingAt": "2026-10-18T09:23:00+02:00",
@@ -24797,7 +24712,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T09:19:54+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2088": {
@@ -24889,7 +24804,7 @@
       "requiredMissing": 2
     },
     "8663": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:56552c4b058f0c319b86e145",
       "firstMissingAt": "2026-10-18T09:23:00+02:00",
@@ -24900,7 +24815,7 @@
         "line": "A3916"
       },
       "lastSeenAt": "2026-10-18T09:19:54+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8670": {
