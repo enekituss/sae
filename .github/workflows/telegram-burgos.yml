@@ -1,0 +1,607 @@
+name: Alertas Telegram · Autobuses de Burgos
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/telegram-burgos.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alertas-telegram-burgos
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Detectar cambios y enviar avisos a Telegram
+        env:
+          BURGOS_TELEGRAM_BOT_TOKEN: ${{ secrets.BURGOS_TELEGRAM_BOT_TOKEN }}
+          BURGOS_TELEGRAM_CHAT_ID: ${{ secrets.BURGOS_TELEGRAM_CHAT_ID }}
+          BURGOS_WORKER_URL: https://burgos-sae-spotter.ecanteroalvarez.workers.dev
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          import sys
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from datetime import datetime, timezone
+
+          TOKEN = (os.environ.get("BURGOS_TELEGRAM_BOT_TOKEN") or "").strip()
+          PRIMARY_CHAT = (os.environ.get("BURGOS_TELEGRAM_CHAT_ID") or "").strip()
+          WORKER_URL = (os.environ.get("BURGOS_WORKER_URL") or "").strip().rstrip("/")
+          STATE_PATH = "burgos-telegram-state.json"
+
+          if not TOKEN or not PRIMARY_CHAT:
+              print("AVISO: configura BURGOS_TELEGRAM_BOT_TOKEN y BURGOS_TELEGRAM_CHAT_ID en Settings → Secrets and variables → Actions. No se ha ejecutado el bot.")
+              sys.exit(0)
+          if not WORKER_URL:
+              print("ERROR: falta BURGOS_WORKER_URL.")
+              sys.exit(1)
+
+          try:
+              with open(STATE_PATH, encoding="utf-8") as handle:
+                  state = json.load(handle)
+          except FileNotFoundError:
+              state = {
+                  "schemaVersion": 1,
+                  "initialized": False,
+                  "confirmedVehicles": {},
+                  "pendingArrivals": {},
+                  "pendingMissing": {},
+                  "pendingRouteChanges": {},
+                  "outbox": {},
+                  "telegramSubscriptions": {},
+                  "telegramUpdateOffset": 0,
+                  "emptyFeedState": {"consecutiveChecks": 0, "firstObservedAt": "", "confirmed": False}
+              }
+          except Exception as exc:
+              print("ERROR: no se pudo leer el estado persistente de Burgos: " + str(exc))
+              sys.exit(1)
+
+          def iso_now():
+              return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+          def parse_time(value):
+              try:
+                  result = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+                  if result.tzinfo is None:
+                      result = result.replace(tzinfo=timezone.utc)
+                  return result
+              except (TypeError, ValueError):
+                  return None
+
+          def clean(value):
+              return str(value or "").strip()
+
+          def telegram_api(method, payload):
+              endpoint = "https://api.telegram.org/bot" + TOKEN + "/" + method
+              last_error = None
+              for attempt in range(4):
+                  request = urllib.request.Request(
+                      endpoint,
+                      data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                      headers={"Content-Type": "application/json"},
+                      method="POST"
+                  )
+                  try:
+                      with urllib.request.urlopen(request, timeout=20) as response:
+                          result = json.loads(response.read().decode("utf-8"))
+                      if not result.get("ok"):
+                          parameters = result.get("parameters") or {}
+                          retry_after = parameters.get("retry_after")
+                          last_error = RuntimeError(method + ": " + clean(result.get("description")))
+                          if retry_after and attempt < 3:
+                              time.sleep(min(30, max(1, int(retry_after))))
+                              continue
+                          raise last_error
+                      return result.get("result", {})
+                  except urllib.error.HTTPError as exc:
+                      try:
+                          body = json.loads(exc.read().decode("utf-8"))
+                          description = clean(body.get("description"))
+                          retry_after = (body.get("parameters") or {}).get("retry_after")
+                      except Exception:
+                          description, retry_after = "", None
+                      last_error = RuntimeError(method + " HTTP " + str(exc.code) + (": " + description if description else ""))
+                      if exc.code != 429 and not (500 <= exc.code <= 599):
+                          raise last_error
+                      if attempt < 3:
+                          time.sleep(min(30, max(1, int(retry_after))) if retry_after else 2 ** attempt)
+                  except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+                      last_error = exc
+                      if attempt < 3:
+                          time.sleep(2 ** attempt)
+              raise RuntimeError(method + " falló tras varios intentos: " + str(last_error))
+
+          def menu_keyboard():
+              return {
+                  "keyboard": [
+                      [{"text": "🔔 Todos los avisos"}],
+                      [{"text": "⚠️ Solo fuera de servicio (sin posición reciente)"}],
+                      [{"text": "🔄 Solo cambios de línea"}],
+                      [{"text": "🚌 Seguir un coche por ID"}]
+                  ],
+                  "resize_keyboard": True,
+                  "is_persistent": True,
+                  "one_time_keyboard": False,
+                  "input_field_placeholder": "Elige tus avisos de Burgos"
+              }
+
+          def mode_description(subscription):
+              mode = clean(subscription.get("mode")) or "all"
+              if mode == "missing":
+                  return "Solo vehículos sin posición reciente (posible fin de servicio)"
+              if mode == "line":
+                  return "Solo cambios confirmados de línea"
+              if mode == "vehicle":
+                  vehicle_id = clean(subscription.get("vehicleId"))
+                  return "Solo el coche ID " + vehicle_id if vehicle_id else "Seguimiento de un coche (falta indicar ID)"
+              return "Todos los avisos"
+
+          def send_menu(chat_id, subscription, notice=""):
+              message = "🚌 SAE Spotter · Autobuses de Burgos\n\n"
+              if notice:
+                  message += notice + "\n\n"
+              message += "Configuración actual: " + mode_description(subscription) + "\n\nElige qué alertas quieres recibir con los botones del teclado."
+              message += "\n\nNota: la ausencia del feed indica que el coche deja de aparecer en los datos publicados; no confirma por sí sola una baja administrativa."
+              telegram_api("sendMessage", {
+                  "chat_id": chat_id,
+                  "text": message,
+                  "reply_markup": menu_keyboard(),
+                  "disable_web_page_preview": True
+              })
+
+          dirty = False
+          subscriptions = state.get("telegramSubscriptions", {})
+          if not isinstance(subscriptions, dict):
+              subscriptions = {}
+          primary_chat_id = str(PRIMARY_CHAT)
+          try:
+              bot_info = telegram_api("getMe", {})
+              primary_info = telegram_api("getChat", {"chat_id": PRIMARY_CHAT})
+              primary_chat_id = str(primary_info.get("id") or PRIMARY_CHAT)
+              print("Bot de Burgos validado: @" + clean(bot_info.get("username")))
+          except Exception as exc:
+              print("ERROR de configuración de Telegram para Burgos: " + str(exc))
+              sys.exit(1)
+
+          if primary_chat_id not in subscriptions:
+              subscriptions[primary_chat_id] = {"mode": "all", "vehicleId": "", "awaitingVehicleId": False}
+              dirty = True
+
+          # Las preferencias se procesan antes de consultar los datos para que el menú responda lo antes posible.
+          try:
+              update_offset = max(0, int(state.get("telegramUpdateOffset", 0) or 0))
+              updates = telegram_api("getUpdates", {
+                  "offset": update_offset,
+                  "timeout": 0,
+                  "allowed_updates": ["message"]
+              })
+          except Exception as exc:
+              print("AVISO: no se pudieron consultar los mensajes de Telegram: " + str(exc))
+              updates = []
+              update_offset = max(0, int(state.get("telegramUpdateOffset", 0) or 0))
+
+          highest_update = update_offset - 1
+          for update in sorted(updates, key=lambda item: int(item.get("update_id", -1))):
+              try:
+                  update_id = int(update.get("update_id", -1))
+              except (TypeError, ValueError):
+                  continue
+              message = update.get("message") or {}
+              incoming_chat_id = str((message.get("chat") or {}).get("id", "")).strip()
+              raw_text = (message.get("text") or "").strip()
+              if incoming_chat_id and raw_text:
+                  if incoming_chat_id not in subscriptions or not isinstance(subscriptions.get(incoming_chat_id), dict):
+                      subscriptions[incoming_chat_id] = {"mode": "all", "vehicleId": "", "awaitingVehicleId": False}
+                      dirty = True
+                  subscription = subscriptions[incoming_chat_id]
+                  command = raw_text.split()[0].split("@")[0].lower()
+                  try:
+                      if command in ("/start", "/help", "/menu", "/menú", "menu", "menú", "/config"):
+                          send_menu(incoming_chat_id, subscription, "Bot conectado. Puedes cambiar las preferencias cuando quieras.")
+                      elif raw_text in ("🔔 Todos los avisos", "Todos los avisos"):
+                          subscription.update({"mode": "all", "awaitingVehicleId": False})
+                          dirty = True
+                          send_menu(incoming_chat_id, subscription, "✅ Preferencias guardadas.")
+                      elif raw_text in ("⚠️ Solo fuera de servicio (sin posición reciente)", "⚠️ Solo sin posición reciente", "Solo sin posición reciente"):
+                          subscription.update({"mode": "missing", "awaitingVehicleId": False})
+                          dirty = True
+                          send_menu(incoming_chat_id, subscription, "✅ Recibirás avisos cuando un coche deje de aparecer de forma confirmada.")
+                      elif raw_text in ("🔄 Solo cambios de línea", "Solo cambios de línea"):
+                          subscription.update({"mode": "line", "awaitingVehicleId": False})
+                          dirty = True
+                          send_menu(incoming_chat_id, subscription, "✅ Recibirás solo cambios confirmados del campo línea.")
+                      elif raw_text in ("🚌 Seguir un coche por ID", "Seguir un coche por ID"):
+                          subscription.update({"mode": "vehicle", "awaitingVehicleId": True})
+                          dirty = True
+                          telegram_api("sendMessage", {
+                              "chat_id": incoming_chat_id,
+                              "text": "Escribe el ID numérico del autobús que quieres seguir. Puedes cancelar con /cancelar.",
+                              "reply_markup": menu_keyboard()
+                          })
+                      elif command in ("/cancel", "/cancelar"):
+                          subscription["awaitingVehicleId"] = False
+                          if not clean(subscription.get("vehicleId")):
+                              subscription["mode"] = "all"
+                          dirty = True
+                          send_menu(incoming_chat_id, subscription, "Operación cancelada.")
+                      elif command in ("/id", "/coche"):
+                          parts = raw_text.split(maxsplit=1)
+                          vehicle_id = parts[1].strip() if len(parts) > 1 else ""
+                          if vehicle_id.isdigit() and len(vehicle_id) <= 12:
+                              subscription.update({"mode": "vehicle", "vehicleId": vehicle_id, "awaitingVehicleId": False})
+                              dirty = True
+                              send_menu(incoming_chat_id, subscription, "✅ Seguiré el coche ID " + vehicle_id + ".")
+                          else:
+                              subscription.update({"mode": "vehicle", "awaitingVehicleId": True})
+                              dirty = True
+                              telegram_api("sendMessage", {
+                                  "chat_id": incoming_chat_id,
+                                  "text": "Escribe el ID numérico del coche que quieres seguir. Puedes cancelar con /cancelar.",
+                                  "reply_markup": menu_keyboard()
+                              })
+                      elif subscription.get("awaitingVehicleId"):
+                          vehicle_id = raw_text.strip()
+                          if vehicle_id.isdigit() and len(vehicle_id) <= 12:
+                              subscription.update({"mode": "vehicle", "vehicleId": vehicle_id, "awaitingVehicleId": False})
+                              dirty = True
+                              send_menu(incoming_chat_id, subscription, "✅ Seguiré el coche ID " + vehicle_id + ".")
+                          else:
+                              telegram_api("sendMessage", {
+                                  "chat_id": incoming_chat_id,
+                                  "text": "El ID debe ser numérico. Prueba otra vez o envía /cancelar."
+                              })
+                  except Exception as exc:
+                      print("AVISO: no se pudo atender un mensaje de Telegram: " + str(exc))
+              highest_update = update_id
+
+          if highest_update >= update_offset:
+              state["telegramUpdateOffset"] = highest_update + 1
+              dirty = True
+
+          confirmed = state.get("confirmedVehicles", {})
+          pending_arrivals = state.get("pendingArrivals", {})
+          pending_missing = state.get("pendingMissing", {})
+          pending_routes = state.get("pendingRouteChanges", {})
+          outbox = state.get("outbox", {})
+          if not isinstance(confirmed, dict):
+              confirmed = {}
+          if not isinstance(pending_arrivals, dict):
+              pending_arrivals = {}
+          if not isinstance(pending_missing, dict):
+              pending_missing = {}
+          if not isinstance(pending_routes, dict):
+              pending_routes = {}
+          if not isinstance(outbox, dict):
+              outbox = {}
+
+          def normalise_vehicle(vehicle):
+              vehicle_id = clean(vehicle.get("id") or vehicle.get("vehicleId") or vehicle.get("vehicle_id") or vehicle.get("vehicle"))
+              if not vehicle_id:
+                  return None
+              line = clean(vehicle.get("lineId") or vehicle.get("line") or vehicle.get("route") or vehicle.get("ruta"))
+              destination = clean(vehicle.get("destination") or vehicle.get("destino") or vehicle.get("headsign") or vehicle.get("destinationName") or vehicle.get("destiny"))
+              direction = clean(vehicle.get("direction") or vehicle.get("sentido") or vehicle.get("direccion"))
+              return {"id": vehicle_id, "line": line, "destination": destination, "direction": direction}
+
+          def vehicle_fields_equal(a, b):
+              return all(clean(a.get(field)) == clean(b.get(field)) for field in ("line", "destination", "direction"))
+
+          def changed_fields(old, new):
+              labels = {"line": "Línea", "destination": "Destino", "direction": "Sentido"}
+              return [
+                  {"field": field, "label": labels[field], "old": clean(old.get(field)) or "No disponible", "new": clean(new.get(field)) or "No disponible"}
+                  for field in ("line", "destination", "direction")
+                  if clean(old.get(field)) != clean(new.get(field))
+              ]
+
+          def queue_event(event):
+              event["detectedAt"] = iso_now()
+              seed = json.dumps([event.get("type"), event.get("vehicleId"), event.get("detectedAt"), event.get("changed")], ensure_ascii=False, sort_keys=True)
+              event_id = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:24]
+              event["eventId"] = event_id
+              event["queuedAt"] = event["detectedAt"]
+              event["targetChats"] = []
+              event["deliveredTo"] = []
+              outbox[event_id] = event
+
+          snapshot_ok = False
+          try:
+              request = urllib.request.Request(
+                  WORKER_URL + "/api/burgos/vehicles",
+                  headers={"Accept": "application/json", "User-Agent": "SAE-Spotter-Burgos-Telegram/1.0"}
+              )
+              with urllib.request.urlopen(request, timeout=180) as response:
+                  payload = json.loads(response.read().decode("utf-8"))
+              vehicles_raw = payload.get("vehicles")
+              if payload.get("ok") is not True or not isinstance(vehicles_raw, list):
+                  raise RuntimeError(clean(payload.get("error")) or "La API no devolvió una lista de autobuses.")
+              failed_lines = payload.get("failedLines") or []
+              line_count = int(payload.get("lineCount") or 0)
+              total_lines = int(payload.get("totalLines") or 0)
+              if payload.get("partial") or failed_lines or (total_lines and line_count and line_count < total_lines):
+                  raise RuntimeError("La consulta municipal es parcial; se omite la detección para evitar falsas desapariciones. Líneas fallidas: " + ", ".join(map(str, failed_lines)))
+              current = {}
+              for raw_vehicle in vehicles_raw:
+                  vehicle = normalise_vehicle(raw_vehicle)
+                  if vehicle:
+                      current[vehicle["id"]] = vehicle
+              snapshot_ok = True
+              print("Snapshot de Burgos válido: " + str(len(current)) + " coches.")
+          except Exception as exc:
+              print("AVISO: no se ha podido obtener un snapshot completo de Burgos; no se recalcularán las alertas: " + str(exc))
+              current = {}
+
+          if snapshot_ok:
+              now = iso_now()
+              empty_state = state.get("emptyFeedState", {})
+              if not isinstance(empty_state, dict):
+                  empty_state = {"consecutiveChecks": 0, "firstObservedAt": "", "confirmed": False}
+
+              if current:
+                  if empty_state.get("consecutiveChecks") or empty_state.get("confirmed"):
+                      empty_state = {"consecutiveChecks": 0, "firstObservedAt": "", "confirmed": False}
+                      dirty = True
+              else:
+                  previous_checks = int(empty_state.get("consecutiveChecks") or 0)
+                  if previous_checks == 0:
+                      empty_state["firstObservedAt"] = now
+                  empty_state["consecutiveChecks"] = previous_checks + 1
+                  first_empty = parse_time(empty_state.get("firstObservedAt"))
+                  elapsed = (datetime.now(timezone.utc) - first_empty).total_seconds() if first_empty else 0
+                  if empty_state["consecutiveChecks"] >= 4 and elapsed >= 15 * 60:
+                      empty_state["confirmed"] = True
+                  state["emptyFeedState"] = empty_state
+                  dirty = True
+
+              if not state.get("initialized"):
+                  confirmed = current.copy()
+                  state["initialized"] = True
+                  state["baselineAt"] = now
+                  dirty = True
+                  print("Primera consulta guardada como línea base: no se anuncian todos los coches como nuevas incorporaciones.")
+              else:
+                  feed_allows_missing = bool(current) or bool(empty_state.get("confirmed"))
+                  for vehicle_id, vehicle in current.items():
+                      if vehicle_id in confirmed:
+                          pending_arrivals.pop(vehicle_id, None)
+                          if vehicle_id in pending_missing:
+                              pending_missing.pop(vehicle_id, None)
+                              dirty = True
+                          old = confirmed[vehicle_id]
+                          changes = changed_fields(old, vehicle)
+                          pending = pending_routes.get(vehicle_id)
+                          if changes:
+                              if pending and vehicle_fields_equal(pending.get("new", {}), vehicle):
+                                  pending["checks"] = int(pending.get("checks") or 1) + 1
+                              else:
+                                  pending = {"old": old, "new": vehicle, "checks": 1, "firstDetectedAt": now}
+                                  pending_routes[vehicle_id] = pending
+                              dirty = True
+                              if pending["checks"] >= 2:
+                                  queue_event({
+                                      "type": "route_change",
+                                      "vehicleId": vehicle_id,
+                                      "line": vehicle.get("line", ""),
+                                      "destination": vehicle.get("destination", ""),
+                                      "direction": vehicle.get("direction", ""),
+                                      "old": old,
+                                      "new": vehicle,
+                                      "changed": changed_fields(old, vehicle)
+                                  })
+                                  confirmed[vehicle_id] = vehicle
+                                  pending_routes.pop(vehicle_id, None)
+                                  dirty = True
+                          elif vehicle_id in pending_routes:
+                              pending_routes.pop(vehicle_id, None)
+                              dirty = True
+                      else:
+                          pending_missing.pop(vehicle_id, None)
+                          pending = pending_routes.pop(vehicle_id, None)
+                          if pending:
+                              dirty = True
+                          candidate = pending_arrivals.get(vehicle_id)
+                          if candidate and vehicle_fields_equal(candidate.get("vehicle", {}), vehicle):
+                              candidate["checks"] = int(candidate.get("checks") or 1) + 1
+                          else:
+                              candidate = {"vehicle": vehicle, "checks": 1, "firstDetectedAt": now}
+                              pending_arrivals[vehicle_id] = candidate
+                          dirty = True
+                          if candidate["checks"] >= 2:
+                              queue_event({
+                                  "type": "vehicle_entered",
+                                  "vehicleId": vehicle_id,
+                                  "line": vehicle.get("line", ""),
+                                  "destination": vehicle.get("destination", ""),
+                                  "direction": vehicle.get("direction", ""),
+                                  "firstObservedAt": candidate.get("firstDetectedAt", now)
+                              })
+                              confirmed[vehicle_id] = vehicle
+                              pending_arrivals.pop(vehicle_id, None)
+                              dirty = True
+
+                  for vehicle_id, old_vehicle in list(confirmed.items()):
+                      if vehicle_id in current:
+                          continue
+                      if vehicle_id in pending_arrivals:
+                          pending_arrivals.pop(vehicle_id, None)
+                          dirty = True
+                      if vehicle_id in pending_routes:
+                          pending_routes.pop(vehicle_id, None)
+                          dirty = True
+                      if not feed_allows_missing:
+                          continue
+                      candidate = pending_missing.get(vehicle_id)
+                      if candidate:
+                          candidate["checks"] = int(candidate.get("checks") or 1) + 1
+                      else:
+                          candidate = {"vehicle": old_vehicle, "checks": 1, "firstMissingAt": now}
+                          pending_missing[vehicle_id] = candidate
+                      dirty = True
+                      if candidate["checks"] >= 2:
+                          queue_event({
+                              "type": "vehicle_missing",
+                              "vehicleId": vehicle_id,
+                              "line": old_vehicle.get("line", ""),
+                              "destination": old_vehicle.get("destination", ""),
+                              "direction": old_vehicle.get("direction", ""),
+                              "lastSeenAt": candidate.get("firstMissingAt", now),
+                              "missingChecks": candidate["checks"]
+                          })
+                          confirmed.pop(vehicle_id, None)
+                          pending_missing.pop(vehicle_id, None)
+                          dirty = True
+
+              state["confirmedVehicles"] = confirmed
+              state["pendingArrivals"] = pending_arrivals
+              state["pendingMissing"] = pending_missing
+              state["pendingRouteChanges"] = pending_routes
+              state["emptyFeedState"] = empty_state
+              state["outbox"] = outbox
+
+          def event_matches(event, subscription):
+              mode = clean(subscription.get("mode")) or "all"
+              event_type = clean(event.get("type"))
+              if mode == "all":
+                  return True
+              if mode == "missing":
+                  return event_type == "vehicle_missing"
+              if mode == "line":
+                  return event_type == "route_change" and any(
+                      item.get("field") == "line" for item in (event.get("changed") or []) if isinstance(item, dict)
+                  )
+              if mode == "vehicle":
+                  return bool(clean(subscription.get("vehicleId"))) and clean(event.get("vehicleId")) == clean(subscription.get("vehicleId"))
+              return False
+
+          def render_event(event):
+              vehicle_id = clean(event.get("vehicleId")) or "No disponible"
+              line = clean(event.get("line")) or "No disponible"
+              destination = clean(event.get("destination")) or "No disponible"
+              direction = clean(event.get("direction")) or "No disponible"
+              event_type = clean(event.get("type"))
+              if event_type == "vehicle_missing":
+                  lines = [
+                      "⚠️ VEHÍCULO SIN POSICIÓN RECIENTE (POSIBLE FIN DE SERVICIO)",
+                      "Coche: " + vehicle_id,
+                      "Última línea publicada: " + line,
+                      "Último destino publicado: " + destination,
+                      "Último sentido publicado: " + direction,
+                      "Confirmación: el coche ha faltado en varias consultas completas del servicio municipal.",
+                      "Nota: no aparecer en el feed no confirma por sí solo una baja administrativa.",
+                      "Hora del aviso: " + clean(event.get("detectedAt"))
+                  ]
+              elif event_type == "vehicle_entered":
+                  lines = [
+                      "🟢 AUTOBÚS DETECTADO EN SERVICIO",
+                      "Coche: " + vehicle_id,
+                      "Línea publicada: " + line,
+                      "Destino publicado: " + destination,
+                      "Sentido publicado: " + direction,
+                      "Primera detección: " + clean(event.get("firstObservedAt")),
+                      "Confirmación: el coche aparece en dos consultas completas consecutivas.",
+                      "Hora del aviso: " + clean(event.get("detectedAt"))
+                  ]
+              else:
+                  lines = [
+                      "🔄 CAMBIO DE DATOS PUBLICADOS DEL AUTOBÚS",
+                      "Coche: " + vehicle_id
+                  ]
+                  labels = {"line": "Línea", "destination": "Destino", "direction": "Sentido"}
+                  for item in event.get("changed", []):
+                      if isinstance(item, dict):
+                          lines.append(labels.get(item.get("field"), clean(item.get("label"))) + ": " + clean(item.get("old")) + " → " + clean(item.get("new")))
+                  lines.append("Hora del aviso: " + clean(event.get("detectedAt")))
+              return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
+
+          # Freeze the intended recipients per event so retrying a failed send cannot
+          # unexpectedly broadcast an old alert to somebody who joined later.
+          for event_id, event in list(outbox.items()):
+              if not event.get("targetChats"):
+                  targets = [
+                      str(chat_id) for chat_id, subscription in subscriptions.items()
+                      if isinstance(subscription, dict) and event_matches(event, subscription)
+                  ]
+                  event["targetChats"] = sorted(set(targets))
+                  event["deliveredTo"] = []
+                  dirty = True
+              targets = [str(chat_id) for chat_id in event.get("targetChats", [])]
+              delivered_to = event.get("deliveredTo", [])
+              if not isinstance(delivered_to, list):
+                  delivered_to = []
+              if not targets:
+                  outbox.pop(event_id, None)
+                  dirty = True
+                  continue
+              complete = True
+              for chat_id in targets:
+                  if chat_id in delivered_to:
+                      continue
+                  try:
+                      telegram_api("sendMessage", {
+                          "chat_id": chat_id,
+                          "text": render_event(event),
+                          "disable_web_page_preview": True
+                      })
+                      delivered_to.append(chat_id)
+                      event["deliveredTo"] = delivered_to
+                      dirty = True
+                      time.sleep(1.1)
+                  except Exception as exc:
+                      print("ERROR al enviar aviso de Burgos a un chat: " + str(exc))
+                      complete = False
+                      break
+              if complete and all(chat_id in delivered_to for chat_id in targets):
+                  outbox.pop(event_id, None)
+                  dirty = True
+
+          state["schemaVersion"] = 1
+          state["telegramSubscriptions"] = subscriptions
+          state["outbox"] = outbox
+          state["pendingArrivals"] = pending_arrivals
+          state["pendingMissing"] = pending_missing
+          state["pendingRouteChanges"] = pending_routes
+          state["confirmedVehicles"] = confirmed
+          if dirty:
+              with open(STATE_PATH + ".tmp", "w", encoding="utf-8") as handle:
+                  json.dump(state, handle, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+                  handle.write("\n")
+              os.replace(STATE_PATH + ".tmp", STATE_PATH)
+              try:
+                  subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
+                  subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
+                  subprocess.run(["git", "add", STATE_PATH], check=True)
+                  diff = subprocess.run(["git", "diff", "--cached", "--quiet"], check=False)
+                  if diff.returncode == 1:
+                      subprocess.run(["git", "commit", "-m", "Guardar estado de alertas de Burgos"], check=True)
+                      subprocess.run(["git", "fetch", "origin", "main"], check=True)
+                      subprocess.run(["git", "rebase", "origin/main"], check=True)
+                      subprocess.run(["git", "push", "origin", "HEAD:main"], check=True)
+                      print("Estado de alertas de Burgos guardado en GitHub.")
+                  elif diff.returncode != 0:
+                      raise RuntimeError("git diff devolvió el código " + str(diff.returncode))
+              except Exception as exc:
+                  print("ERROR al guardar el estado del bot de Burgos: " + str(exc))
+                  sys.exit(1)
+
+          print("Proceso de alertas Burgos terminado; avisos pendientes: " + str(len(outbox)) + ".")
+          PY
