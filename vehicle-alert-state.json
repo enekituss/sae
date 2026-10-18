@@ -17547,66 +17547,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:5aedf6e151ff50a4a7a57d47": {
-      "destination": "BAKIO (Aut.)",
-      "detectedAt": "2026-10-18T22:11+02:00",
-      "direction": "",
-      "eventId": "missing:5aedf6e151ff50a4a7a57d47",
-      "firstMissingAt": "2026-10-18T22:07:06+02:00",
-      "lastSeenAt": "2026-10-18T22:03:54+02:00",
-      "line": "A3518",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T22:11:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2096"
-    },
-    "missing:ac7cf21ac830390d7a9d9db2": {
-      "destination": "MENDATA",
-      "detectedAt": "2026-10-18T22:11+02:00",
-      "direction": "",
-      "eventId": "missing:ac7cf21ac830390d7a9d9db2",
-      "firstMissingAt": "2026-10-18T22:07:06+02:00",
-      "lastSeenAt": "2026-10-18T22:03:54+02:00",
-      "line": "A3533",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T22:11:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8682"
-    },
-    "vehicle_returned:9a6bd56f054e8fe7f19c8848": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T22:11+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:9a6bd56f054e8fe7f19c8848",
-      "lastKnown": {
-        "destination": "AIREPORTUA",
-        "direction": "",
-        "id": "2120",
-        "line": "A3247"
-      },
-      "line": "A3247",
-      "queuedAt": "2026-10-18T22:11:05+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2120"
-    },
-    "vehicle_returned:db8bafa976c9bfd58d0d193e": {
-      "destination": "LARRABETZU",
-      "detectedAt": "2026-10-18T22:11+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:db8bafa976c9bfd58d0d193e",
-      "lastKnown": {
-        "destination": "LARRABETZU",
-        "direction": "",
-        "id": "2113",
-        "line": "A3223"
-      },
-      "line": "A3223",
-      "queuedAt": "2026-10-18T22:11:05+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2113"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3365": {
@@ -17696,7 +17637,7 @@
       "requiredMissing": 2
     },
     "2096": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:5aedf6e151ff50a4a7a57d47",
       "firstMissingAt": "2026-10-18T22:07:06+02:00",
@@ -17707,7 +17648,7 @@
         "line": "A3518"
       },
       "lastSeenAt": "2026-10-18T22:03:54+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2100": {
@@ -18006,7 +17947,7 @@
       "requiredMissing": 2
     },
     "8682": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:ac7cf21ac830390d7a9d9db2",
       "firstMissingAt": "2026-10-18T22:07:06+02:00",
@@ -18017,7 +17958,7 @@
         "line": "A3533"
       },
       "lastSeenAt": "2026-10-18T22:03:54+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
@@ -18034,5 +17975,5 @@
       "vehicleId": "7830"
     }
   },
-  "telegramUpdateOffset": 30217619
+  "telegramUpdateOffset": 30217620
 }
