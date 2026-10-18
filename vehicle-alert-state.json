@@ -15036,21 +15036,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:2fbd7be3d30000bbb0eeb94b": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T07:48+02:00",
-      "direction": "",
-      "eventId": "missing:2fbd7be3d30000bbb0eeb94b",
-      "firstMissingAt": "2026-10-18T07:45:01+02:00",
-      "lastSeenAt": "2026-10-18T07:41:58+02:00",
-      "line": "A3411",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T07:48:21+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1101"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1714": {
       "consecutiveChecks": 1,
@@ -15086,7 +15072,7 @@
   },
   "pendingVehicles": {
     "1101": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:2fbd7be3d30000bbb0eeb94b",
       "firstMissingAt": "2026-10-18T07:45:01+02:00",
@@ -15097,7 +15083,7 @@
         "line": "A3411"
       },
       "lastSeenAt": "2026-10-18T07:41:58+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2135": {
