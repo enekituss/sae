@@ -27133,75 +27133,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:2c89b8b5809da893f53974d9": {
-      "destination": "GERNIKA LUMO",
-      "detectedAt": "2026-10-18T18:53+02:00",
-      "direction": "",
-      "eventId": "missing:2c89b8b5809da893f53974d9",
-      "firstMissingAt": "2026-10-18T18:49:04+02:00",
-      "lastSeenAt": "2026-10-18T18:45:22+02:00",
-      "line": "A3532",
-      "missingChecks": 4,
-      "queuedAt": "2026-10-18T18:53:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8681"
-    },
-    "route:821b517a00f01c408fa82c5b": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "OTXANDIO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T18:53+02:00",
-      "direction": "",
-      "eventId": "route:821b517a00f01c408fa82c5b",
-      "line": "A3925",
-      "queuedAt": "2026-10-18T18:53:03+02:00",
-      "type": "route_change",
-      "vehicleId": "3352"
-    },
-    "route:8e7290f4a0bf169a22838b96": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "MUSKIZ"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T18:53+02:00",
-      "direction": "",
-      "eventId": "route:8e7290f4a0bf169a22838b96",
-      "line": "A3336",
-      "queuedAt": "2026-10-18T18:53:03+02:00",
-      "type": "route_change",
-      "vehicleId": "7816"
-    },
-    "route:fc2374720422eb9a599f26d1": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AIREPORTUA",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T18:53+02:00",
-      "direction": "",
-      "eventId": "route:fc2374720422eb9a599f26d1",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T18:53:03+02:00",
-      "type": "route_change",
-      "vehicleId": "2120"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "7877": {
@@ -27323,7 +27255,7 @@
       "requiredMissing": 2
     },
     "8681": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 4,
       "eventId": "missing:2c89b8b5809da893f53974d9",
       "firstMissingAt": "2026-10-18T18:49:04+02:00",
@@ -27334,7 +27266,7 @@
         "line": "A3532"
       },
       "lastSeenAt": "2026-10-18T18:45:22+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
