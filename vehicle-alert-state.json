@@ -25503,21 +25503,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:b1aae490f2bb29e0d4868687": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T12:37+02:00",
-      "direction": "",
-      "eventId": "missing:b1aae490f2bb29e0d4868687",
-      "firstMissingAt": "2026-10-18T12:33:02+02:00",
-      "lastSeenAt": "2026-10-18T12:29:27+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T12:37:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2089"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1731": {
@@ -25602,7 +25588,7 @@
       "requiredMissing": 2
     },
     "2089": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:b1aae490f2bb29e0d4868687",
       "firstMissingAt": "2026-10-18T12:33:02+02:00",
@@ -25613,7 +25599,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T12:29:27+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2090": {
@@ -25781,9 +25767,9 @@
   "telegramSubscriptions": {
     "5333330154": {
       "awaitingVehicleId": false,
-      "mode": "vehicle",
+      "mode": "line",
       "vehicleId": "7830"
     }
   },
-  "telegramUpdateOffset": 30217609
+  "telegramUpdateOffset": 30217610
 }
