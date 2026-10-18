@@ -147,6 +147,15 @@ jobs:
               print("Filas publicadas por resourceVehicles: " + str(payload.get("vehicleRowCount") or 0))
               print("Observaciones de resourceEstimations: " + str(payload.get("estimationCount") or 0))
               print("Autobuses resultantes: " + str(len(payload["vehicles"])) + ".")
+          except urllib.error.HTTPError as exc:
+              try:
+                  body = json.loads(exc.read().decode("utf-8", errors="replace"))
+                  detail = str(body.get("error") or body.get("message") or "")[:500]
+              except Exception:
+                  detail = ""
+              message = "HTTP " + str(exc.code) + (": " + detail if detail else "")
+              failures.append("SAE oficial de Burgos (line=01, tres recursos): " + message)
+              print("FALLO: consulta del SAE por línea: " + message)
           except Exception as exc:
               failures.append("SAE oficial de Burgos (line=01, tres recursos): " + str(exc))
               print("FALLO: consulta del SAE por línea: " + str(exc))
