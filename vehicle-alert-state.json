@@ -22702,34 +22702,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "missing:09f6b37b5a6d94fc95e1c7da": {
-      "destination": "LEIOA",
-      "detectedAt": "2026-10-18T15:13+02:00",
-      "direction": "",
-      "eventId": "missing:09f6b37b5a6d94fc95e1c7da",
-      "firstMissingAt": "2026-10-18T15:09:03+02:00",
-      "lastSeenAt": "2026-10-18T15:05:55+02:00",
-      "line": "A3531",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T15:13:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2130"
-    },
-    "missing:ca206d0d77578143113b3e7b": {
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-18T15:13+02:00",
-      "direction": "",
-      "eventId": "missing:ca206d0d77578143113b3e7b",
-      "firstMissingAt": "2026-10-18T15:09:03+02:00",
-      "lastSeenAt": "2026-10-18T15:05:55+02:00",
-      "line": "A3916",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T15:13:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8678"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3337": {
@@ -22860,7 +22833,7 @@
       "requiredMissing": 2
     },
     "2130": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:09f6b37b5a6d94fc95e1c7da",
       "firstMissingAt": "2026-10-18T15:09:03+02:00",
@@ -22871,7 +22844,7 @@
         "line": "A3531"
       },
       "lastSeenAt": "2026-10-18T15:05:55+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2132": {
@@ -23065,7 +23038,7 @@
       "requiredMissing": 2
     },
     "8678": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:ca206d0d77578143113b3e7b",
       "firstMissingAt": "2026-10-18T15:09:03+02:00",
@@ -23076,7 +23049,7 @@
         "line": "A3916"
       },
       "lastSeenAt": "2026-10-18T15:05:55+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
