@@ -19,7 +19,7 @@ Web de consulta de líneas y vehículos Bizkaibus detectados por SIRI, con desti
 
 ## Alertas de cambios de ruta por Telegram
 
-El bot tiene un menú personal por chat privado. Envía `/start` o `/menu` para elegir entre seis opciones. Como GitHub Actions procesa los mensajes en ciclos de unos cinco minutos, la respuesta del menú puede tardar:
+El bot tiene un menú personal por chat privado. Envía `/start` o `/menu` para elegir entre seis opciones. Una vez activados los webhooks de Telegram del Worker de Cloudflare, las selecciones se confirman al instante y las preferencias se guardan en la rama separada `telegram-data`. Si los webhooks todavía no están configurados, GitHub Actions conserva el procesamiento periódico de respaldo. La detección de cambios de autobuses sigue dependiendo de las siguientes consultas de los datos publicados y no se vuelve instantánea por acelerar el menú:
 
 - **Todos los avisos:** recibe todas las clases de eventos confirmados.
 - **Solo fuera de servicio:** avisa cuando un vehículo deja de aparecer en el feed tras varias comprobaciones. No confirma una baja administrativa.
@@ -28,7 +28,26 @@ El bot tiene un menú personal por chat privado. Envía `/start` o `/menu` para 
 - **Seguir coche(s) por ID:** escribe uno o varios identificadores, separados por espacios o comas. Se puede volver a seleccionar la opción para añadir más coches. También funciona `/id 1101 1102`.
 - **Pausar avisos:** no envía más avisos hasta que se seleccione otra modalidad. También funciona `/stop` o `/pausar`.
 
-Las preferencias se guardan por chat privado en `vehicle-alert-state.json`, así que cada usuario tiene sus filtros y su lista de coches independientes. El bot revisa la modalidad al enviar para evitar entregar mensajes pendientes que ya no corresponden a la configuración actual.
+### Activar el menú instantáneo (una sola vez)
+
+En Cloudflare, dentro del Worker `bizkaibus-sae-dispatcher`, añade estos **Secrets** sin publicarlos ni enviarlos por el chat:
+
+- `TELEGRAM_BIZKAIBUS_BOT_TOKEN`: el mismo valor que el secreto de Actions `TELEGRAM_BOT_TOKEN`.
+- `TELEGRAM_BURGOS_BOT_TOKEN`: el mismo valor que `BURGOS_TELEGRAM_BOT_TOKEN`.
+- `TELEGRAM_WEBHOOK_SECRET`: una cadena aleatoria de al menos 32 caracteres con letras, números, guion y guion bajo.
+- `GITHUB_TOKEN`: necesita `Actions: Read and write` y `Contents: Read and write` para el repositorio `sae`.
+
+Despliega el Worker actualizado y, en PowerShell, ejecuta lo siguiente. Cuando te lo pida, pega el valor de `TELEGRAM_WEBHOOK_SECRET` que guardaste en Cloudflare; no incluyas el secreto en GitHub ni en el chat:
+
+```powershell
+$secret = Read-Host "Pega TELEGRAM_WEBHOOK_SECRET"
+Invoke-RestMethod -Method Post -Uri "https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev/admin/telegram/setup" -Headers @{ Authorization = "Bearer $secret" }
+Remove-Variable secret
+```
+
+La respuesta debe indicar `"ok": true` y que ambos webhooks se han registrado. A partir de ese momento, Cloudflare recibe los mensajes y guarda las preferencias en la rama separada `telegram-data`; GitHub Actions sigue comprobando los autobuses con su frecuencia normal. Mientras los webhooks no estén activos, los flujos mantienen el polling antiguo como respaldo.
+
+Las preferencias principales se guardan por chat privado en la rama `telegram-data` (un fichero independiente por usuario), mientras que `vehicle-alert-state.json` conserva el estado del detector y la cola de eventos. El bot revisa la modalidad al enviar para evitar entregar mensajes pendientes que ya no corresponden a la configuración actual.
 La actualización automática compara snapshots consecutivos de SIRI y mantiene una cola persistente de avisos de Telegram:
 
 - **Entrada en el feed:** un vehículo con ID publicado que no estaba en el snapshot anterior debe aparecer en dos consultas válidas consecutivas separadas al menos dos minutos. La primera ejecución establece la referencia y no anuncia toda la flota como nueva.
@@ -53,7 +72,7 @@ El flujo `.github/workflows/telegram-burgos.yml` consulta el Worker municipal de
 
 Después, comparte el enlace [https://t.me/SAEBUR_bot](https://t.me/SAEBUR_bot) en tu grupo de comunidad. Los miembros deben pulsar **Iniciar** en el chat privado del bot para que se registren individualmente; no es necesario añadir el bot al grupo.
 
-Envía `/start` o `/menu` a [@SAEBUR_bot](https://t.me/SAEBUR_bot) para abrir el menú individual. Cada persona debe iniciar el bot en su chat privado: sus preferencias se guardan por separado de las de los demás. El menú dispone de todos los avisos, solo fuera de servicio, solo cambios de línea entre coches activos, nueva entrada/reaparición, seguimiento de varios coches por ID y pausa total de avisos. Para añadir varios coches, escribe sus ID separados por espacios o comas, o repite la opción de seguimiento; también funciona `/id 1101 1102`. `/misavisos` y `/estado` muestran el menú; `/stop` o `/pausar` detienen los avisos hasta reactivarlos. La modalidad se comprueba de nuevo antes del envío para no recibir alertas pendientes que ya no encajan con las preferencias actuales. Las horas de aviso se muestran en hora peninsular española. El estado se conserva en `burgos-telegram-state.json` y no comparte preferencias ni token con Bizkaibus.
+Envía `/start` o `/menu` a [@SAEBUR_bot](https://t.me/SAEBUR_bot) para abrir el menú individual. Cada persona debe iniciar el bot en su chat privado: sus preferencias se guardan por separado en la rama `telegram-data`. El menú dispone de todos los avisos, solo fuera de servicio, solo cambios de línea entre coches activos, nueva entrada/reaparición, seguimiento de varios coches por ID y pausa total de avisos. Para añadir varios coches, escribe sus ID separados por espacios o comas, o repite la opción de seguimiento; también funciona `/id 1101 1102`. `/misavisos` y `/estado` muestran el menú; `/stop` o `/pausar` detienen los avisos hasta reactivarlos. La modalidad se comprueba de nuevo antes del envío para no recibir alertas pendientes que ya no encajan con las preferencias actuales. Las horas de aviso se muestran en hora peninsular española. `burgos-telegram-state.json` conserva el estado del detector y la cola de avisos, y el token y preferencias de Burgos siguen separados de Bizkaibus.
 
 Para activar Telegram:
 1. Crear un bot con [@BotFather](https://t.me/BotFather) usando `/newbot` y guardar su token de forma privada.
