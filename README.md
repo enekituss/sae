@@ -40,6 +40,17 @@ Los mensajes describen altas y bajas **del feed publicado**, que es la evidencia
 
 **Importante:** esta alerta detecta cambios de línea/destino/sentido asignados en los datos SIRI. No detecta todavía una desviación geográfica del autobús respecto al trazado de su línea; para eso habría que comparar su posición GPS con los shapes del GTFS y aplicar un margen de tolerancia.
 
+### Bot independiente para autobuses de Burgos
+
+El flujo `.github/workflows/telegram-burgos.yml` consulta el Worker municipal de Burgos cada cinco minutos y compara snapshots completos para evitar falsas alertas cuando la consulta falla o está incompleta.
+
+1. En [@BotFather](https://t.me/BotFather), crea un segundo bot con `/newbot` y guarda su token en privado.
+2. Abre el bot nuevo en Telegram y envíale `/start`.
+3. En el repositorio, entra en **Settings → Secrets and variables → Actions** y crea los secretos `BURGOS_TELEGRAM_BOT_TOKEN` (token del bot nuevo) y `BURGOS_TELEGRAM_CHAT_ID` (ID del chat principal; puede ser el mismo ID personal o de grupo que usas para Bizkaibus).
+4. En **Actions → Alertas Telegram · Autobuses de Burgos**, ejecuta **Run workflow** para la primera comprobación, o espera al siguiente ciclo programado.
+
+Envía `/start` o `/menu` al bot de Burgos para elegir todos los avisos, solo vehículos sin posición reciente, solo cambios de línea o seguimiento por ID. El estado de este bot se conserva por separado en `burgos-telegram-state.json`; no comparte las preferencias ni el token de Bizkaibus.
+
 Para activar Telegram:
 1. Crear un bot con [@BotFather](https://t.me/BotFather) usando `/newbot` y guardar su token de forma privada.
 2. Abrir el bot nuevo en Telegram, pulsar **Iniciar** y enviar `/start`.
