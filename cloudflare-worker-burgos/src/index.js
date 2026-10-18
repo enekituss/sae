@@ -221,8 +221,8 @@ async function fetchLiveSnapshot() {
   }
   const nodes = nodesPayload.filter(node => readLiveNodeId(node));
   const chunks = [];
-  // 100 IDs still fit in a compact query string and halve the number of round trips.
-  for (let i = 0; i < nodes.length; i += 100) chunks.push(nodes.slice(i, i + 100));
+  // Keep the query URL size conservative while allowing more batches to run in parallel.
+  for (let i = 0; i < nodes.length; i += 50) chunks.push(nodes.slice(i, i + 50));
 
   const results = new Array(chunks.length);
   const errors = [];
