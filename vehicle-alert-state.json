@@ -25631,21 +25631,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:12fb31c798d36f02d11c81f6": {
-      "destination": "LEIOA",
-      "detectedAt": "2026-10-18T14:37+02:00",
-      "direction": "",
-      "eventId": "missing:12fb31c798d36f02d11c81f6",
-      "firstMissingAt": "2026-10-18T14:33:02+02:00",
-      "lastSeenAt": "2026-10-18T14:29:48+02:00",
-      "line": "A3531",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T14:37:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2129"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "3375": {
       "consecutiveChecks": 1,
@@ -25829,7 +25815,7 @@
       "requiredMissing": 2
     },
     "2129": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:12fb31c798d36f02d11c81f6",
       "firstMissingAt": "2026-10-18T14:33:02+02:00",
@@ -25840,7 +25826,7 @@
         "line": "A3531"
       },
       "lastSeenAt": "2026-10-18T14:29:48+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2135": {
