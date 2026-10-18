@@ -801,12 +801,25 @@ jobs:
                   state["emptyFeedState"] = empty_state
                   dirty = True
 
-              if not state.get("initialized"):
+              source_changed = bool(state.get("initialized")) and state.get("monitorSource") != snapshot_source
+              if not state.get("initialized") or source_changed:
                   confirmed = current.copy()
                   state["initialized"] = True
                   state["baselineAt"] = now
+                  state["monitorSource"] = snapshot_source
+                  # Al cambiar el tipo de lectura, no comparar campos de formatos distintos:
+                  # se toma una nueva línea base para no notificar falsos cambios.
+                  pending_arrivals = {}
+                  pending_missing = {}
+                  pending_routes = {}
+                  recently_missing = {}
+                  empty_state = {"consecutiveChecks": 0, "firstObservedAt": "", "confirmed": False}
+                  state["emptyFeedState"] = empty_state
                   dirty = True
-                  print("Primera consulta guardada como línea base: no se anuncian todos los coches como nuevas incorporaciones.")
+                  if source_changed:
+                      print("Ha cambiado la fuente del SAE; se guarda una nueva línea base sin emitir falsas alertas.")
+                  else:
+                      print("Primera consulta guardada como línea base: no se anuncian todos los coches como nuevas incorporaciones.")
               else:
                   feed_allows_missing = bool(current) or bool(empty_state.get("confirmed"))
                   for vehicle_id, vehicle in current.items():
