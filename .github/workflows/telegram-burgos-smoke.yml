@@ -118,112 +118,38 @@ jobs:
               failures.append("Health del Worker de Burgos: " + str(exc))
               print("FALLO: Worker de Burgos: " + str(exc))
 
-          source_errors = []
-          worker_source_ok = False
-          direct_source_ok = False
-
-          # Primero se comprueba el snapshot oficial de estimaciones, que es la fuente
-          # que ahora prioriza el monitor de cambios.
+          worker_base = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev"
           try:
-              request = urllib.request.Request(
-                  worker_base + "/api/burgos/live?fresh=1",
-                  headers={"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "SAE-Burgos-Diagnostics/1.0"}
-              )
-              with urllib.request.urlopen(request, timeout=70) as response:
-                  live = json.loads(response.read().decode("utf-8"))
-              if live.get("ok") is not True or not isinstance(live.get("observations"), list):
-                  raise RuntimeError(str(live.get("error") or "respuesta sin observaciones del SAE"))
-              total_groups = int(live.get("totalGroups") or 0)
-              completed_groups = int(live.get("completedGroups") or 0)
-              if live.get("partial") or (total_groups and completed_groups != total_groups):
-                  raise RuntimeError("snapshot parcial: " + str(completed_groups) + "/" + str(total_groups) + " grupos")
-              observations = live.get("observations") or []
-              vehicle_ids = {
-                  str(item.get("vehicleId") or item.get("vehicle") or item.get("vehicle_id") or "").strip()
-                  for item in observations if isinstance(item, dict)
-              }
-              vehicle_ids.discard("")
-              vehicle_ids.discard("0")
-              if not vehicle_ids:
-                  print("AVISO: el Worker leyó las estimaciones, pero ahora no hay IDs de autobús identificables.")
-              else:
-                  print("OK: SAE por estimaciones a través del Worker; " + str(len(vehicle_ids)) + " IDs identificables, " + str(len(observations)) + " observaciones.")
-              worker_source_ok = True
-          except Exception as exc:
-              source_errors.append("Worker /api/burgos/live: " + str(exc))
-              print("AVISO: lectura del SAE mediante Worker falló: " + str(exc))
-
-          # Comprobación directa de los recursos oficiales: probar el mismo patrón
-          # que usa el monitor, con resourceEstimations y line=01.
-          official_pages = [
-              "https://movilidad.aytoburgos.es/es/rutas-en-directo",
-              "https://movilidad.aytoburgos.es/rutas-en-directo",
-              "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
-          ]
-
-          def official_resource(resource, extra=None):
-              params = {
-                  "p_p_id": "as_asac_isaenext_IsaenextWebPortlet",
-                  "p_p_lifecycle": "2",
-                  "p_p_state": "normal",
-                  "p_p_mode": "view",
-                  "p_p_resource_id": resource,
-                  "p_p_cacheability": "cacheLevelPage"
-              }
-              if extra:
-                  params.update(extra)
-              errors = []
-              for page in official_pages:
-                  request_url = page + "?" + urllib.parse.urlencode(params)
-                  request = urllib.request.Request(
-                      request_url,
-                      headers={
-                          "Accept": "application/json, text/plain, */*",
-                          "Cache-Control": "no-cache",
-                          "Referer": "https://movilidad.aytoburgos.es/es/rutas-en-directo",
-                          "User-Agent": "Mozilla/5.0 (compatible; SAE-Burgos-Diagnostics/1.0)"
-                      }
-                  )
-                  try:
-                      with urllib.request.urlopen(request, timeout=15) as response:
-                          return json.loads(response.read().decode("utf-8"))
-                  except Exception as exc:
-                      errors.append(urllib.parse.urlparse(page).netloc + ": " + str(exc)[:120])
-              raise RuntimeError(resource + " no respondió: " + " | ".join(errors))
-
-          try:
-              # Misma consulta por línea y lista de IDs que figura en la URL aportada.
-              stop_ids = ["402", "183", "209", "98", "26", "224", "71", "152", "164", "227", "228"]
-              print("Probando resourceEstimations directamente con line=01 y " + str(len(stop_ids)) + " IDs de parada.")
-              estimations = official_resource("resourceEstimations", {
-                  "_as_asac_isaenext_IsaenextWebPortlet_line": "01",
-                  "_as_asac_isaenext_IsaenextWebPortlet_tipo": "1",
-                  "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": ",".join(stop_ids)
+              url = worker_base + "/api/burgos/vehicles?" + urllib.parse.urlencode({
+                  "line": "01",
+                  "fresh": "1",
+                  "_t": "diagnostic"
               })
-              if not isinstance(estimations, list):
-                  raise RuntimeError("resourceEstimations no devolvió una lista")
-              routes_count = 0
-              ids_seen = set()
-              for stop in estimations:
-                  if not isinstance(stop, dict):
-                      continue
-                  for route in (stop.get("routeEstimationByNode") or stop.get("routes") or []):
-                      if not isinstance(route, dict):
-                          continue
-                      routes_count += 1
-                      for item in (route.get("publicEstimationVHExts") or route.get("estimations") or []):
-                          if isinstance(item, dict):
-                              vehicle_id = str(item.get("vehicle") or item.get("vehicleId") or item.get("vehicle_id") or "").strip()
-                              if vehicle_id and vehicle_id != "0":
-                                  ids_seen.add(vehicle_id)
-              print("OK: resourceEstimations con line=01 responde; " + str(len(estimations)) + " resultados de parada, " + str(routes_count) + " grupos de línea y " + str(len(ids_seen)) + " IDs identificables.")
-              direct_source_ok = True
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      "Accept": "application/json",
+                      "Cache-Control": "no-cache",
+                      "User-Agent": "SAE-Burgos-Diagnostics/1.0"
+                  }
+              )
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  payload = json.loads(response.read().decode("utf-8"))
+              if payload.get("ok") is not True or not isinstance(payload.get("vehicles"), list):
+                  raise RuntimeError(str(payload.get("error") or "respuesta sin lista de autobuses"))
+              source_type = str(payload.get("sourceType") or "")
+              required_resources = ("resourceRoutes", "resourceVehicles", "resourceEstimations")
+              missing_resources = [resource for resource in required_resources if resource not in source_type]
+              if missing_resources:
+                  raise RuntimeError("el Worker no confirma los tres recursos: " + ", ".join(missing_resources))
+              print("OK: Worker de Burgos consultó los tres recursos oficiales para line=01.")
+              print("Paradas identificadas en resourceRoutes: " + str(payload.get("routeStopCount") or 0))
+              print("Filas publicadas por resourceVehicles: " + str(payload.get("vehicleRowCount") or 0))
+              print("Observaciones de resourceEstimations: " + str(payload.get("estimationCount") or 0))
+              print("Autobuses resultantes: " + str(len(payload["vehicles"])) + ".")
           except Exception as exc:
-              source_errors.append("SAE oficial directo por línea: " + str(exc))
-              print("AVISO: consulta directa del SAE por línea falló: " + str(exc))
-
-          if not (worker_source_ok or direct_source_ok):
-              failures.append("No se pudo leer ninguna fuente del SAE oficial. " + " | ".join(source_errors))
+              failures.append("SAE oficial de Burgos (line=01, tres recursos): " + str(exc))
+              print("FALLO: consulta del SAE por línea: " + str(exc))
 
           if failures:
               print("\nRESULTADO: todavía no está listo el circuito completo.")
