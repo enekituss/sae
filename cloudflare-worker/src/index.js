@@ -363,6 +363,425 @@ async function fetchBurgosVehiclesSnapshot() {
   };
 }
 
+
+const TELEGRAM_PREFERENCES_BRANCH = "telegram-data";
+const TELEGRAM_BOTS = {
+  bizkaibus: {
+    tokenEnv: "TELEGRAM_BIZKAIBUS_BOT_TOKEN",
+    stateFile: "vehicle-alert-state.json",
+    title: "🚌 Configuración de alertas SAE Bizkaibus"
+  },
+  burgos: {
+    tokenEnv: "TELEGRAM_BURGOS_BOT_TOKEN",
+    stateFile: "burgos-telegram-state.json",
+    title: "🚌 SAE Spotter · Autobuses de Burgos"
+  }
+};
+const TELEGRAM_BUTTONS = [
+  "🔔 Todos los avisos",
+  "⚠️ Solo fuera de servicio",
+  "🔄 Solo cambios de línea",
+  "🟢 Nueva entrada (reaparición)",
+  "🚌 Seguir coche(s) por ID",
+  "⏸️ Pausar avisos"
+];
+
+function utf8ToBase64(value) {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
+
+function base64ToUtf8(value) {
+  const binary = atob(String(value || "").replace(/\s/g, ""));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function githubAuthHeaders(env) {
+  const token = String(env.GITHUB_TOKEN || "").trim();
+  if (!token) throw new Error("Falta el secreto GITHUB_TOKEN en Cloudflare Workers.");
+  return {
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "SAE-Spotter-Cloudflare-Worker/1.0",
+    "Authorization": "Bearer " + token
+  };
+}
+
+async function readRepositoryFile(path, ref, env) {
+  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+  const response = await fetch(
+    GITHUB_API + "/repos/" + REPOSITORY + "/contents/" + encodedPath + "?ref=" + encodeURIComponent(ref),
+    { headers: githubAuthHeaders(env) }
+  );
+  const raw = await response.text();
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error("GitHub no pudo leer " + path + " (HTTP " + response.status + "): " + raw.slice(0, 180));
+  }
+  const file = JSON.parse(raw);
+  return {
+    sha: file.sha,
+    content: base64ToUtf8(file.content || "")
+  };
+}
+
+async function writeRepositoryFile(path, content, message, refBranch, env) {
+  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const current = await readRepositoryFile(path, refBranch, env);
+    const payload = {
+      message,
+      content: utf8ToBase64(content),
+      branch: refBranch
+    };
+    if (current?.sha) payload.sha = current.sha;
+    try {
+      await githubRequest("/repos/" + REPOSITORY + "/contents/" + encodedPath, env, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      return;
+    } catch (error) {
+      if (attempt === 2 || !/HTTP (409|422)/.test(error?.message || "")) throw error;
+      // Re-read the latest SHA on the next attempt if another update won the race.
+    }
+  }
+}
+
+function defaultTelegramSubscription() {
+  return { mode: "all", vehicleId: "", vehicleIds: [], awaitingVehicleId: false };
+}
+
+function normalizeTrackedIds(subscription) {
+  const raw = Array.isArray(subscription.vehicleIds) ? subscription.vehicleIds : [];
+  const legacy = String(subscription.vehicleId || "").trim();
+  const candidates = legacy ? raw.concat([legacy]) : raw;
+  const result = [];
+  for (const value of candidates) {
+    const id = String(value || "").trim();
+    if (/^\d{1,12}$/.test(id) && !result.includes(id)) result.push(id);
+  }
+  return result;
+}
+
+function storeTrackedIds(subscription, ids) {
+  const unique = [];
+  for (const value of ids) {
+    const id = String(value || "").trim();
+    if (/^\d{1,12}$/.test(id) && !unique.includes(id)) unique.push(id);
+  }
+  subscription.vehicleIds = unique;
+  subscription.vehicleId = unique[0] || "";
+}
+
+function telegramModeDescription(subscription) {
+  const mode = String(subscription.mode || "all");
+  if (mode === "off" || mode === "paused") return "Avisos pausados";
+  if (mode === "missing") return "Solo autobuses cuya salida del servicio de datos se ha confirmado";
+  if (mode === "line") return "Solo cambios de línea de vehículos que siguen activos";
+  if (mode === "entry") return "Solo reapariciones de autobuses que habían desaparecido";
+  if (mode === "vehicle") {
+    const ids = normalizeTrackedIds(subscription);
+    return ids.length ? "Siguiendo ID: " + ids.slice(0, 10).join(", ") + (ids.length > 10 ? " y " + (ids.length - 10) + " más" : "") : "Seguimiento de coches (falta indicar ID)";
+  }
+  return "Todos los avisos";
+}
+
+function telegramKeyboard(city) {
+  return {
+    keyboard: TELEGRAM_BUTTONS.map(label => [{ text: label }]),
+    resize_keyboard: true,
+    is_persistent: true,
+    one_time_keyboard: false,
+    input_field_placeholder: city === "burgos" ? "Elige tus avisos de Burgos" : "Elige tus avisos"
+  };
+}
+
+async function callTelegramApi(token, method, payload) {
+  const response = await fetch("https://api.telegram.org/bot" + token + "/" + method, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(15000)
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.ok) {
+    throw new Error("Telegram " + method + " falló: " + String(result.description || response.statusText || response.status).slice(0, 200));
+  }
+  return result.result;
+}
+
+async function loadTelegramSubscription(city, chatId, env) {
+  const path = "telegram-preferences/" + city + "/" + chatId + ".json";
+  const saved = await readRepositoryFile(path, TELEGRAM_PREFERENCES_BRANCH, env);
+  if (saved) {
+    try {
+      return JSON.parse(saved.content);
+    } catch {
+      throw new Error("Las preferencias guardadas de Telegram no son JSON válido.");
+    }
+  }
+
+  // Migrate the subscriber's existing settings from the old shared monitor state.
+  const legacyPath = TELEGRAM_BOTS[city].stateFile;
+  try {
+    const legacy = await readRepositoryFile(legacyPath, "main", env);
+    const state = legacy ? JSON.parse(legacy.content) : {};
+    const subscriptions = state.telegramSubscriptions || {};
+    if (subscriptions[chatId] && typeof subscriptions[chatId] === "object") {
+      return { ...defaultTelegramSubscription(), ...subscriptions[chatId] };
+    }
+  } catch (error) {
+    console.warn("No se pudo migrar la preferencia anterior de " + city + ": " + (error?.message || String(error)));
+  }
+  return defaultTelegramSubscription();
+}
+
+async function saveTelegramSubscription(city, chatId, subscription, env) {
+  const path = "telegram-preferences/" + city + "/" + chatId + ".json";
+  const content = JSON.stringify(subscription, null, 2) + "\n";
+  await writeRepositoryFile(path, content, "Guardar preferencias Telegram (" + city + ")", TELEGRAM_PREFERENCES_BRANCH, env);
+}
+
+async function sendTelegramMenu(token, city, chatId, subscription, notice = "") {
+  const title = TELEGRAM_BOTS[city].title;
+  let message = title + "\n\n";
+  if (notice) message += notice + "\n\n";
+  message += "Configuración actual: " + telegramModeDescription(subscription) + "\n\nElige qué alertas quieres recibir con los botones del teclado.";
+  if (String(subscription.mode || "all") === "vehicle") {
+    message += "\n\nEscribe uno o varios ID numéricos separados por espacios o comas. Repite «Seguir coche(s) por ID» para añadir más.";
+  }
+  if (String(subscription.mode || "all") === "off") {
+    message += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro.";
+  }
+  if (city === "bizkaibus") {
+    message += "\n\n«Nueva entrada» avisa cuando un coche desaparecido vuelve a aparecer en el feed.";
+  } else {
+    message += "\n\nLa ausencia de posición publicada no confirma por sí sola una baja administrativa.";
+  }
+  message += "\n\n⚡ Las preferencias se guardan al momento. Los avisos se ajustan en la siguiente comprobación de autobuses.";
+  await callTelegramApi(token, "sendMessage", {
+    chat_id: chatId,
+    text: message,
+    reply_markup: telegramKeyboard(city),
+    disable_web_page_preview: true
+  });
+}
+
+function telegramWebhookText(value) {
+  return String(value || "").trim();
+}
+
+async function processTelegramWebhook(request, env, city) {
+  const expectedSecret = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
+  const providedSecret = String(request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "").trim();
+  if (!expectedSecret || providedSecret !== expectedSecret) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const botConfig = TELEGRAM_BOTS[city];
+  const token = String(env[botConfig.tokenEnv] || "").trim();
+  if (!token || !String(env.GITHUB_TOKEN || "").trim()) {
+    return new Response("Webhook not configured", { status: 503 });
+  }
+
+  let update;
+  try {
+    update = await request.json();
+  } catch {
+    return new Response("Invalid JSON", { status: 400 });
+  }
+
+  const message = update?.message;
+  const chat = message?.chat || {};
+  const chatId = String(chat.id || "").trim();
+  const rawText = telegramWebhookText(message?.text);
+  if (!chatId || chat.type !== "private" || !rawText || !/^-?\d{1,20}$/.test(chatId)) {
+    return new Response("ok", { status: 200 });
+  }
+
+  try {
+    const subscription = await loadTelegramSubscription(city, chatId, env);
+    const command = rawText.split(/\s+/)[0].split("@")[0].toLowerCase();
+    let notice = "";
+    let reply = "menu";
+    let save = false;
+    let handled = true;
+
+    if (["/start", "/help", "/menu", "/menú", "menu", "menú", "/config", "/misavisos", "/estado"].includes(command)) {
+      notice = "Bot conectado. Tus preferencias son independientes de las de los demás usuarios.";
+      save = true;
+    } else if (["/stop", "/pausar"].includes(command) || ["⏸️ Pausar avisos", "Pausar avisos"].includes(rawText)) {
+      subscription.mode = "off";
+      subscription.awaitingVehicleId = false;
+      notice = "⏸️ Avisos pausados. No se enviarán más alertas hasta que los reactives.";
+      save = true;
+    } else if (["🔔 Todos los avisos", "Todos los avisos"].includes(rawText)) {
+      subscription.mode = "all";
+      subscription.awaitingVehicleId = false;
+      notice = "✅ Seleccionado: recibirás todos los avisos.";
+      save = true;
+    } else if (["⚠️ Solo fuera de servicio", "⚠️ Solo fuera de servicio (sin posición reciente)", "⚠️ Solo sin posición reciente", "Solo sin posición reciente"].includes(rawText)) {
+      subscription.mode = "missing";
+      subscription.awaitingVehicleId = false;
+      notice = city === "burgos"
+        ? "✅ Seleccionado: solo recibirás avisos de coches que dejan de aparecer del servicio publicado tras las comprobaciones de confirmación."
+        : "✅ Seleccionado: solo recibirás salidas de servicio confirmadas.";
+      save = true;
+    } else if (["🔄 Solo cambios de línea", "Solo cambios de línea"].includes(rawText)) {
+      subscription.mode = "line";
+      subscription.awaitingVehicleId = false;
+      notice = city === "burgos"
+        ? "✅ Seleccionado: solo recibirás cambios confirmados de línea de autobuses que siguen activos."
+        : "✅ Seleccionado: recibirás solo cambios de línea de vehículos que siguen activos.";
+      save = true;
+    } else if (["🟢 Nueva entrada (reaparición)", "🟢 Nueva entrada", "Nueva entrada"].includes(rawText)) {
+      subscription.mode = "entry";
+      subscription.awaitingVehicleId = false;
+      notice = city === "burgos"
+        ? "✅ Seleccionado: recibirás avisos cuando un autobús desaparecido vuelva a aparecer en el feed."
+        : "✅ Seleccionado: recibirás solo reapariciones de coches que habían desaparecido.";
+      save = true;
+    } else if (["🚌 Seguir coche(s) por ID", "🚌 Seguir un coche por ID", "Seguir un coche por ID"].includes(rawText)) {
+      subscription.mode = "vehicle";
+      subscription.awaitingVehicleId = true;
+      save = true;
+      reply = "vehiclePrompt";
+    } else if (["/cancel", "/cancelar"].includes(command)) {
+      subscription.awaitingVehicleId = false;
+      if (!normalizeTrackedIds(subscription).length) subscription.mode = "all";
+      notice = "Operación cancelada.";
+      save = true;
+    } else if (["/id", "/coche"].includes(command)) {
+      const parts = rawText.split(/\s+/).slice(1).join(" ").replace(/[,;]/g, " ").split(/\s+/).filter(Boolean);
+      const validIds = parts.filter(value => /^\d{1,12}$/.test(value));
+      if (validIds.length) {
+        const ids = normalizeTrackedIds(subscription);
+        const added = [];
+        for (const id of validIds) {
+          if (!ids.includes(id)) {
+            ids.push(id);
+            added.push(id);
+          }
+        }
+        storeTrackedIds(subscription, ids);
+        subscription.mode = "vehicle";
+        subscription.awaitingVehicleId = false;
+        notice = added.length ? "✅ Añadido(s) al seguimiento: " + added.join(", ") + "." : "✅ Esos coches ya estaban en tu lista.";
+        save = true;
+      } else {
+        subscription.mode = "vehicle";
+        subscription.awaitingVehicleId = true;
+        save = true;
+        reply = "vehiclePrompt";
+      }
+    } else if (subscription.awaitingVehicleId) {
+      const validIds = rawText.replace(/[,;]/g, " ").split(/\s+/).filter(value => /^\d{1,12}$/.test(value));
+      if (validIds.length) {
+        const ids = normalizeTrackedIds(subscription);
+        const added = [];
+        for (const id of validIds) {
+          if (!ids.includes(id)) {
+            ids.push(id);
+            added.push(id);
+          }
+        }
+        storeTrackedIds(subscription, ids);
+        subscription.mode = "vehicle";
+        subscription.awaitingVehicleId = false;
+        notice = added.length ? "✅ Añadido(s) al seguimiento: " + added.join(", ") + "." : "✅ Esos coches ya estaban en tu lista.";
+        notice += " Puedes añadir más con «Seguir coche(s) por ID».";
+        save = true;
+      } else {
+        reply = "invalidVehicleId";
+      }
+    } else {
+      handled = false;
+    }
+
+    if (!handled) return new Response("ok", { status: 200 });
+    if (save) await saveTelegramSubscription(city, chatId, subscription, env);
+
+    if (reply === "vehiclePrompt") {
+      await callTelegramApi(token, "sendMessage", {
+        chat_id: chatId,
+        text: city === "burgos"
+          ? "🚌 Escribe el ID numérico del autobús que quieres seguir. Puedes añadir más de uno repitiendo esta opción. Puedes cancelar con /cancelar."
+          : "🚌 Escribe uno o varios ID numéricos separados por espacios o comas. Repite esta opción para añadir más coches.\n\nPuedes cancelar con /cancelar.",
+        reply_markup: telegramKeyboard(city)
+      });
+    } else if (reply === "invalidVehicleId") {
+      await callTelegramApi(token, "sendMessage", {
+        chat_id: chatId,
+        text: "El ID debe ser numérico. Envía uno o varios ID separados por espacios o comas, o escribe /cancelar."
+      });
+    } else {
+      await sendTelegramMenu(token, city, chatId, subscription, notice);
+    }
+    return new Response("ok", { status: 200 });
+  } catch (error) {
+    console.error("Telegram webhook " + city + ": " + (error?.message || String(error)));
+    try {
+      await callTelegramApi(token, "sendMessage", {
+        chat_id: chatId,
+        text: "⚠️ No he podido guardar tu configuración. Comprueba que el secreto GITHUB_TOKEN del Worker permite Contents: Read and write."
+      });
+    } catch {
+      // Telegram reintentará el webhook si no recibe un 2xx.
+      return new Response("Temporary failure", { status: 500 });
+    }
+    // Return 200 after a readable error to avoid repeated error messages for one update.
+    return new Response("ok", { status: 200 });
+  }
+}
+
+async function setupTelegramWebhooks(request, env) {
+  const secret = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
+  const authorization = String(request.headers.get("Authorization") || "").trim();
+  if (!secret || authorization !== "Bearer " + secret) {
+    return jsonResponse(request, { ok: false, error: "No autorizado." }, 401);
+  }
+  const missing = [
+    ["TELEGRAM_BIZKAIBUS_BOT_TOKEN", env.TELEGRAM_BIZKAIBUS_BOT_TOKEN],
+    ["TELEGRAM_BURGOS_BOT_TOKEN", env.TELEGRAM_BURGOS_BOT_TOKEN],
+    ["GITHUB_TOKEN", env.GITHUB_TOKEN]
+  ].filter(([name, value]) => !String(value || "").trim()).map(([name]) => name);
+  if (missing.length) {
+    return jsonResponse(request, { ok: false, error: "Faltan secretos del Worker: " + missing.join(", ") }, 400);
+  }
+
+  const origin = new URL(request.url).origin;
+  const configured = [];
+  try {
+    for (const city of ["bizkaibus", "burgos"]) {
+      const token = String(env[TELEGRAM_BOTS[city].tokenEnv]).trim();
+      const result = await callTelegramApi(token, "setWebhook", {
+        url: origin + "/telegram/" + city,
+        secret_token: secret,
+        max_connections: 1,
+        allowed_updates: ["message"],
+        drop_pending_updates: false
+      });
+      configured.push({ bot: city, configured: Boolean(result) });
+    }
+    return jsonResponse(request, {
+      ok: true,
+      webhooks: configured,
+      message: "Webhooks registrados. Los mensajes del menú ya no dependen de GitHub Actions."
+    });
+  } catch (error) {
+    console.error("No se pudieron registrar los webhooks de Telegram:", error?.message || String(error));
+    return jsonResponse(request, { ok: false, error: error?.message || "Error al registrar webhooks." }, 502);
+  }
+}
+
 export default {
   async scheduled(controller, env, ctx) {
     await dispatchUpdates(env);
@@ -370,6 +789,19 @@ export default {
 
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (request.method === "POST" && url.pathname === "/admin/telegram/setup") {
+      return setupTelegramWebhooks(request, env);
+    }
+
+    if (request.method === "POST" && url.pathname === "/telegram/bizkaibus") {
+      return processTelegramWebhook(request, env, "bizkaibus");
+    }
+
+    if (request.method === "POST" && url.pathname === "/telegram/burgos") {
+      return processTelegramWebhook(request, env, "burgos");
+    }
+
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/api/burgos/")) {
       return new Response(null, { status: 204, headers: corsHeaders(request, { "Access-Control-Max-Age": "86400" }) });
@@ -382,7 +814,8 @@ export default {
         cadence: "*/2 * * * *",
         dispatchWorkflows: WORKFLOWS.map(workflow => workflow.file),
         endpoints: ["/api/burgos/nodes", "/api/burgos/estimates?stopId=200", "/api/burgos/vehicles", "/api/burgos/vehicles?line=01", "/api/burgos/live"],
-        note: "Cada dos minutos se intentan ejecutar los workflows de Bizkaibus y Telegram Burgos. Si ya hay una ejecución en cola o curso, se omite ese ciclo. La fuente pública de Burgos entrega estimaciones por parada; las coordenadas sólo se consideran GPS si el servicio las publica."
+        telegramEndpoints: ["/telegram/bizkaibus", "/telegram/burgos", "POST /admin/telegram/setup"],
+        note: "Los webhooks de Telegram responden a las preferencias en el momento y guardan la configuración en una rama de datos separada. El Worker sigue lanzando los workflows de detección cada dos minutos. La fuente pública de Burgos entrega estimaciones por parada; las coordenadas sólo se consideran GPS si el servicio las publica."
       });
     }
 
