@@ -259,10 +259,18 @@ async function fetchVehiclesForLine(line) {
   };
 
   // Cada consulta usa los tres recursos municipales con el mismo número de línea.
-  const [routeResult, vehicleResult] = await Promise.all([
-    requestIsaenext("resourceRoutes", lineParams),
-    requestIsaenext("resourceVehicles", lineParams)
-  ]);
+  let routeResult;
+  try {
+    routeResult = await requestIsaenext("resourceRoutes", lineParams);
+  } catch (error) {
+    throw new Error("resourceRoutes: " + (error?.message || String(error)));
+  }
+  let vehicleResult;
+  try {
+    vehicleResult = await requestIsaenext("resourceVehicles", lineParams);
+  } catch (error) {
+    throw new Error("resourceVehicles: " + (error?.message || String(error)));
+  }
 
   const routePayload = routeResult.data;
   if (!routePayload || (Array.isArray(routePayload) && routePayload.length === 0)) {
@@ -275,15 +283,23 @@ async function fetchVehiclesForLine(line) {
     nodeIds = [...BURGOS_KNOWN_NODE_IDS];
   }
   if (!nodeIds.length) {
+    const topKeys = Array.isArray(routePayload)
+      ? (routePayload[0] && typeof routePayload[0] === "object" ? Object.keys(routePayload[0]).slice(0, 20) : ["elementos no objeto"])
+      : (routePayload && typeof routePayload === "object" ? Object.keys(routePayload).slice(0, 20) : [typeof routePayload]);
     throw new Error("resourceRoutes respondió para la línea " + line +
-      ", pero no se pudieron extraer IDs de parada para resourceEstimations.");
+      ", pero no se pudieron extraer IDs de parada. Claves visibles: " + topKeys.join(", ") + ".");
   }
 
-  const estimationResult = await requestIsaenext("resourceEstimations", {
-    [PORTLET_PREFIX + "line"]: line,
-    [PORTLET_PREFIX + "tipo"]: "1",
-    [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
-  });
+  let estimationResult;
+  try {
+    estimationResult = await requestIsaenext("resourceEstimations", {
+      [PORTLET_PREFIX + "line"]: line,
+      [PORTLET_PREFIX + "tipo"]: "1",
+      [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
+    });
+  } catch (error) {
+    throw new Error("resourceEstimations: " + (error?.message || String(error)));
+  }
   if (!Array.isArray(estimationResult.data)) {
     throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
   }
