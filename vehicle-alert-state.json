@@ -24831,106 +24831,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:528dc97659c1d062da509e58": {
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-18T20:49+02:00",
-      "direction": "",
-      "eventId": "missing:528dc97659c1d062da509e58",
-      "firstMissingAt": "2026-10-18T20:45:05+02:00",
-      "lastSeenAt": "2026-10-18T20:41:57+02:00",
-      "line": "A3916",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:49:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8678"
-    },
-    "missing:fdb0fcb10b1beb49ef2bdfb8": {
-      "destination": "GERNIKA LUMO",
-      "detectedAt": "2026-10-18T20:49+02:00",
-      "direction": "",
-      "eventId": "missing:fdb0fcb10b1beb49ef2bdfb8",
-      "firstMissingAt": "2026-10-18T20:45:05+02:00",
-      "lastSeenAt": "2026-10-18T20:41:57+02:00",
-      "line": "A3532",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:49:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8681"
-    },
-    "route:759d07a1b90f44943d8d1d98": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TRAPAGA Elguero",
-          "old": "ERREPELEGA"
-        }
-      ],
-      "destination": "TRAPAGA Elguero",
-      "detectedAt": "2026-10-18T20:49+02:00",
-      "direction": "",
-      "eventId": "route:759d07a1b90f44943d8d1d98",
-      "line": "A3331",
-      "queuedAt": "2026-10-18T20:49:09+02:00",
-      "type": "route_change",
-      "vehicleId": "7834"
-    },
-    "route:cc60d4bc003c53b890d55bd5": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "LUTXANA"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T20:49+02:00",
-      "direction": "",
-      "eventId": "route:cc60d4bc003c53b890d55bd5",
-      "line": "A3129",
-      "queuedAt": "2026-10-18T20:49:09+02:00",
-      "type": "route_change",
-      "vehicleId": "7849"
-    },
-    "route:dfe875b22df6aff60d270232": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "PORTUGALETE",
-          "old": "MUSKIZ-Cobaron"
-        }
-      ],
-      "destination": "PORTUGALETE",
-      "detectedAt": "2026-10-18T20:49+02:00",
-      "direction": "",
-      "eventId": "route:dfe875b22df6aff60d270232",
-      "line": "A3321",
-      "queuedAt": "2026-10-18T20:49:09+02:00",
-      "type": "route_change",
-      "vehicleId": "7880"
-    },
-    "route_after_gap:adfb9d004cf383e2f4dfe392": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TEKNO. PARKEA",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "TEKNO. PARKEA",
-      "detectedAt": "2026-10-18T20:49+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:adfb9d004cf383e2f4dfe392",
-      "line": "A3224",
-      "queuedAt": "2026-10-18T20:49:09+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2137"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1715": {
       "consecutiveChecks": 1,
@@ -25076,7 +24977,7 @@
       "requiredMissing": 2
     },
     "8678": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:528dc97659c1d062da509e58",
       "firstMissingAt": "2026-10-18T20:45:05+02:00",
@@ -25087,11 +24988,11 @@
         "line": "A3916"
       },
       "lastSeenAt": "2026-10-18T20:41:57+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8681": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:fdb0fcb10b1beb49ef2bdfb8",
       "firstMissingAt": "2026-10-18T20:45:05+02:00",
@@ -25102,7 +25003,7 @@
         "line": "A3532"
       },
       "lastSeenAt": "2026-10-18T20:41:57+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
