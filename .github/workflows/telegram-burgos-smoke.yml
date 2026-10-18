@@ -83,6 +83,26 @@ jobs:
               failures.append("Webhook de Telegram: " + str(exc))
               print("FALLO: no se pudo comprobar el webhook: " + str(exc))
 
+          shared_base = "https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev"
+          try:
+              request = urllib.request.Request(shared_base + "/health", headers={"User-Agent": "SAE-Burgos-Diagnostics/1.0"})
+              with urllib.request.urlopen(request, timeout=10) as response:
+                  shared_health = json.loads(response.read().decode("utf-8"))
+              flags = shared_health.get("telegramSecretStatus") or {}
+              print("Worker de menús Telegram responde.")
+              print("Secret GITHUB_TOKEN presente: " + str(bool(flags.get("githubToken"))))
+              print("Secret TELEGRAM_WEBHOOK_SECRET presente: " + str(bool(flags.get("webhookSecret"))))
+              print("Secret TELEGRAM_BURGOS_BOT_TOKEN presente: " + str(bool(flags.get("burgosBotToken"))))
+              if not flags.get("githubToken"):
+                  failures.append("Falta GITHUB_TOKEN en bizkaibus-sae-dispatcher (necesario para guardar preferencias).")
+              if not flags.get("webhookSecret"):
+                  failures.append("Falta TELEGRAM_WEBHOOK_SECRET en bizkaibus-sae-dispatcher.")
+              if not flags.get("burgosBotToken"):
+                  failures.append("Falta TELEGRAM_BURGOS_BOT_TOKEN en bizkaibus-sae-dispatcher; copia allí el valor del secreto BURGOS_TELEGRAM_BOT_TOKEN.")
+          except Exception as exc:
+              failures.append("Health del Worker de menús Telegram: " + str(exc))
+              print("FALLO: Worker de menús Telegram: " + str(exc))
+
           worker_base = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev"
           try:
               request = urllib.request.Request(worker_base + "/health", headers={"User-Agent": "SAE-Burgos-Diagnostics/1.0"})
