@@ -23830,146 +23830,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:eed4f33b41ba7d76af8e57c8": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:35+02:00",
-      "direction": "",
-      "eventId": "entered:eed4f33b41ba7d76af8e57c8",
-      "firstObservedAt": "2026-10-18T09:31:06+02:00",
-      "line": "A3115",
-      "queuedAt": "2026-10-18T09:35:04+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "7882"
-    },
-    "missing:293a3c65fbbafddc2ce407b1": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T09:35+02:00",
-      "direction": "",
-      "eventId": "missing:293a3c65fbbafddc2ce407b1",
-      "firstMissingAt": "2026-10-18T09:31:06+02:00",
-      "lastSeenAt": "2026-10-18T09:27:16+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T09:35:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2089"
-    },
-    "route:2ded97370402964622c52370": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALDAKAO Ospitalea",
-          "old": "ARRIGORRIAGA"
-        }
-      ],
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T09:35+02:00",
-      "direction": "",
-      "eventId": "route:2ded97370402964622c52370",
-      "line": "A3641",
-      "queuedAt": "2026-10-18T09:35:04+02:00",
-      "type": "route_change",
-      "vehicleId": "3364"
-    },
-    "route:55e2a2dea6c2b1e6aefc297a": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AREETA/LAS ARENAS",
-          "old": "EHU/UPV"
-        }
-      ],
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T09:35+02:00",
-      "direction": "",
-      "eventId": "route:55e2a2dea6c2b1e6aefc297a",
-      "line": "A2161",
-      "queuedAt": "2026-10-18T09:35:04+02:00",
-      "type": "route_change",
-      "vehicleId": "2102"
-    },
-    "route:5c23a3ac4840dc026dd4dd30": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "GETXO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:35+02:00",
-      "direction": "",
-      "eventId": "route:5c23a3ac4840dc026dd4dd30",
-      "line": "A3414",
-      "queuedAt": "2026-10-18T09:35:04+02:00",
-      "type": "route_change",
-      "vehicleId": "1514"
-    },
-    "route:5fc1afe2d299b8229da54004": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3923",
-          "old": "A3926"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ELORRIO",
-          "old": "BILBAO (Aut.)"
-        }
-      ],
-      "destination": "ELORRIO",
-      "detectedAt": "2026-10-18T09:35+02:00",
-      "direction": "",
-      "eventId": "route:5fc1afe2d299b8229da54004",
-      "line": "A3923",
-      "queuedAt": "2026-10-18T09:35:04+02:00",
-      "type": "route_change",
-      "vehicleId": "3378"
-    },
-    "route:8e58f3469aa9c4973d657aff": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CRUCES/GURUTZETA",
-          "old": "GETXO"
-        }
-      ],
-      "destination": "CRUCES/GURUTZETA",
-      "detectedAt": "2026-10-18T09:35+02:00",
-      "direction": "",
-      "eventId": "route:8e58f3469aa9c4973d657aff",
-      "line": "A3471",
-      "queuedAt": "2026-10-18T09:35:04+02:00",
-      "type": "route_change",
-      "vehicleId": "1731"
-    },
-    "route:cafb26542223a08331fe1811": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "BARAKALDO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:35+02:00",
-      "direction": "",
-      "eventId": "route:cafb26542223a08331fe1811",
-      "line": "A3137",
-      "queuedAt": "2026-10-18T09:35:04+02:00",
-      "type": "route_change",
-      "vehicleId": "7826"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2061": {
@@ -24016,7 +23877,7 @@
       "requiredMissing": 2
     },
     "2089": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:293a3c65fbbafddc2ce407b1",
       "firstMissingAt": "2026-10-18T09:31:06+02:00",
@@ -24027,7 +23888,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T09:27:16+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2133": {
