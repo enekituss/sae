@@ -27025,63 +27025,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:fe11d8d32acdc92b92994ef0": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T13:25+02:00",
-      "direction": "",
-      "eventId": "missing:fe11d8d32acdc92b92994ef0",
-      "firstMissingAt": "2026-10-18T13:21:03+02:00",
-      "lastSeenAt": "2026-10-18T13:17:48+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T13:25:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3303"
-    },
-    "route:477225e9bf195af74e659d55": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "BALMASEDA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T13:25+02:00",
-      "direction": "",
-      "eventId": "route:477225e9bf195af74e659d55",
-      "line": "A0651",
-      "queuedAt": "2026-10-18T13:25:05+02:00",
-      "type": "route_change",
-      "vehicleId": "5027"
-    },
-    "route:c149413a8dd094a4eef5ea1c": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3472",
-          "old": "A3471"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AREETA/LAS ARENAS",
-          "old": "CRUCES/GURUTZETA"
-        }
-      ],
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T13:25+02:00",
-      "direction": "",
-      "eventId": "route:c149413a8dd094a4eef5ea1c",
-      "line": "A3472",
-      "queuedAt": "2026-10-18T13:25:05+02:00",
-      "type": "route_change",
-      "vehicleId": "1731"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3366": {
@@ -27113,7 +27057,7 @@
   },
   "pendingVehicles": {
     "3303": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:fe11d8d32acdc92b92994ef0",
       "firstMissingAt": "2026-10-18T13:21:03+02:00",
@@ -27124,7 +27068,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T13:17:48+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3377": {
