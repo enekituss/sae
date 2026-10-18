@@ -53,10 +53,18 @@ Tras desplegar el Worker, prueba primero `/health`, después `/api/burgos/nodes`
 El proxy permite peticiones desde `https://enekituss.github.io` mediante CORS. Otros orígenes no reciben permiso CORS.
 
 
+## Coches urbanos de Burgos por línea
+
+El Worker incorpora `GET /api/burgos/vehicles`, que usa el recurso municipal `resourceVehicles` para consultar los coches publicados de las 29 líneas urbanas conocidas. Combina las respuestas con concurrencia limitada e incluye el identificador de coche, la línea asignada y los campos de posición que publique el servicio.
+
+También permite consultar una sola línea, por ejemplo `GET /api/burgos/vehicles?line=01`. Las líneas admitidas son `01`–`23`, `73`, `87`, `88`, `89`, `C1` y `C2`. La respuesta incluye `vehicles`, `count`, `lineCount`, `totalLines`, `partial` y `warnings`. Se aplica una caché breve para evitar consultas repetidas al origen.
+
+El origen del recurso es `https://www.aytoburgos.es/web/movilidad/rutas-en-directo`, con los parámetros de portlet `resourceVehicles`, `line` y `label`. La web SAE Spotter intenta primero este recurso de vehículos, y usa la API de estimaciones por parada como respaldo si la consulta falla. Solo se dibujan posiciones si hay coordenadas válidas; los datos de vehículos sin coordenadas se mantienen en el listado.
+
 ## Datos en directo para el mapa de Burgos
 
-El Worker incluye ahora `GET /api/burgos/live`, que consulta las estimaciones de ISAENEXT para las paradas municipales en grupos pequeños y con concurrencia limitada. La respuesta contiene la línea, el identificador de vehículo si se publica, el destino, los segundos y metros hasta una parada de referencia y la hora de consulta. La web usa coordenadas GPS únicamente si el servicio las devuelve; de no ser así, puede reconstruir una posición aproximada sobre el trazado GTFS a partir de la distancia al siguiente punto.
+El endpoint `GET /api/burgos/live` sigue disponible como respaldo: consulta las estimaciones de ISAENEXT para las paradas municipales en grupos pequeños y con concurrencia limitada. La respuesta contiene la línea, el identificador de vehículo si se publica, el destino, los segundos y metros hasta una parada de referencia y la hora de consulta. La web puede reconstruir una posición aproximada sobre el trazado GTFS a partir de la distancia al siguiente punto; identifica esas posiciones como estimaciones.
 
-Tras desplegar el Worker, su URL se puede introducir en el panel Burgos con el botón **Configurar conexión**. Basta con pegar el dominio base que termina en `workers.dev`, sin añadir `/api/burgos/live`. La URL se guarda en el navegador local. La conexión directa al servidor municipal se intenta primero si no hay proxy configurado.
+Tras desplegar el Worker, su URL se puede introducir en el panel Burgos con el botón **Configurar conexión**. Basta con pegar el dominio base que termina en `workers.dev`, sin añadir rutas como `/api/burgos/vehicles` o `/api/burgos/live`. La URL se guarda en el navegador local. Si el acceso directo desde el navegador no está bloqueado por CORS, también se intenta consultar resourceVehicles directamente.
 
-Prueba el endpoint en el navegador con `https://TU-WORKER.workers.dev/api/burgos/live`. La respuesta debe contener `observations`. Si algún grupo falla, el endpoint devuelve los resultados disponibles y los avisos de las tandas fallidas. No lanza cientos de peticiones individuales.
+Prueba los endpoints en el navegador con `https://TU-WORKER.workers.dev/api/burgos/vehicles`, `https://TU-WORKER.workers.dev/api/burgos/vehicles?line=01` y `https://TU-WORKER.workers.dev/api/burgos/live`. La respuesta del primer endpoint debe contener `vehicles`; la del endpoint de respaldo, `observations`. Los fallos parciales por línea se indican en `warnings` en lugar de inventar resultados.
