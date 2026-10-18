@@ -1,0 +1,131 @@
+name: Diagnóstico Telegram · Autobuses de Burgos
+
+on:
+  push:
+    paths:
+      - ".github/workflows/telegram-burgos-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Comprobar token, webhook y fuente de autobuses sin enviar mensajes
+        env:
+          BURGOS_TELEGRAM_BOT_TOKEN: ${{ secrets.BURGOS_TELEGRAM_BOT_TOKEN }}
+          BURGOS_TELEGRAM_CHAT_ID: ${{ secrets.BURGOS_TELEGRAM_CHAT_ID }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          token = (os.environ.get("BURGOS_TELEGRAM_BOT_TOKEN") or "").strip()
+          chat_id = (os.environ.get("BURGOS_TELEGRAM_CHAT_ID") or "").strip()
+          failures = []
+
+          if not token or not chat_id:
+              print("FALLO: faltan BURGOS_TELEGRAM_BOT_TOKEN o BURGOS_TELEGRAM_CHAT_ID en GitHub Actions.")
+              sys.exit(1)
+
+          def telegram(method, payload=None):
+              url = "https://api.telegram.org/bot" + token + "/" + method
+              body = json.dumps(payload or {}).encode("utf-8")
+              request = urllib.request.Request(
+                  url, data=body,
+                  headers={"Content-Type": "application/json", "User-Agent": "SAE-Burgos-Diagnostics/1.0"},
+                  method="POST"
+              )
+              with urllib.request.urlopen(request, timeout=12) as response:
+                  return json.loads(response.read().decode("utf-8"))
+
+          try:
+              me = telegram("getMe")
+              if not me.get("ok"):
+                  raise RuntimeError("Telegram getMe devolvió ok=false")
+              print("OK: token de Telegram válido para @" + str((me.get("result") or {}).get("username") or "bot"))
+          except Exception as exc:
+              failures.append("Token de Telegram: " + str(exc))
+              print("FALLO: token de Telegram: " + str(exc))
+
+          try:
+              chat = telegram("getChat", {"chat_id": chat_id})
+              if not chat.get("ok"):
+                  raise RuntimeError("Telegram no reconoce el chat configurado")
+              print("OK: BURGOS_TELEGRAM_CHAT_ID es accesible (ID oculto).")
+          except Exception as exc:
+              failures.append("Chat de Telegram: " + str(exc))
+              print("FALLO: chat de Telegram: " + str(exc))
+
+          try:
+              webhook = telegram("getWebhookInfo").get("result") or {}
+              url = str(webhook.get("url") or "")
+              expected = "https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev/telegram/burgos"
+              if url == expected:
+                  print("OK: webhook de Burgos registrado en Cloudflare.")
+              elif not url:
+                  failures.append("Webhook de Burgos todavía no está registrado.")
+                  print("FALLO: el webhook de Burgos está vacío; comprueba los Secrets del Worker bizkaibus-sae-dispatcher.")
+              else:
+                  failures.append("Webhook de Burgos apunta a otra URL.")
+                  print("FALLO: webhook apunta a una URL distinta: " + url)
+              if webhook.get("last_error_message"):
+                  print("AVISO de Telegram webhook: " + str(webhook.get("last_error_message"))[:300])
+          except Exception as exc:
+              failures.append("Webhook de Telegram: " + str(exc))
+              print("FALLO: no se pudo comprobar el webhook: " + str(exc))
+
+          worker_base = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev"
+          try:
+              request = urllib.request.Request(worker_base + "/health", headers={"User-Agent": "SAE-Burgos-Diagnostics/1.0"})
+              with urllib.request.urlopen(request, timeout=10) as response:
+                  health = json.loads(response.read().decode("utf-8"))
+              scheduler = health.get("telegramScheduler") or {}
+              print("OK: Worker independiente de Burgos responde en /health.")
+              print("Programador BURGOS_GITHUB_TOKEN configurado: " + str(bool(scheduler.get("configured"))))
+              print("Fuente declarada por el Worker: " + str(health.get("source") or "No indicada"))
+              if not scheduler.get("configured"):
+                  failures.append("Falta BURGOS_GITHUB_TOKEN en el Worker burgos-sae-spotter.")
+          except Exception as exc:
+              failures.append("Health del Worker de Burgos: " + str(exc))
+              print("FALLO: Worker de Burgos: " + str(exc))
+
+          try:
+              request = urllib.request.Request(
+                  worker_base + "/api/burgos/vehicles?line=01",
+                  headers={"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "SAE-Burgos-Diagnostics/1.0"}
+              )
+              with urllib.request.urlopen(request, timeout=22) as response:
+                  payload = json.loads(response.read().decode("utf-8"))
+              if payload.get("ok") is not True or not isinstance(payload.get("vehicles"), list):
+                  raise RuntimeError(str(payload.get("error") or "respuesta sin lista de vehículos"))
+              if payload.get("partial"):
+                  raise RuntimeError("el endpoint devolvió datos parciales")
+              print("OK: fuente municipal de Burgos consultada por la línea 01; vehículos en feed: " + str(len(payload["vehicles"])) + ".")
+          except urllib.error.HTTPError as exc:
+              try:
+                  body = json.loads(exc.read().decode("utf-8", errors="replace"))
+                  detail = str(body.get("error") or body.get("message") or "")[:350]
+              except Exception:
+                  detail = ""
+              failures.append("Fuente municipal de Burgos: HTTP " + str(exc.code) + (": " + detail if detail else ""))
+              print("FALLO: fuente municipal de Burgos: HTTP " + str(exc.code) + (": " + detail if detail else ""))
+          except Exception as exc:
+              failures.append("Fuente municipal de Burgos: " + str(exc))
+              print("FALLO: fuente municipal de Burgos: " + str(exc))
+
+          if failures:
+              print("\nRESULTADO: todavía no está listo el circuito completo.")
+              for failure in failures:
+                  print("- " + failure)
+              sys.exit(1)
+          print("\nRESULTADO: Telegram, webhook, programador y consulta del feed de Burgos superaron el diagnóstico.")
+          PY
