@@ -137,16 +137,21 @@ jobs:
                         hasSaveLoad:typeof window.g==='function'
                       })""")
                       print("UI_STATE:",json.dumps(state,ensure_ascii=False)[:5000])
-                      # Solo pulsa controles si están visibles dentro de un diálogo abierto.
-                      for selector, label in [('button[onclick="reconectarAhora()"]','Reconectar'),('button[onclick="g()"]','GUARDAR Y CARGAR')]:
-                          ctl = page.locator(selector)
-                          try:
-                              if await ctl.count() and await ctl.first.is_visible():
-                                  await ctl.first.click(timeout=3000)
-                                  print("UI_ACTION: pulsado " + label)
-                                  await page.wait_for_timeout(10000)
-                          except Exception as exc:
-                              print("UI_ACTION_ERROR:", label, str(exc)[:160])
+                      functions = await page.evaluate("""() => ({
+                        reconectar: typeof window.reconectarAhora === 'function' ? String(window.reconectarAhora).slice(0,2200) : '',
+                        saveLoad: typeof window.g === 'function' ? String(window.g).slice(0,2200) : '',
+                        visibleAppFunctions: Object.keys(window).filter(k=>/reconect|guardar|linea|cargar|prefer/i.test(k)).slice(0,80)
+                      })""")
+                      print("APP_FUNCTIONS:",json.dumps(functions,ensure_ascii=False)[:6000])
+                      # Llama a la misma función pública que utiliza el botón Reconectar.
+                      # No se construyen cabeceras ni se llaman endpoints privados.
+                      try:
+                          if await page.evaluate("typeof window.reconectarAhora === 'function'"):
+                              await page.evaluate("window.reconectarAhora()")
+                              print("UI_ACTION: llamada a la función pública reconectarAhora")
+                              await page.wait_for_timeout(10000)
+                      except Exception as exc:
+                          print("UI_ACTION_ERROR:", "reconectarAhora()", str(exc)[:180])
                       await page.wait_for_timeout(12000)
                   except Exception as exc:
                       print("PAGE_ERROR:",repr(exc)[:250])
