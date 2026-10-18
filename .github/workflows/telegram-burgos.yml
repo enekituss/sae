@@ -25,6 +25,9 @@ jobs:
         with:
           persist-credentials: true
 
+      - name: Descargar rama de preferencias de Telegram
+        run: git fetch origin telegram-data:refs/remotes/origin/telegram-data
+
       - name: Detectar cambios y enviar avisos a Telegram
         env:
           BURGOS_TELEGRAM_BOT_TOKEN: ${{ secrets.BURGOS_TELEGRAM_BOT_TOKEN }}
@@ -198,7 +201,7 @@ jobs:
               if clean(subscription.get("mode")) == "off":
                   message += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro."
               message += "\n\nConfigura tus preferencias en el chat privado con @SAEBUR_bot. La falta de posición publicada no confirma por sí sola una baja administrativa."
-              message += "\n\n⏱️ Las opciones se procesan en el siguiente ciclo automático, normalmente en unos dos minutos."
+              message += "\n\n⚡ Las preferencias se guardan al momento. Los avisos se ajustan en la siguiente comprobación de autobuses."
               telegram_api("sendMessage", {
                   "chat_id": chat_id,
                   "text": message,
@@ -210,6 +213,28 @@ jobs:
           subscriptions = state.get("telegramSubscriptions", {})
           if not isinstance(subscriptions, dict):
               subscriptions = {}
+          # La rama telegram-data separa las preferencias instantáneas del estado cambiante de los vehículos.
+          try:
+              pref_paths = subprocess.run(
+                  ["git", "ls-tree", "-r", "--name-only", "refs/remotes/origin/telegram-data", "telegram-preferences/burgos"],
+                  capture_output=True, text=True, check=True
+              ).stdout.splitlines()
+              for pref_path in pref_paths:
+                  if not pref_path.endswith(".json"):
+                      continue
+                  chat_id = os.path.basename(pref_path)[:-5]
+                  if not chat_id:
+                      continue
+                  raw_pref = subprocess.run(
+                      ["git", "show", "refs/remotes/origin/telegram-data:" + pref_path],
+                      capture_output=True, text=True, check=True
+                  ).stdout
+                  value = json.loads(raw_pref)
+                  if isinstance(value, dict):
+                      subscriptions[chat_id] = value
+              print("Preferencias de Telegram cargadas desde la rama de datos: " + str(len(pref_paths)))
+          except Exception as exc:
+              print("AVISO: no se pudo leer la rama telegram-data; se conservarán las preferencias de respaldo: " + str(exc))
           primary_chat_id = str(PRIMARY_CHAT)
           try:
               bot_info = telegram_api("getMe", {})
@@ -227,7 +252,7 @@ jobs:
           # Las preferencias se procesan antes de consultar los datos para que el menú responda lo antes posible.
           try:
               update_offset = max(0, int(state.get("telegramUpdateOffset", 0) or 0))
-              updates = telegram_api("getUpdates", {
+              updates = [] if telegram_api("getWebhookInfo", {}).get("url") else telegram_api("getUpdates", {
                   "offset": update_offset,
                   "timeout": 0,
                   "allowed_updates": ["message"]
