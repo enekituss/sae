@@ -24,6 +24,12 @@
     .connection-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
     .connection-actions button { padding: 9px 12px; border-radius: 9px; cursor: pointer; }
     .connection-actions .secondary { background: transparent; border: 1px solid var(--line, #d9e0e7); }
+    .upcoming-stops { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--line, #d9e0e7); }
+    .upcoming-stops summary { cursor: pointer; font-weight: 650; }
+    .upcoming-stops ol { margin: 8px 0 8px 20px; padding: 0; }
+    .upcoming-stops li { padding: 2px 0; line-height: 1.35; }
+    .upcoming-stops .upcoming-stop-next { font-weight: 700; }
+    .upcoming-stops small { display: block; margin-top: 8px; line-height: 1.4; color: var(--muted, #607080); }
     @media (max-width: 650px) { #logoutButton { width: 100%; } .connection-actions button { flex: 1 1 120px; } }
   </style>
   <script>document.documentElement.classList.add('auth-check');</script>
@@ -95,6 +101,6 @@
     </footer>
   </main>
 
-  <script src="./burgos-vehicles.js?v=20261018i"></script>
+  <script src="./burgos-vehicles.js?v=20261018j"></script>
 </body>
 </html>
