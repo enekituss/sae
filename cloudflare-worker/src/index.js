@@ -3,6 +3,8 @@ const WORKFLOW_FILE = "update-siri.yml";
 const BRANCH = "main";
 const GITHUB_API = "https://api.github.com";
 const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
+const BURGOS_VEHICLES_SOURCE = "https://www.aytoburgos.es/web/movilidad/rutas-en-directo";
+const BURGOS_LINES = [...Array.from({ length: 23 }, (_, i) => String(i + 1).padStart(2, "0")), "73", "87", "88", "89", "C1", "C2"];
 const ALLOWED_ORIGIN = "https://enekituss.github.io";
 const ISAENEXT_PORTLET = "as_asac_isaenext_IsaenextWebPortlet";
 
@@ -244,6 +246,100 @@ async function fetchIsaenextJson(url) {
   }
 }
 
+
+function isaenextVehiclesUrl(line) {
+  const timestamp = Date.now();
+  const url = new URL(BURGOS_VEHICLES_SOURCE);
+  url.searchParams.set("p_p_id", ISAENEXT_PORTLET);
+  url.searchParams.set("p_p_lifecycle", "2");
+  url.searchParams.set("p_p_state", "normal");
+  url.searchParams.set("p_p_mode", "view");
+  url.searchParams.set("p_p_cacheability", "cacheLevelPage");
+  url.searchParams.set("p_p_resource_id", "resourceVehicles");
+  url.searchParams.set("_as_asac_isaenext_IsaenextWebPortlet_formDate", String(timestamp));
+  url.searchParams.set("_as_asac_isaenext_IsaenextWebPortlet_line", line);
+  url.searchParams.set("_as_asac_isaenext_IsaenextWebPortlet_label", line);
+  url.searchParams.set("_t", String(timestamp));
+  return url;
+}
+
+async function fetchBurgosVehicles(line) {
+  const url = isaenextVehiclesUrl(line);
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "Accept": "application/json, text/plain, */*",
+      "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter/1.0)",
+      "Referer": BURGOS_VEHICLES_SOURCE
+    },
+    signal: AbortSignal.timeout(12000)
+  });
+  const body = await response.text();
+  if (!response.ok) {
+    throw new Error("resourceVehicles de línea " + line + " respondió HTTP " + response.status);
+  }
+  let payload;
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    throw new Error("resourceVehicles de línea " + line + " no devolvió JSON reconocible.");
+  }
+  if (!Array.isArray(payload)) {
+    throw new Error("resourceVehicles de línea " + line + " no devolvió una lista.");
+  }
+  return payload.map(vehicle => ({
+    ...vehicle,
+    id: String(vehicle?.id ?? vehicle?.vehicleId ?? vehicle?.vehicle_id ?? "").trim(),
+    lineId: line
+  })).filter(vehicle => vehicle.id);
+}
+
+async function fetchBurgosVehiclesSnapshot() {
+  const results = new Array(BURGOS_LINES.length);
+  const errors = [];
+  let cursor = 0;
+  const concurrency = Math.min(5, BURGOS_LINES.length);
+  await Promise.all(Array.from({ length: concurrency }, async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= BURGOS_LINES.length) return;
+      const line = BURGOS_LINES[index];
+      try {
+        results[index] = await fetchBurgosVehicles(line);
+      } catch (error) {
+        errors.push("Línea " + line + ": " + (error?.message || String(error)));
+        results[index] = null;
+      }
+    }
+  }));
+
+  const completed = results.filter(Array.isArray);
+  const vehicles = [];
+  results.forEach((rows, index) => {
+    if (Array.isArray(rows)) vehicles.push(...rows);
+  });
+  if (!completed.length) {
+    throw new Error("No se pudo consultar ninguna línea con resourceVehicles. " + errors.slice(0, 3).join(" | "));
+  }
+
+  const uniqueVehicles = new Map();
+  for (const vehicle of vehicles) {
+    const id = String(vehicle.id || "").trim();
+    if (id) uniqueVehicles.set(id, vehicle);
+  }
+  return {
+    fetchedAt: new Date().toISOString(),
+    source: BURGOS_VEHICLES_SOURCE,
+    sourceType: "ISAENEXT · resourceVehicles por línea",
+    lineCount: completed.length,
+    totalLines: BURGOS_LINES.length,
+    partial: errors.length > 0,
+    warnings: errors.slice(0, 5),
+    count: uniqueVehicles.size,
+    vehicles: [...uniqueVehicles.values()]
+  };
+}
+
 export default {
   async scheduled(controller, env, ctx) {
     try {
@@ -287,6 +383,70 @@ export default {
       }
     }
 
+
+    if (request.method === "GET" && url.pathname === "/api/burgos/vehicles") {
+      const requestedLine = (url.searchParams.get("line") || "").trim().toUpperCase();
+      if (requestedLine && !BURGOS_LINES.includes(requestedLine)) {
+        return jsonResponse(request, {
+          error: "Línea no válida. Usa una de estas: " + BURGOS_LINES.join(", "),
+          allowedLines: BURGOS_LINES
+        }, 400);
+      }
+
+      const cache = caches.default;
+      const cacheKeyUrl = new URL("/__cache/burgos-vehicles" + (requestedLine ? "?line=" + encodeURIComponent(requestedLine) : "?line=all"), url.origin);
+      const cacheRequest = new Request(cacheKeyUrl.toString());
+      try {
+        const cached = await cache.match(cacheRequest);
+        if (cached) {
+          return jsonResponse(request, { ...(await cached.json()), cacheHit: true }, 200, {
+            "Cache-Control": "public, max-age=10"
+          });
+        }
+      } catch {
+        // La caché es opcional.
+      }
+
+      try {
+        let payload;
+        if (requestedLine) {
+          const vehicles = await fetchBurgosVehicles(requestedLine);
+          payload = {
+            fetchedAt: new Date().toISOString(),
+            source: BURGOS_VEHICLES_SOURCE,
+            sourceType: "ISAENEXT · resourceVehicles por línea",
+            line: requestedLine,
+            lineCount: 1,
+            totalLines: 1,
+            partial: false,
+            warnings: [],
+            count: vehicles.length,
+            vehicles
+          };
+        } else {
+          payload = await fetchBurgosVehiclesSnapshot();
+        }
+
+        try {
+          await cache.put(cacheRequest, new Response(JSON.stringify(payload), {
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Cache-Control": "public, max-age=10"
+            }
+          }));
+        } catch {
+          // La respuesta sigue siendo válida aunque la caché no esté disponible.
+        }
+        return jsonResponse(request, payload, 200, { "Cache-Control": "public, max-age=10" });
+      } catch (error) {
+        console.error("Fallo al consultar los vehículos de Burgos por línea:", error?.message || String(error));
+        return jsonResponse(request, {
+          error: error?.message || "No se pudieron consultar los vehículos por línea.",
+          source: BURGOS_VEHICLES_SOURCE,
+          fetchedAt: new Date().toISOString()
+        }, 502);
+      }
+    }
 
     if (request.method === "GET" && url.pathname === "/api/burgos/live") {
       const cache = caches.default;
