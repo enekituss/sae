@@ -153,9 +153,10 @@ jobs:
               source_errors.append("Worker /api/burgos/live: " + str(exc))
               print("AVISO: lectura del SAE mediante Worker falló: " + str(exc))
 
-          # Comprobación directa de los recursos oficiales documentados en el cliente público
-          # de Burgos: resourceNodes y resourceEstimations para una parada concreta.
+          # Comprobación directa de los recursos oficiales: probar el mismo patrón
+          # que usa el monitor, con resourceEstimations y line=01.
           official_pages = [
+              "https://movilidad.aytoburgos.es/es/rutas-en-directo",
               "https://movilidad.aytoburgos.es/rutas-en-directo",
               "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
           ]
@@ -179,7 +180,7 @@ jobs:
                       headers={
                           "Accept": "application/json, text/plain, */*",
                           "Cache-Control": "no-cache",
-                          "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo",
+                          "Referer": "https://movilidad.aytoburgos.es/es/rutas-en-directo",
                           "User-Agent": "Mozilla/5.0 (compatible; SAE-Burgos-Diagnostics/1.0)"
                       }
                   )
@@ -195,17 +196,18 @@ jobs:
               if not isinstance(nodes, list) or not nodes:
                   raise RuntimeError("resourceNodes no devolvió la lista de paradas")
               def stop_id(node):
-                  return str(node.get("num") or node.get("id") or node.get("stopId") or node.get("nodeId") or node.get("nodoId") or "").strip()
-              chosen_stop = next((stop_id(node) for node in nodes if isinstance(node, dict) and stop_id(node) == "200"), "")
-              if not chosen_stop:
-                  chosen_stop = next((stop_id(node) for node in nodes if isinstance(node, dict) and stop_id(node)), "")
-              if not chosen_stop:
+                  return str(node.get("num") or node.get("id") or node.get("stopId") or node.get("nodeId") or node.get("nodoId") or node.get("idNodo") or node.get("numNodo") or "").strip()
+              stop_ids = list(dict.fromkeys(stop_id(node) for node in nodes if isinstance(node, dict) and stop_id(node)))
+              if not stop_ids:
                   raise RuntimeError("resourceNodes devolvió paradas, pero ninguna con ID")
-              print("OK: recurso oficial resourceNodes; " + str(len(nodes)) + " paradas; se probará la parada " + chosen_stop + ".")
+              if len(",".join(stop_ids)) > 6500:
+                  raise RuntimeError("La lista de IDs de parada excede el tamaño prudente de la consulta")
+              print("OK: recurso oficial resourceNodes; " + str(len(stop_ids)) + " paradas disponibles.")
 
               estimations = official_resource("resourceEstimations", {
+                  "_as_asac_isaenext_IsaenextWebPortlet_line": "01",
                   "_as_asac_isaenext_IsaenextWebPortlet_tipo": "1",
-                  "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": chosen_stop
+                  "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": ",".join(stop_ids)
               })
               if not isinstance(estimations, list):
                   raise RuntimeError("resourceEstimations no devolvió una lista")
@@ -223,11 +225,11 @@ jobs:
                               vehicle_id = str(item.get("vehicle") or item.get("vehicleId") or item.get("vehicle_id") or "").strip()
                               if vehicle_id and vehicle_id != "0":
                                   ids_seen.add(vehicle_id)
-              print("OK: recurso oficial resourceEstimations responde para parada " + chosen_stop + "; " + str(routes_count) + " grupos de línea y " + str(len(ids_seen)) + " IDs de autobús identificables.")
+              print("OK: resourceEstimations con line=01 responde; " + str(len(estimations)) + " resultados de parada, " + str(routes_count) + " grupos de línea y " + str(len(ids_seen)) + " IDs identificables.")
               direct_source_ok = True
           except Exception as exc:
-              source_errors.append("SAE oficial directo: " + str(exc))
-              print("AVISO: consulta directa al SAE oficial falló: " + str(exc))
+              source_errors.append("SAE oficial directo por línea: " + str(exc))
+              print("AVISO: consulta directa del SAE por línea falló: " + str(exc))
 
           if not (worker_source_ok or direct_source_ok):
               failures.append("No se pudo leer ninguna fuente del SAE oficial. " + " | ".join(source_errors))
@@ -237,5 +239,5 @@ jobs:
               for failure in failures:
                   print("- " + failure)
               sys.exit(1)
-          print("\nRESULTADO: Telegram, webhook, programador y consulta del feed de Burgos superaron el diagnóstico.")
+          print("\nRESULTADO: configuración de Telegram y consulta del SAE oficial superaron el diagnóstico.")
           PY
