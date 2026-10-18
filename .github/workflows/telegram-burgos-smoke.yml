@@ -5,6 +5,8 @@ on:
   push:
     paths:
       - ".github/workflows/telegram-burgos-smoke.yml"
+      - ".github/workflows/telegram-burgos.yml"
+      - "cloudflare-worker-burgos/src/index.js"
   workflow_dispatch:
 
 permissions:
