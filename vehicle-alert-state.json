@@ -26332,92 +26332,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:4bf0e3812fe62570d3e1efb5": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T15:51+02:00",
-      "direction": "",
-      "eventId": "entered:4bf0e3812fe62570d3e1efb5",
-      "firstObservedAt": "2026-10-18T15:47:03+02:00",
-      "line": "A3336",
-      "queuedAt": "2026-10-18T15:51:00+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "7828"
-    },
-    "missing:9d53291ca07b6809fb27abaf": {
-      "destination": "OTXANDIO-UBIDE",
-      "detectedAt": "2026-10-18T15:51+02:00",
-      "direction": "",
-      "eventId": "missing:9d53291ca07b6809fb27abaf",
-      "firstMissingAt": "2026-10-18T15:47:03+02:00",
-      "lastSeenAt": "2026-10-18T15:43:47+02:00",
-      "line": "A3925",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T15:51:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3335"
-    },
-    "route:2ecb8bced219a6791485bba0": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TRAPAGA Elguero",
-          "old": "ERREPELEGA"
-        }
-      ],
-      "destination": "TRAPAGA Elguero",
-      "detectedAt": "2026-10-18T15:51+02:00",
-      "direction": "",
-      "eventId": "route:2ecb8bced219a6791485bba0",
-      "line": "A3331",
-      "queuedAt": "2026-10-18T15:51:00+02:00",
-      "type": "route_change",
-      "vehicleId": "7834"
-    },
-    "route:320e0a16cc42e6ed68ee0022": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T15:51+02:00",
-      "direction": "",
-      "eventId": "route:320e0a16cc42e6ed68ee0022",
-      "line": "A3136",
-      "queuedAt": "2026-10-18T15:51:00+02:00",
-      "type": "route_change",
-      "vehicleId": "7855"
-    },
-    "route:c75d1f401fe9ac42104966d1": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3915",
-          "old": "A3916"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO (Aut.)",
-          "old": "ONDARROA"
-        }
-      ],
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T15:51+02:00",
-      "direction": "",
-      "eventId": "route:c75d1f401fe9ac42104966d1",
-      "line": "A3915",
-      "queuedAt": "2026-10-18T15:51:00+02:00",
-      "type": "route_change",
-      "vehicleId": "8661"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1715": {
@@ -26582,7 +26497,7 @@
       "requiredMissing": 2
     },
     "3335": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:9d53291ca07b6809fb27abaf",
       "firstMissingAt": "2026-10-18T15:47:03+02:00",
@@ -26593,7 +26508,7 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-18T15:43:47+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3365": {
