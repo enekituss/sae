@@ -27018,37 +27018,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:4a2078cade58da87a239dbfd": {
-      "destination": "DERIO",
-      "detectedAt": "2026-10-18T12:51+02:00",
-      "direction": "",
-      "eventId": "missing:4a2078cade58da87a239dbfd",
-      "firstMissingAt": "2026-10-18T12:47:04+02:00",
-      "lastSeenAt": "2026-10-18T12:43:48+02:00",
-      "line": "A2153",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T12:51:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2087"
-    },
-    "vehicle_returned:63336c7f917fa2ceba5cfe00": {
-      "destination": "ELORRIO",
-      "detectedAt": "2026-10-18T12:51+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:63336c7f917fa2ceba5cfe00",
-      "lastKnown": {
-        "destination": "ELORRIO",
-        "direction": "",
-        "id": "3380",
-        "line": "A3923"
-      },
-      "line": "A3923",
-      "queuedAt": "2026-10-18T12:51:00+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3380"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "5039": {
       "consecutiveChecks": 2,
@@ -27227,7 +27197,7 @@
       "requiredMissing": 2
     },
     "2087": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:4a2078cade58da87a239dbfd",
       "firstMissingAt": "2026-10-18T12:47:04+02:00",
@@ -27238,7 +27208,7 @@
         "line": "A2153"
       },
       "lastSeenAt": "2026-10-18T12:43:48+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2090": {
