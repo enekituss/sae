@@ -25237,50 +25237,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:6735944b1e477ed71b188838": {
-      "destination": "PLENTZIA (Metro)",
-      "detectedAt": "2026-10-18T20:51+02:00",
-      "direction": "",
-      "eventId": "entered:6735944b1e477ed71b188838",
-      "firstObservedAt": "2026-10-18T20:49:09+02:00",
-      "line": "A3499",
-      "queuedAt": "2026-10-18T20:51:10+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "1715"
-    },
-    "missing:a5ad6cc0de49d6545f0c1ff5": {
-      "destination": "OTXANDIO",
-      "detectedAt": "2026-10-18T20:51+02:00",
-      "direction": "",
-      "eventId": "missing:a5ad6cc0de49d6545f0c1ff5",
-      "firstMissingAt": "2026-10-18T20:47:07+02:00",
-      "lastSeenAt": "2026-10-18T20:43:35+02:00",
-      "line": "A3925",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:51:10+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3319"
-    },
-    "route:4eb9c21c2087a24d89fd616c": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ARRIGORRIAGA",
-          "old": "GALDAKAO Ospitalea"
-        }
-      ],
-      "destination": "ARRIGORRIAGA",
-      "detectedAt": "2026-10-18T20:51+02:00",
-      "direction": "",
-      "eventId": "route:4eb9c21c2087a24d89fd616c",
-      "line": "A3641",
-      "queuedAt": "2026-10-18T20:51:10+02:00",
-      "type": "route_change",
-      "vehicleId": "3364"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1731": {
@@ -25432,7 +25389,7 @@
       "requiredMissing": 2
     },
     "3319": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a5ad6cc0de49d6545f0c1ff5",
       "firstMissingAt": "2026-10-18T20:47:07+02:00",
@@ -25443,7 +25400,7 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-18T20:43:35+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8661": {
