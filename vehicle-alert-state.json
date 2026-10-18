@@ -25155,79 +25155,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:184a1a77789ec9c622abdef7": {
-      "destination": "BAKIO (Aut.)",
-      "detectedAt": "2026-10-18T20:15+02:00",
-      "direction": "",
-      "eventId": "missing:184a1a77789ec9c622abdef7",
-      "firstMissingAt": "2026-10-18T20:11:07+02:00",
-      "lastSeenAt": "2026-10-18T20:07:26+02:00",
-      "line": "A3518",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:15:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2099"
-    },
-    "route_after_gap:3cf9de09a71dc398484cb8e9": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "OROZKO Ibarra"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T20:15+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:3cf9de09a71dc398484cb8e9",
-      "line": "A3613",
-      "queuedAt": "2026-10-18T20:15:07+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3386"
-    },
-    "route_after_gap:e17668d62d12753485af26b7": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3913",
-          "old": "A3911"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ARRAZOLA",
-          "old": "DURANGO"
-        }
-      ],
-      "destination": "ARRAZOLA",
-      "detectedAt": "2026-10-18T20:15+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:e17668d62d12753485af26b7",
-      "line": "A3913",
-      "queuedAt": "2026-10-18T20:15:07+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3372"
-    },
-    "vehicle_returned:5f5c521daedace7caa27a84c": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T20:15+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:5f5c521daedace7caa27a84c",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "3352",
-        "line": "A3925"
-      },
-      "line": "A3925",
-      "queuedAt": "2026-10-18T20:15:07+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3352"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1714": {
@@ -25362,7 +25290,7 @@
       "requiredMissing": 2
     },
     "2099": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:184a1a77789ec9c622abdef7",
       "firstMissingAt": "2026-10-18T20:11:07+02:00",
@@ -25373,7 +25301,7 @@
         "line": "A3518"
       },
       "lastSeenAt": "2026-10-18T20:07:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2102": {
