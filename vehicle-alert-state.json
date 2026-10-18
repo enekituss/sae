@@ -18532,50 +18532,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:e193aff43efd0f5f62e7ccbe": {
-      "destination": "BAKIO (Aut.)",
-      "detectedAt": "2026-10-18T08:01+02:00",
-      "direction": "",
-      "eventId": "entered:e193aff43efd0f5f62e7ccbe",
-      "firstObservedAt": "2026-10-18T07:58:59+02:00",
-      "line": "A3518",
-      "queuedAt": "2026-10-18T08:01:01+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "2124"
-    },
-    "missing:ed4a74641cdbf282e432f0aa": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T08:01+02:00",
-      "direction": "",
-      "eventId": "missing:ed4a74641cdbf282e432f0aa",
-      "firstMissingAt": "2026-10-18T07:56:59+02:00",
-      "lastSeenAt": "2026-10-18T07:53:44+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T08:01:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2089"
-    },
-    "route:39de685451d316ad8f839430": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "Metro BOLUETA",
-          "old": "GALDAKAO"
-        }
-      ],
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-18T08:01+02:00",
-      "direction": "",
-      "eventId": "route:39de685451d316ad8f839430",
-      "line": "A3932",
-      "queuedAt": "2026-10-18T08:01:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3295"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2129": {
       "consecutiveChecks": 1,
@@ -18637,7 +18594,7 @@
   },
   "pendingVehicles": {
     "2089": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:ed4a74641cdbf282e432f0aa",
       "firstMissingAt": "2026-10-18T07:56:59+02:00",
@@ -18648,7 +18605,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T07:53:44+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3375": {
