@@ -1,4 +1,4 @@
-const BURGOS_SOURCE = "https://www.aytoburgos.es/web/movilidad/rutas-en-directo";
+const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
 const PORTLET_ID = "as_asac_isaenext_IsaenextWebPortlet";
 const PORTLET_PREFIX = "_as_asac_isaenext_IsaenextWebPortlet_";
 const ALLOWED_ORIGIN = "https://enekituss.github.io";
