@@ -1454,25 +1454,24 @@
       "upcomingStops": []
     }
   },
-  "outbox": {},
+  "outbox": {
+    "missing:0dd92ecfb62a99db3787bea1": {
+      "destination": "BILBAO",
+      "detectedAt": "2026-10-19T00:03+02:00",
+      "direction": "",
+      "eventId": "missing:0dd92ecfb62a99db3787bea1",
+      "firstMissingAt": "2026-10-18T23:59:03+02:00",
+      "lastSeenAt": "2026-10-18T23:55:46+02:00",
+      "line": "A3247",
+      "missingChecks": 3,
+      "queuedAt": "2026-10-19T00:03:03+02:00",
+      "type": "vehicle_missing",
+      "vehicleId": "2119"
+    }
+  },
   "pendingArrivals": {},
   "pendingRouteChanges": {},
   "pendingVehicles": {
-    "1514": {
-      "alerted": true,
-      "consecutiveMissing": 3,
-      "eventId": "missing:55abd0d5a380c75e8176b28d",
-      "firstMissingAt": "2026-10-18T23:01:04+02:00",
-      "lastKnown": {
-        "destination": "LEIOA",
-        "direction": "",
-        "id": "1514",
-        "line": "A3414"
-      },
-      "lastSeenAt": "2026-10-18T22:56:00+02:00",
-      "notificationQueued": false,
-      "requiredMissing": 2
-    },
     "1720": {
       "alerted": true,
       "consecutiveMissing": 3,
@@ -1518,24 +1517,10 @@
       "notificationQueued": false,
       "requiredMissing": 2
     },
-    "2103": {
-      "alerted": true,
-      "consecutiveMissing": 3,
-      "eventId": "missing:946ecab70b1f6a53dc5d909f",
-      "firstMissingAt": "2026-10-18T23:01:04+02:00",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "2103",
-        "line": "A2322"
-      },
-      "lastSeenAt": "2026-10-18T22:56:00+02:00",
-      "notificationQueued": false,
-      "requiredMissing": 2
-    },
     "2119": {
       "alerted": false,
-      "consecutiveMissing": 2,
+      "consecutiveMissing": 3,
+      "eventId": "missing:0dd92ecfb62a99db3787bea1",
       "firstMissingAt": "2026-10-18T23:59:03+02:00",
       "lastKnown": {
         "destination": "BILBAO",
@@ -1544,7 +1529,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T23:55:46+02:00",
-      "notificationQueued": false,
+      "notificationQueued": true,
       "requiredMissing": 2
     },
     "3293": {
@@ -1574,21 +1559,6 @@
         "line": "A3932"
       },
       "lastSeenAt": "2026-10-18T23:21:58+02:00",
-      "notificationQueued": false,
-      "requiredMissing": 2
-    },
-    "3330": {
-      "alerted": true,
-      "consecutiveMissing": 3,
-      "eventId": "missing:b600a822d8dd429ae73a4428",
-      "firstMissingAt": "2026-10-18T23:01:04+02:00",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "3330",
-        "line": "A3912"
-      },
-      "lastSeenAt": "2026-10-18T22:56:00+02:00",
       "notificationQueued": false,
       "requiredMissing": 2
     },
@@ -1964,21 +1934,6 @@
         "line": "A3136"
       },
       "lastSeenAt": "2026-10-18T23:53:58+02:00",
-      "notificationQueued": false,
-      "requiredMissing": 2
-    },
-    "7867": {
-      "alerted": true,
-      "consecutiveMissing": 3,
-      "eventId": "missing:3bee738fbb321aa8be8a8ac8",
-      "firstMissingAt": "2026-10-18T23:01:04+02:00",
-      "lastKnown": {
-        "destination": "SESTAO",
-        "direction": "",
-        "id": "7867",
-        "line": "A3135"
-      },
-      "lastSeenAt": "2026-10-18T22:56:00+02:00",
       "notificationQueued": false,
       "requiredMissing": 2
     },
