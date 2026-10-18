@@ -532,24 +532,30 @@ jobs:
                               errors.append(urllib.parse.urlparse(page).netloc + ": " + str(exc)[:120])
                       raise RuntimeError(resource + " no respondió en el SAE: " + " || ".join(errors))
 
-                  nodes_payload = fetch_direct_isaenext("resourceNodes")
-                  if not isinstance(nodes_payload, list) or not nodes_payload:
-                      raise RuntimeError("resourceNodes no devolvió una lista de paradas.")
-
                   def direct_stop_id(node):
                       return clean(node.get("num") or node.get("id") or node.get("stopId") or node.get("nodeId") or node.get("nodoId") or node.get("idNodo") or node.get("numNodo"))
 
-                  nodes = []
-                  seen_node_ids = set()
-                  for node in nodes_payload:
-                      if not isinstance(node, dict):
-                          continue
-                      stop_id = direct_stop_id(node)
-                      if stop_id and stop_id not in seen_node_ids:
-                          seen_node_ids.add(stop_id)
-                          nodes.append(node)
-                  if not nodes:
-                      raise RuntimeError("resourceNodes no devolvió IDs de paradas reconocibles.")
+                  try:
+                      nodes_payload = fetch_direct_isaenext("resourceNodes")
+                      if not isinstance(nodes_payload, list) or not nodes_payload:
+                          raise RuntimeError("resourceNodes no devolvió una lista de paradas.")
+                      nodes = []
+                      seen_node_ids = set()
+                      for node in nodes_payload:
+                          if not isinstance(node, dict):
+                              continue
+                          stop_id = direct_stop_id(node)
+                          if stop_id and stop_id not in seen_node_ids:
+                              seen_node_ids.add(stop_id)
+                              nodes.append(node)
+                      if not nodes:
+                          raise RuntimeError("resourceNodes no devolvió IDs de paradas reconocibles.")
+                      print("Usando el catálogo oficial de " + str(len(nodes)) + " paradas.")
+                  except Exception as node_error:
+                      # Respaldo exacto de la URL de resourceEstimations que aportó el usuario.
+                      known_ids = ["402", "183", "209", "98", "26", "224", "71", "152", "164", "227", "228"]
+                      nodes = [{"num": value} for value in known_ids]
+                      print("AVISO: resourceNodes no responde; se probará resourceEstimations con los IDs proporcionados: " + str(node_error)[:180])
 
                   all_stop_ids = [direct_stop_id(node) for node in nodes]
                   if len(",".join(all_stop_ids)) > 6500:
