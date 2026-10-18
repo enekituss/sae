@@ -2,19 +2,22 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#17212b">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="SAE Spotter">
   <title>Autobuses urbanos de Burgos · SAE Spotter</title>
-  <meta name="description" content="Líneas, recorridos y horarios programados de los autobuses urbanos de Burgos.">
+  <meta name="description" content="Listado de líneas y autobuses urbanos de Burgos detectados en el servicio municipal.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./burgos.css?v=20261017live3">
+  <link rel="stylesheet" href="./styles.css?v=20261018a">
+  <style>
+    html.auth-check body { visibility: hidden; }
+    #logoutButton:hover { background: #2c3b49 !important; }
+    @media (max-width: 650px) { #logoutButton { width: 100%; } }
+  </style>
   <script>document.documentElement.classList.add('auth-check');</script>
-  <style>html.auth-check body { visibility: hidden; }</style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
   <script src="./auth-guard.js?v=20261017a"></script>
@@ -23,95 +26,52 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="eyebrow">SAE SPOTTER · BURGOS</div>
+      <div class="eyebrow">SAE · BURGOS</div>
       <h1>Autobuses urbanos <span>de Burgos</span></h1>
-      <p>Autobuses detectados por línea, posiciones publicadas y horarios por parada.</p>
-      <nav class="page-nav" aria-label="Navegación">
-        <a href="./index.html">← Cambiar ciudad</a>
-      </nav>
+      <p>Líneas y autobuses activos detectados por el servicio municipal.</p>
+      <a class="city-switch" href="./index.html">← Cambiar ciudad</a>
     </div>
-    <div class="status" aria-live="polite"><span id="dot" class="status-dot"></span><span id="statusText">Leyendo GTFS oficial…</span></div>
+    <div class="status" aria-live="polite">
+      <span id="dot" class="status-dot"></span>
+      <span id="statusText">Leyendo datos publicados…</span>
+    </div>
   </header>
 
   <main class="page">
-    <section class="summary">
+    <section class="summary" aria-label="Resumen">
       <div class="summary-copy">
-        <h2>Servicios programados</h2>
-        <p>Selecciona una línea para consultar sus viajes y las horas de llegada y salida en cada parada. El ID del viaje GTFS no es el número físico de flota del autobús.</p>
+        <h2>Autobuses activos</h2>
+        <p>Los vehículos se agrupan por línea. Se muestran únicamente los coches que aparecen en la última consulta completa del servicio municipal.</p>
       </div>
       <div class="stats">
-        <div class="stat"><strong id="routeCount">—</strong><span>líneas</span></div>
-        <div class="stat"><strong id="stopCount">—</strong><span>paradas</span></div>
-        <div class="stat"><strong id="tripCount">—</strong><span>viajes del fichero</span></div>
+        <div class="stat"><strong id="vehicleCount">—</strong><span>autobuses activos</span></div>
+        <div class="stat"><strong id="lineCount">—</strong><span>líneas con autobuses</span></div>
       </div>
-    </section>
-
-
-    <section class="live-panel" aria-labelledby="liveTitle">
-      <header class="live-panel-head">
-        <div>
-          <div class="live-kicker">FUENTE MUNICIPAL · ISAENEXT</div>
-          <h2 id="liveTitle">Autobuses en directo</h2>
-          <p>Consulta los vehículos que la fuente está detectando y su ubicación sobre el recorrido.</p>
-        </div>
-        <div class="live-actions">
-          <span id="liveUpdated">Esperando primera consulta…</span>
-          <button id="liveRefresh" type="button">↻ Actualizar posiciones</button>
-          <button id="liveConfigToggle" class="quiet-button" type="button">Configurar conexión</button>
-        </div>
-      </header>
-      <div id="liveConfigPanel" class="live-config" hidden>
-        <label for="liveProxyUrl">URL de Cloudflare Worker <span>(recomendado para los coches por línea)</span></label>
-        <div class="live-config-row">
-          <input id="liveProxyUrl" type="url" inputmode="url" placeholder="https://nombre.subdominio.workers.dev">
-          <button id="liveProxySave" type="button">Guardar conexión</button>
-          <button id="liveProxyClear" class="quiet-button" type="button">Quitar</button>
-        </div>
-        <p>El Worker consulta resourceVehicles por línea y evita depender de CORS del navegador. Si la conexión directa está bloqueada, pega aquí solo el dominio workers.dev, sin rutas; se guarda únicamente en este navegador.</p>
-      </div>
-      <div class="live-summary">
-        <div><strong id="liveBusCount">—</strong><span>autobuses detectados</span></div>
-        <div><strong id="livePositionCount">—</strong><span>posiciones en el mapa</span></div>
-        <div><strong id="liveStopCount">—</strong><span>líneas consultadas</span></div>
-      </div>
-      <div id="liveMap" aria-label="Mapa de autobuses de Burgos en directo"></div>
-      <div id="liveStatus" class="live-status" role="status" aria-live="polite">
-        <span class="spinner"></span> Consultando si el servicio municipal está publicando posiciones…
-      </div>
-      <div id="liveVehicleList" class="live-vehicle-list"></div>
-      <p class="live-disclaimer">SAE Spotter consulta primero el recurso municipal <code>resourceVehicles</code> por línea para identificar los coches publicados y usar sus coordenadas cuando estén disponibles. Si esa consulta falla, utiliza las estimaciones por parada como respaldo; cuando no se publica GPS, la posición se reconstruye de forma aproximada sobre el trazado GTFS y se identifica como estimación.</p>
-    </section>
-
-    <section id="dataNotice" class="notice" aria-live="polite">
-      <strong>Comprobando la vigencia del horario…</strong>
     </section>
 
     <section class="list-panel">
       <div class="toolbar">
-        <label class="searchbox"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Buscar línea, destino, parada o ID de viaje…" autocomplete="off"></label>
-        <button id="refresh" type="button">↻ Actualizar</button>
+        <label class="searchbox">
+          <span aria-hidden="true">⌕</span>
+          <input id="search" type="search" placeholder="Buscar línea, número de coche, destino o matrícula…" autocomplete="off">
+        </label>
+        <button id="refresh" type="button"><span aria-hidden="true">↻</span> Actualizar</button>
       </div>
-      <div class="filters">
-        <label for="serviceDate">Fecha del servicio</label>
-        <input id="serviceDate" type="date">
-        <label class="checkbox-label"><input id="showAllSchedules" type="checkbox"> Mostrar también horarios de referencia de otras fechas</label>
-        <button id="clearLine" class="quiet-button" type="button" hidden>Ver todas las líneas</button>
+      <div class="list-heading">
+        <span>LÍNEAS Y AUTOBUSES ACTIVOS</span>
+        <span id="lastUpdated">Esperando primera actualización</span>
       </div>
-      <div class="list-heading"><span id="listTitle">LÍNEAS DE AUTOBÚS</span><span id="lastUpdated">Esperando datos…</span></div>
-      <div id="results" class="results" aria-live="polite"><div class="message"><span class="spinner"></span> Cargando líneas y horarios oficiales…</div></div>
-    </section>
-
-    <section class="notice secondary-notice">
-      <strong>Qué significa la información:</strong> el mapa consulta los vehículos publicados por línea en ISAENEXT y las coordenadas que ofrece el recurso. Si se usa la fuente de respaldo, una ubicación reconstruida sobre el trazado GTFS se identifica como estimación. La tabla de viajes usa horarios GTFS por separado y no garantiza que un vehículo esté circulando ahora.
+      <div id="lines" class="lines" aria-live="polite">
+        <div class="message"><span class="spinner"></span> Cargando autobuses de Burgos…</div>
+      </div>
     </section>
 
     <footer>
-      <span id="sourceDescription">Fuente de publicación: <a href="https://www.aytoburgos.es/GTFS/Google_transit.zip" target="_blank" rel="noopener noreferrer">GTFS oficial del Ayuntamiento de Burgos</a>.</span>
-      <span id="feedValidity">La validez de los calendarios se comprueba con los datos publicados.</span>
+      <span>Fuente: servicio municipal ISAENEXT, recurso <code>resourceVehicles</code>. La copia se actualiza automáticamente mediante GitHub Actions aproximadamente cada cinco minutos.</span>
+      <span>Un vehículo aparece aquí cuando está incluido en la última consulta completa; esto no constituye una confirmación administrativa del estado del vehículo.</span>
     </footer>
   </main>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="./burgos.js?v=20261018vehicles2"></script>
+  <script src="./burgos-vehicles.js?v=20261018a"></script>
 </body>
 </html>
