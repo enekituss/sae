@@ -25297,21 +25297,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:bacafa63593258513455de8b": {
-      "destination": "MORGA",
-      "detectedAt": "2026-10-18T11:17+02:00",
-      "direction": "",
-      "eventId": "missing:bacafa63593258513455de8b",
-      "firstMissingAt": "2026-10-18T11:13:01+02:00",
-      "lastSeenAt": "2026-10-18T11:09:51+02:00",
-      "line": "A3533",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T11:17:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8682"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1715": {
@@ -25573,7 +25559,7 @@
       "requiredMissing": 2
     },
     "8682": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:bacafa63593258513455de8b",
       "firstMissingAt": "2026-10-18T11:13:01+02:00",
@@ -25584,7 +25570,7 @@
         "line": "A3533"
       },
       "lastSeenAt": "2026-10-18T11:09:51+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
