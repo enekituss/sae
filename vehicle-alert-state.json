@@ -24685,57 +24685,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:a7b6085a08f90132fdec416a": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T11:37+02:00",
-      "direction": "",
-      "eventId": "missing:a7b6085a08f90132fdec416a",
-      "firstMissingAt": "2026-10-18T11:33:01+02:00",
-      "lastSeenAt": "2026-10-18T11:29:44+02:00",
-      "line": "A3632",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T11:37:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3293"
-    },
-    "route:b932a9850449e97231aeb695": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CRUCES/GURUTZETA",
-          "old": "GETXO"
-        }
-      ],
-      "destination": "CRUCES/GURUTZETA",
-      "detectedAt": "2026-10-18T11:37+02:00",
-      "direction": "",
-      "eventId": "route:b932a9850449e97231aeb695",
-      "line": "A3471",
-      "queuedAt": "2026-10-18T11:37:01+02:00",
-      "type": "route_change",
-      "vehicleId": "1761"
-    },
-    "route_after_gap:f79d2e92cdd1ebf2d8d6f04d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "LA ARBOLEDA",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "LA ARBOLEDA",
-      "detectedAt": "2026-10-18T11:37+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:f79d2e92cdd1ebf2d8d6f04d",
-      "line": "A3333",
-      "queuedAt": "2026-10-18T11:37:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7885"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2090": {
@@ -24820,7 +24770,7 @@
       "requiredMissing": 2
     },
     "3293": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a7b6085a08f90132fdec416a",
       "firstMissingAt": "2026-10-18T11:33:01+02:00",
@@ -24831,7 +24781,7 @@
         "line": "A3632"
       },
       "lastSeenAt": "2026-10-18T11:29:44+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3303": {
