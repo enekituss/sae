@@ -22773,63 +22773,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:89e1127322aeece7b85bb811": {
-      "destination": "GETXO",
-      "detectedAt": "2026-10-18T21:53+02:00",
-      "direction": "",
-      "eventId": "missing:89e1127322aeece7b85bb811",
-      "firstMissingAt": "2026-10-18T21:49:06+02:00",
-      "lastSeenAt": "2026-10-18T21:46:03+02:00",
-      "line": "A3411",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T21:53:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1102"
-    },
-    "missing:a38e0c403b4c13d149e35e9b": {
-      "destination": "MUNGIA",
-      "detectedAt": "2026-10-18T21:53+02:00",
-      "direction": "",
-      "eventId": "missing:a38e0c403b4c13d149e35e9b",
-      "firstMissingAt": "2026-10-18T21:49:06+02:00",
-      "lastSeenAt": "2026-10-18T21:46:03+02:00",
-      "line": "A3537",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T21:53:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2132"
-    },
-    "missing:d8d3281e8a0bf3d8771d0e7a": {
-      "destination": "PLENTZIA (Metro)",
-      "detectedAt": "2026-10-18T21:53+02:00",
-      "direction": "",
-      "eventId": "missing:d8d3281e8a0bf3d8771d0e7a",
-      "firstMissingAt": "2026-10-18T21:49:06+02:00",
-      "lastSeenAt": "2026-10-18T21:46:03+02:00",
-      "line": "A3499",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T21:53:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1715"
-    },
-    "vehicle_returned:913744dc975c9109385931cf": {
-      "destination": "ERRIGOITI",
-      "detectedAt": "2026-10-18T21:53+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:913744dc975c9109385931cf",
-      "lastKnown": {
-        "destination": "ERRIGOITI",
-        "direction": "",
-        "id": "8680",
-        "line": "A3534"
-      },
-      "line": "A3534",
-      "queuedAt": "2026-10-18T21:53:05+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "8680"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3305": {
@@ -22939,7 +22883,7 @@
   },
   "pendingVehicles": {
     "1102": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:89e1127322aeece7b85bb811",
       "firstMissingAt": "2026-10-18T21:49:06+02:00",
@@ -22950,7 +22894,7 @@
         "line": "A3411"
       },
       "lastSeenAt": "2026-10-18T21:46:03+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "1512": {
@@ -22968,7 +22912,7 @@
       "requiredMissing": 2
     },
     "1715": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:d8d3281e8a0bf3d8771d0e7a",
       "firstMissingAt": "2026-10-18T21:49:06+02:00",
@@ -22979,7 +22923,7 @@
         "line": "A3499"
       },
       "lastSeenAt": "2026-10-18T21:46:03+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "1718": {
@@ -23041,7 +22985,7 @@
       "requiredMissing": 2
     },
     "2132": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a38e0c403b4c13d149e35e9b",
       "firstMissingAt": "2026-10-18T21:49:06+02:00",
@@ -23052,7 +22996,7 @@
         "line": "A3537"
       },
       "lastSeenAt": "2026-10-18T21:46:03+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3303": {
