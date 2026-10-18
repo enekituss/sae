@@ -74,36 +74,52 @@ function normalizeLineCode(value) {
 }
 
 async function requestIsaenext(resource, extra = {}) {
-  const url = new URL(BURGOS_SOURCE);
-  url.searchParams.set("p_p_id", PORTLET_ID);
-  url.searchParams.set("p_p_lifecycle", "2");
-  url.searchParams.set("p_p_state", "normal");
-  url.searchParams.set("p_p_mode", "view");
-  url.searchParams.set("p_p_resource_id", resource);
-  url.searchParams.set("p_p_cacheability", "cacheLevelPage");
-  for (const [key, value] of Object.entries(extra)) {
-    url.searchParams.set(key, String(value));
+  const sources = [
+    BURGOS_SOURCE,
+    "https://movilidad.aytoburgos.es/rutas-en-directo",
+    "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
+  ];
+  const errors = [];
+
+  for (const base of sources) {
+    const url = new URL(base);
+    url.searchParams.set("p_p_id", PORTLET_ID);
+    url.searchParams.set("p_p_lifecycle", "2");
+    url.searchParams.set("p_p_state", "normal");
+    url.searchParams.set("p_p_mode", "view");
+    url.searchParams.set("p_p_resource_id", resource);
+    url.searchParams.set("p_p_cacheability", "cacheLevelPage");
+    for (const [key, value] of Object.entries(extra)) {
+      url.searchParams.set(key, String(value));
+    }
+
+    try {
+      const response = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+          "Accept": "application/json, text/plain, */*",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
+          "Referer": BURGOS_SOURCE
+        },
+        signal: AbortSignal.timeout(6000)
+      });
+      const body = await response.text();
+      if (!response.ok) {
+        errors.push(new URL(base).host + " HTTP " + response.status);
+        continue;
+      }
+      try {
+        return { data: JSON.parse(body), source: base };
+      } catch {
+        errors.push(new URL(base).host + " no devolvió JSON válido");
+      }
+    } catch (error) {
+      errors.push(new URL(base).host + ": " + (error?.message || String(error)));
+    }
   }
 
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "Accept": "application/json, text/plain, */*",
-      "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
-      "Referer": BURGOS_SOURCE
-    },
-    signal: AbortSignal.timeout(15000)
-  });
-  const body = await response.text();
-  if (!response.ok) {
-    throw new Error(resource + " línea " + String(extra[PORTLET_PREFIX + "line"] || "?") +
-      " respondió HTTP " + response.status + ".");
-  }
-  try {
-    return { data: JSON.parse(body), source: BURGOS_SOURCE };
-  } catch {
-    throw new Error(resource + " no devolvió JSON válido.");
-  }
+  throw new Error(resource + " línea " + String(extra[PORTLET_PREFIX + "line"] || "?") +
+    " no respondió en ninguna ruta municipal: " + errors.join(" | "));
 }
 
 // resourceRoutes contiene el trazado y, según el formato publicado, los IDs de parada.
