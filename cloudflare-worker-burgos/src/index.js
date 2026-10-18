@@ -65,7 +65,10 @@ function normalizeLineCode(value) {
 
 async function requestIsaenext(resource, extra = {}) {
   const errors = [];
-  for (const base of BURGOS_SOURCE_FALLBACKS) {
+  // La URL /es/ es la fuente oficial confirmada para las estimaciones.
+  // Evita triplicar subpeticiones al consultar las 29 líneas desde el Worker.
+  const sources = resource === "resourceEstimations" ? [BURGOS_SOURCE] : BURGOS_SOURCE_FALLBACKS;
+  for (const base of sources) {
     try {
       const url = resourceUrl(resource, extra, base);
       const response = await fetch(url.toString(), {
