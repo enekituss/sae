@@ -25217,37 +25217,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:f9c5e1b0e064084591d2500b": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T17:41+02:00",
-      "direction": "",
-      "eventId": "missing:f9c5e1b0e064084591d2500b",
-      "firstMissingAt": "2026-10-18T17:37:01+02:00",
-      "lastSeenAt": "2026-10-18T17:33:16+02:00",
-      "line": "A3915",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T17:41:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8678"
-    },
-    "vehicle_returned:456fac21fdfe90e52ad21615": {
-      "destination": "ARRIGORRIAGA",
-      "detectedAt": "2026-10-18T17:41+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:456fac21fdfe90e52ad21615",
-      "lastKnown": {
-        "destination": "GALDAKAO Ospitalea",
-        "direction": "",
-        "id": "3303",
-        "line": "A3641"
-      },
-      "line": "A3641",
-      "queuedAt": "2026-10-18T17:41:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3303"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "8643": {
       "consecutiveChecks": 1,
@@ -25466,7 +25436,7 @@
       "requiredMissing": 2
     },
     "8678": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:f9c5e1b0e064084591d2500b",
       "firstMissingAt": "2026-10-18T17:37:01+02:00",
@@ -25477,7 +25447,7 @@
         "line": "A3915"
       },
       "lastSeenAt": "2026-10-18T17:33:16+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
