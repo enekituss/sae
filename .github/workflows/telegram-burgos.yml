@@ -520,9 +520,149 @@ jobs:
               current = {}
               snapshot_ok = False
 
-          # Si el portal municipal no acepta las consultas directas, prueba las
-          # estimaciones del Worker. No consulta /vehicles otra vez para evitar
-          # repetir las mismas peticiones por línea que acaban de fallar.
+          # Segunda fuente oficial directa: paradas (resourceNodes) y
+          # estimaciones por parada (resourceEstimations). Es el mismo formato
+          # utilizado por clientes públicos de la API municipal.
+          if not snapshot_ok:
+              try:
+                  official_pages = [
+                      "https://movilidad.aytoburgos.es/rutas-en-directo",
+                      "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
+                      "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
+                  ]
+
+                  def fetch_direct_isaenext(resource, extra=None):
+                      params = {
+                          "p_p_id": "as_asac_isaenext_IsaenextWebPortlet",
+                          "p_p_lifecycle": "2",
+                          "p_p_state": "normal",
+                          "p_p_mode": "view",
+                          "p_p_resource_id": resource,
+                          "p_p_cacheability": "cacheLevelPage"
+                      }
+                      if extra:
+                          params.update(extra)
+                      errors = []
+                      for page in official_pages:
+                          url = page + "?" + urllib.parse.urlencode(params)
+                          request = urllib.request.Request(
+                              url,
+                              headers={
+                                  "Accept": "application/json, text/plain, */*",
+                                  "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+                                  "Cache-Control": "no-cache",
+                                  "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo",
+                                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                              }
+                          )
+                          try:
+                              with urllib.request.urlopen(request, timeout=8) as response:
+                                  payload = json.loads(response.read().decode("utf-8"))
+                              return payload
+                          except Exception as exc:
+                              errors.append(urllib.parse.urlparse(page).netloc + ": " + str(exc)[:120])
+                      raise RuntimeError(resource + " no respondió en las fuentes oficiales: " + " || ".join(errors))
+
+                  nodes_payload = fetch_direct_isaenext("resourceNodes")
+                  if not isinstance(nodes_payload, list) or not nodes_payload:
+                      raise RuntimeError("resourceNodes no devolvió una lista de paradas.")
+                  nodes = [
+                      node for node in nodes_payload
+                      if isinstance(node, dict) and clean(node.get("num") or node.get("id") or node.get("stopId") or node.get("nodeId"))
+                  ]
+                  if not nodes:
+                      raise RuntimeError("no se encontraron IDs de paradas en resourceNodes.")
+
+                  def direct_stop_id(node):
+                      return clean(node.get("num") or node.get("id") or node.get("stopId") or node.get("nodeId") or node.get("nodoId") or node.get("idNodo") or node.get("numNodo"))
+
+                  chunks = [nodes[index:index + 40] for index in range(0, len(nodes), 40)]
+
+                  def fetch_estimation_chunk(chunk):
+                      stop_ids = [direct_stop_id(node) for node in chunk]
+                      payload = fetch_direct_isaenext("resourceEstimations", {
+                          "_as_asac_isaenext_IsaenextWebPortlet_tipo": "1",
+                          "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": ",".join(stop_ids)
+                      })
+                      if not isinstance(payload, list):
+                          raise RuntimeError("resourceEstimations no devolvió una lista.")
+                      if len(payload) == 1 and len(chunk) > 2:
+                          raise RuntimeError("solo devolvió una parada para un grupo de " + str(len(chunk)) + " IDs.")
+                      return chunk, payload
+
+                  chunk_results = {}
+                  chunk_errors = []
+                  with ThreadPoolExecutor(max_workers=5) as executor:
+                      futures = {executor.submit(fetch_estimation_chunk, chunk): index for index, chunk in enumerate(chunks)}
+                      for future in as_completed(futures):
+                          index = futures[future]
+                          try:
+                              chunk_results[index] = future.result()
+                          except Exception as exc:
+                              chunk_errors.append("grupo " + str(index + 1) + ": " + str(exc))
+
+                  if chunk_errors or len(chunk_results) != len(chunks):
+                      raise RuntimeError(
+                          str(len(chunk_errors)) + "/" + str(len(chunks)) + " grupos fallaron. "
+                          + " | ".join(chunk_errors[:4])
+                      )
+
+                  stops_by_id = {direct_stop_id(node): node for node in nodes}
+                  candidate_current = {}
+                  candidate_eta = {}
+                  total_observations = 0
+
+                  for index in range(len(chunks)):
+                      chunk, rows = chunk_results[index]
+                      total_observations += len(rows)
+                      for row_index, result in enumerate(rows):
+                          if not isinstance(result, dict):
+                              continue
+                          explicit_stop_id = direct_stop_id(result)
+                          stop = stops_by_id.get(explicit_stop_id)
+                          if stop is None and len(rows) == len(chunk) and row_index < len(chunk):
+                              stop = chunk[row_index]
+                          route_groups = result.get("routeEstimationByNode") or result.get("routes") or []
+                          if not isinstance(route_groups, list):
+                              continue
+                          for route_group in route_groups:
+                              if not isinstance(route_group, dict):
+                                  continue
+                              line = clean(route_group.get("line") or route_group.get("route") or route_group.get("lineName"))
+                              estimates = route_group.get("publicEstimationVHExts") or route_group.get("estimations") or route_group.get("buses") or []
+                              if not isinstance(estimates, list):
+                                  continue
+                              for item in estimates:
+                                  if not isinstance(item, dict):
+                                      continue
+                                  vehicle_id = clean(item.get("vehicle") or item.get("vehicleId") or item.get("vehicle_id"))
+                                  if not vehicle_id or vehicle_id == "0":
+                                      continue
+                                  vehicle = normalise_vehicle({
+                                      "id": vehicle_id,
+                                      "lineId": line,
+                                      "destination": item.get("destination") or route_group.get("destination"),
+                                      "direction": item.get("direction") or route_group.get("direction")
+                                  })
+                                  if not vehicle:
+                                      continue
+                                  try:
+                                      eta_score = float(item.get("seconds"))
+                                  except (TypeError, ValueError):
+                                      eta_score = float("inf")
+                                  if vehicle_id not in candidate_current or eta_score < candidate_eta.get(vehicle_id, float("inf")):
+                                      candidate_current[vehicle_id] = vehicle
+                                      candidate_eta[vehicle_id] = eta_score
+
+                  current = candidate_current
+                  snapshot_ok = True
+                  print("Snapshot de Burgos válido mediante estimaciones oficiales directas: " + str(len(current)) + " coches identificados en " + str(len(nodes)) + " paradas (" + str(total_observations) + " resultados de estimación).")
+              except Exception as exc:
+                  source_errors.append("estimaciones oficiales directas: " + str(exc))
+                  current = {}
+                  snapshot_ok = False
+
+          # Última alternativa: estimaciones del Worker, solo si la consulta oficial directa falla.
           if not snapshot_ok:
               try:
                   request = urllib.request.Request(
