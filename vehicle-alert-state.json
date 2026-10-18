@@ -23715,21 +23715,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:e36825dd117b66661baab051": {
-      "destination": "LUTXANA",
-      "detectedAt": "2026-10-18T11:47+02:00",
-      "direction": "",
-      "eventId": "missing:e36825dd117b66661baab051",
-      "firstMissingAt": "2026-10-18T11:43:00+02:00",
-      "lastSeenAt": "2026-10-18T11:39:40+02:00",
-      "line": "A3129",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T11:47:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7876"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "7789": {
@@ -23984,7 +23970,7 @@
       "requiredMissing": 2
     },
     "7876": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:e36825dd117b66661baab051",
       "firstMissingAt": "2026-10-18T11:43:00+02:00",
@@ -23995,7 +23981,7 @@
         "line": "A3129"
       },
       "lastSeenAt": "2026-10-18T11:39:40+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8680": {
