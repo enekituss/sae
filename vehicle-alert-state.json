@@ -27288,87 +27288,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:0541a251f9358a63c502fa8b": {
-      "destination": "EREÑO",
-      "detectedAt": "2026-10-18T10:59+02:00",
-      "direction": "",
-      "eventId": "missing:0541a251f9358a63c502fa8b",
-      "firstMissingAt": "2026-10-18T10:55:02+02:00",
-      "lastSeenAt": "2026-10-18T10:51:22+02:00",
-      "line": "A3534",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T10:59:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8680"
-    },
-    "route_after_gap:7afac0d68ba114ee2df90df8": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ La Arena",
-          "old": "GETXO"
-        }
-      ],
-      "destination": "MUSKIZ La Arena",
-      "detectedAt": "2026-10-18T10:59+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:7afac0d68ba114ee2df90df8",
-      "line": "A3338",
-      "queuedAt": "2026-10-18T10:59:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7874"
-    },
-    "vehicle_returned:2e5b0d2033fe92aa93a9e5d7": {
-      "destination": "ELANTXOBE-EA",
-      "detectedAt": "2026-10-18T10:59+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:2e5b0d2033fe92aa93a9e5d7",
-      "lastKnown": {
-        "destination": "GERNIKA LUMO",
-        "direction": "",
-        "id": "8681",
-        "line": "A3532"
-      },
-      "line": "A3532",
-      "queuedAt": "2026-10-18T10:59:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "8681"
-    },
-    "vehicle_returned:a6de0c85d6b25a8403b3701c": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T10:59+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:a6de0c85d6b25a8403b3701c",
-      "lastKnown": {
-        "destination": "AIREPORTUA",
-        "direction": "",
-        "id": "2090",
-        "line": "A3247"
-      },
-      "line": "A3247",
-      "queuedAt": "2026-10-18T10:59:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2090"
-    },
-    "vehicle_returned:f78d707064e517fe2e3cd483": {
-      "destination": "BERANGO (Artea)",
-      "detectedAt": "2026-10-18T10:59+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:f78d707064e517fe2e3cd483",
-      "lastKnown": {
-        "destination": "AREETA/LAS ARENAS",
-        "direction": "",
-        "id": "1719",
-        "line": "A3451"
-      },
-      "line": "A3422",
-      "queuedAt": "2026-10-18T10:59:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "1719"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2103": {
@@ -27580,7 +27500,7 @@
       "requiredMissing": 2
     },
     "8680": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:0541a251f9358a63c502fa8b",
       "firstMissingAt": "2026-10-18T10:55:02+02:00",
@@ -27591,7 +27511,7 @@
         "line": "A3534"
       },
       "lastSeenAt": "2026-10-18T10:51:22+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
