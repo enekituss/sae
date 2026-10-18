@@ -1,0 +1,142 @@
+name: Diagnóstico navegador público de Burgos
+
+on:
+  push:
+    paths:
+      - ".github/workflows/probe-burgos-browser.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-browser-feed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Instalar Playwright sin descargar un navegador nuevo
+        shell: bash
+        run: |
+          python -m pip install --quiet playwright
+          google-chrome --version || chromium --version || true
+
+      - name: Abrir Bus Burgos como un navegador normal
+        shell: bash
+        run: |
+          python - <<'PY'
+          import asyncio
+          import json
+          from collections import defaultdict
+          from urllib.parse import urlparse, parse_qs
+          from playwright.async_api import async_playwright
+
+          ROOT = "https://webburgos.com/bus/"
+
+          async def main():
+              captured = []
+              failures = []
+
+              async with async_playwright() as p:
+                  browser = await p.chromium.launch(
+                      channel="chrome",
+                      headless=True,
+                      args=["--no-sandbox"]
+                  )
+                  context = await browser.new_context(
+                      viewport={"width": 1365, "height": 900},
+                      locale="es-ES",
+                      timezone_id="Europe/Madrid"
+                  )
+                  page = await context.new_page()
+
+                  async def response_handler(response):
+                      url = response.url
+                      parsed = urlparse(url)
+                      query = parse_qs(parsed.query)
+                      action = (query.get("action") or [""])[0]
+                      if action not in ("vehiculos", "estimaciones"):
+                          return
+                      line = (query.get("line") or [""])[0]
+                      stop_id = (query.get("nodoId") or [""])[0]
+                      try:
+                          raw = await response.body()
+                          body_text = raw.decode("utf-8", errors="replace")
+                          try:
+                              payload = json.loads(body_text)
+                          except Exception:
+                              payload = None
+                          result = {
+                              "action": action,
+                              "line": line,
+                              "stopId": stop_id,
+                              "status": response.status,
+                              "bytes": len(raw),
+                              "json": isinstance(payload, (list, dict))
+                          }
+                          if isinstance(payload, list):
+                              result["count"] = len(payload)
+                              result["sampleKeys"] = sorted(payload[0].keys())[:24] if payload and isinstance(payload[0], dict) else []
+                              if action == "vehiculos":
+                                  result["identified"] = sum(
+                                      1 for item in payload
+                                      if isinstance(item, dict) and any(item.get(k) not in (None, "", 0, "0") for k in ("id", "vehicleId", "vehicle_id", "vehicle"))
+                                  )
+                              if action == "estimaciones":
+                                  result["identified"] = sum(
+                                      1 for row in payload if isinstance(row, dict)
+                                      for group in (row.get("routeEstimationByNode") or [])
+                                      if isinstance(group, dict)
+                                      for item in (group.get("publicEstimationVHExts") or [])
+                                      if isinstance(item, dict) and item.get("vehicle") not in (None, "", 0, "0")
+                                  )
+                          elif isinstance(payload, dict):
+                              result["keys"] = sorted(payload.keys())[:24]
+                          captured.append(result)
+                          print("LIVE_RESPONSE:", json.dumps(result, ensure_ascii=False))
+                      except Exception as exc:
+                          failures.append({"urlPath": parsed.path, "action": action, "line": line, "error": str(exc)[:160]})
+                          print("LIVE_RESPONSE_ERROR:", json.dumps(failures[-1], ensure_ascii=False))
+
+                  async def request_failed(request):
+                      parsed = urlparse(request.url)
+                      query = parse_qs(parsed.query)
+                      action = (query.get("action") or [""])[0]
+                      if action in ("vehiculos", "estimaciones"):
+                          failure = {"action": action, "line": (query.get("line") or [""])[0], "error": str(request.failure)[:160]}
+                          failures.append(failure)
+                          print("LIVE_REQUEST_FAILED:", json.dumps(failure, ensure_ascii=False))
+
+                  page.on("response", response_handler)
+                  page.on("requestfailed", request_failed)
+
+                  try:
+                      response = await page.goto(ROOT, wait_until="domcontentloaded", timeout=35000)
+                      print("PAGE:", json.dumps({
+                          "status": response.status if response else None,
+                          "url": page.url,
+                          "title": await page.title()
+                      }, ensure_ascii=False))
+                      # Give the site's regular application polling a chance to run.
+                      await page.wait_for_timeout(30000)
+                  except Exception as exc:
+                      print("PAGE_ERROR:", repr(exc)[:250])
+
+                  by_action = defaultdict(list)
+                  for item in captured:
+                      by_action[item["action"]].append(item)
+                  vehicles = by_action.get("vehiculos", [])
+                  estimates = by_action.get("estimaciones", [])
+                  print("SUMMARY:", json.dumps({
+                      "vehicleResponses": len(vehicles),
+                      "vehicleStatuses": dict((str(k), sum(1 for x in vehicles if x["status"] == k)) for k in sorted(set(x["status"] for x in vehicles))),
+                      "vehicleBodies": sum(x.get("count", 0) for x in vehicles if x["status"] == 200),
+                      "identifiedVehicles": sum(x.get("identified", 0) for x in vehicles if x["status"] == 200),
+                      "estimationResponses": len(estimates),
+                      "estimationStatuses": dict((str(k), sum(1 for x in estimates if x["status"] == k)) for k in sorted(set(x["status"] for x in estimates))),
+                      "requestFailures": len(failures)
+                  }, ensure_ascii=False))
+                  await context.close()
+                  await browser.close()
+
+          asyncio.run(main())
+          PY
