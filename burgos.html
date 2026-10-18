@@ -15,7 +15,16 @@
   <style>
     html.auth-check body { visibility: hidden; }
     #logoutButton:hover { background: #2c3b49 !important; }
-    @media (max-width: 650px) { #logoutButton { width: 100%; } }
+    .connection-settings { margin: 12px 0 16px; border: 1px solid var(--line, #d9e0e7); border-radius: 12px; background: var(--panel, #fff); }
+    .connection-settings summary { cursor: pointer; padding: 12px 14px; font-weight: 700; }
+    .connection-body { padding: 0 14px 14px; }
+    .connection-help { margin: 0 0 10px; font-size: .9rem; line-height: 1.45; color: var(--muted, #607080); }
+    .connection-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .connection-row input { flex: 1 1 280px; min-width: 0; padding: 11px 12px; border: 1px solid var(--line, #d9e0e7); border-radius: 9px; font: inherit; }
+    .connection-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .connection-actions button { padding: 9px 12px; border-radius: 9px; cursor: pointer; }
+    .connection-actions .secondary { background: transparent; border: 1px solid var(--line, #d9e0e7); }
+    @media (max-width: 650px) { #logoutButton { width: 100%; } .connection-actions button { flex: 1 1 120px; } }
   </style>
   <script>document.documentElement.classList.add('auth-check');</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -57,6 +66,20 @@
         </label>
         <button id="refresh" type="button"><span aria-hidden="true">↻</span> Actualizar</button>
       </div>
+      <details class="connection-settings">
+        <summary>⚙ Configurar conexión</summary>
+        <div class="connection-body">
+          <p class="connection-help">Para evitar los errores 403 de los proxies públicos, pega aquí la URL base del Worker de Cloudflare que está desplegado para SAE Spotter. Debe ser una URL HTTPS que normalmente termina en <code>.workers.dev</code>; no incluyas <code>/api/burgos/vehicles</code>.</p>
+          <div class="connection-row">
+            <input id="workerUrlInput" type="url" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://bizkaibus-sae-dispatcher.tu-cuenta.workers.dev" aria-label="URL base del Worker de Cloudflare">
+          </div>
+          <div class="connection-actions">
+            <button id="saveWorkerUrl" type="button">Guardar y comprobar</button>
+            <button id="clearWorkerUrl" class="secondary" type="button">Borrar conexión guardada</button>
+          </div>
+          <p class="connection-help" style="margin-top:10px">La URL se guarda solo en este navegador. Puedes copiarla desde Cloudflare → Workers & Pages → <code>bizkaibus-sae-dispatcher</code> → Overview.</p>
+        </div>
+      </details>
       <div class="list-heading">
         <span>LÍNEAS Y AUTOBUSES ACTIVOS</span>
         <span id="lastUpdated">Esperando primera actualización</span>
@@ -72,6 +95,6 @@
     </footer>
   </main>
 
-  <script src="./burgos-vehicles.js?v=20261018c"></script>
+  <script src="./burgos-vehicles.js?v=20261018d"></script>
 </body>
 </html>
