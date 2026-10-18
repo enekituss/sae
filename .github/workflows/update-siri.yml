@@ -1502,18 +1502,21 @@ jobs:
               state_dirty = True
 
           def settings_keyboard(subscription):
-              current_mode = str(subscription.get("mode") or "all")
-              choices = [
-                  ("all", "🔔 Todos los avisos"),
-                  ("missing", "⚠️ Solo sin posición reciente"),
-                  ("line", "🔄 Solo cambios de línea"),
-                  ("vehicle", "🚌 Seguir un coche por ID"),
+              # Use reply-keyboard buttons rather than callback buttons: this bot
+              # processes updates in GitHub Actions, not in a permanently running process.
+              labels = [
+                  "🔔 Todos los avisos",
+                  "⚠️ Solo fuera de servicio (sin posición reciente)",
+                  "🔄 Solo cambios de línea",
+                  "🚌 Seguir un coche por ID",
               ]
-              keyboard = []
-              for mode, label in choices:
-                  prefix = "✅ " if current_mode == mode else ""
-                  keyboard.append([{"text": prefix + label, "callback_data": "mode:" + mode}])
-              return {"inline_keyboard": keyboard}
+              return {
+                  "keyboard": [[{"text": label}] for label in labels],
+                  "resize_keyboard": True,
+                  "is_persistent": True,
+                  "one_time_keyboard": False,
+                  "input_field_placeholder": "Elige tus avisos",
+              }
 
           def subscription_description(subscription):
               mode = str(subscription.get("mode") or "all")
@@ -1580,10 +1583,15 @@ jobs:
                                   subscription["awaitingVehicleId"] = mode == "vehicle"
                                   state_dirty = True
                                   if callback_id:
-                                      telegram_api("answerCallbackQuery", {
-                                          "callback_query_id": callback_id,
-                                          "text": "Envía el ID del coche" if mode == "vehicle" else "Preferencias guardadas",
-                                      })
+                                      try:
+                                          telegram_api("answerCallbackQuery", {
+                                              "callback_query_id": callback_id,
+                                              "text": "Envía el ID del coche" if mode == "vehicle" else "Preferencias guardadas",
+                                          })
+                                      except Exception as callback_exc:
+                                          # Callback queries expire while this scheduled workflow waits to run.
+                                          # Still save the choice and send the settings message.
+                                          print("AVISO: no se pudo confirmar el botón antiguo: " + str(callback_exc))
                                   if mode == "vehicle":
                                       telegram_api("sendMessage", {
                                           "chat_id": incoming_chat_id,
@@ -1604,6 +1612,30 @@ jobs:
 
                               if command in ("/start", "/help", "/menu", "/config"):
                                   show_settings(incoming_chat_id, "Bot conectado. Puedes cambiar estas opciones cuando quieras.")
+                              elif raw_text in ("🔔 Todos los avisos", "Todos los avisos"):
+                                  subscription["mode"] = "all"
+                                  subscription["awaitingVehicleId"] = False
+                                  state_dirty = True
+                                  show_settings(incoming_chat_id, "✅ Preferencias guardadas.")
+                              elif raw_text in ("⚠️ Solo fuera de servicio (sin posición reciente)", "⚠️ Solo sin posición reciente", "Solo sin posición reciente"):
+                                  subscription["mode"] = "missing"
+                                  subscription["awaitingVehicleId"] = False
+                                  state_dirty = True
+                                  show_settings(incoming_chat_id, "✅ Recibirás solo avisos de vehículos sin posición reciente.")
+                              elif raw_text in ("🔄 Solo cambios de línea", "Solo cambios de línea"):
+                                  subscription["mode"] = "line"
+                                  subscription["awaitingVehicleId"] = False
+                                  state_dirty = True
+                                  show_settings(incoming_chat_id, "✅ Recibirás solo cambios confirmados del campo línea.")
+                              elif raw_text in ("🚌 Seguir un coche por ID", "Seguir un coche por ID"):
+                                  subscription["mode"] = "vehicle"
+                                  subscription["awaitingVehicleId"] = True
+                                  state_dirty = True
+                                  telegram_api("sendMessage", {
+                                      "chat_id": incoming_chat_id,
+                                      "text": "🚌 Escribe ahora el ID numérico del autobús que quieres seguir. Puedes cancelar con /cancelar.",
+                                      "reply_markup": settings_keyboard(subscription),
+                                  })
                               elif command in ("/cancel", "/cancelar"):
                                   subscription["awaitingVehicleId"] = False
                                   if not str(subscription.get("vehicleId") or "").strip():
