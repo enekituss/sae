@@ -5276,34 +5276,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:41ce22c51018ea22b624ed44": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T23:09+02:00",
-      "direction": "",
-      "eventId": "missing:41ce22c51018ea22b624ed44",
-      "firstMissingAt": "2026-10-18T23:05:04+02:00",
-      "lastSeenAt": "2026-10-18T23:01:54+02:00",
-      "line": "A3631",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T23:09:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3354"
-    },
-    "missing:afaf452de2847a2927cb6e03": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T23:09+02:00",
-      "direction": "",
-      "eventId": "missing:afaf452de2847a2927cb6e03",
-      "firstMissingAt": "2026-10-18T23:05:04+02:00",
-      "lastSeenAt": "2026-10-18T23:01:54+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T23:09:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2076"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "7863": {
@@ -5517,7 +5490,7 @@
       "requiredMissing": 2
     },
     "2076": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:afaf452de2847a2927cb6e03",
       "firstMissingAt": "2026-10-18T23:05:04+02:00",
@@ -5528,7 +5501,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T23:01:54+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2078": {
@@ -5891,7 +5864,7 @@
       "requiredMissing": 2
     },
     "3354": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:41ce22c51018ea22b624ed44",
       "firstMissingAt": "2026-10-18T23:05:04+02:00",
@@ -5902,7 +5875,7 @@
         "line": "A3631"
       },
       "lastSeenAt": "2026-10-18T23:01:54+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3360": {
