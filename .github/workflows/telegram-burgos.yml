@@ -470,9 +470,7 @@ jobs:
                   official_pages = [
                       "https://movilidad.aytoburgos.es/rutas-en-directo",
                       "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
-                      "https://www.aytoburgos.es/web/movilidad/rutas-en-directo",
-                      "https://programaseducativos.aytoburgos.es/en/web/movilidad/rutas-en-directo",
-                      "https://programaseducativos.aytoburgos.es/fr/web/movilidad/rutas-en-directo"
+                      "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
                   ]
 
                   def fetch_burgos_vehicle_line(line):
@@ -504,7 +502,7 @@ jobs:
                               }
                           )
                           try:
-                              with urllib.request.urlopen(request, timeout=8) as response:
+                              with urllib.request.urlopen(request, timeout=4) as response:
                                   payload = json.loads(response.read().decode("utf-8"))
                               if not isinstance(payload, list):
                                   raise RuntimeError("resourceVehicles no devolvió una lista")
@@ -568,9 +566,7 @@ jobs:
                   official_pages = [
                       "https://movilidad.aytoburgos.es/rutas-en-directo",
                       "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
-                      "https://www.aytoburgos.es/web/movilidad/rutas-en-directo",
-                      "https://programaseducativos.aytoburgos.es/en/web/movilidad/rutas-en-directo",
-                      "https://programaseducativos.aytoburgos.es/fr/web/movilidad/rutas-en-directo"
+                      "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
                   ]
 
                   def fetch_direct_isaenext(resource, extra=None):
@@ -598,7 +594,7 @@ jobs:
                               }
                           )
                           try:
-                              with urllib.request.urlopen(request, timeout=8) as response:
+                              with urllib.request.urlopen(request, timeout=4) as response:
                                   payload = json.loads(response.read().decode("utf-8"))
                               return payload
                           except Exception as exc:
