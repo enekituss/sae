@@ -19,7 +19,7 @@ Web de consulta de líneas y vehículos Bizkaibus detectados por SIRI, con desti
 
 ## Alertas de cambios de ruta por Telegram
 
-El bot tiene un menú personal por chat. Envía `/start` o `/menu` para elegir entre:
+El bot tiene un menú personal por chat. Envía `/start` o `/menu` para elegir entre. Se usa el teclado de respuesta de Telegram para evitar el indicador de carga de los antiguos botones internos; como los mensajes se procesan en el siguiente ciclo de GitHub Actions, la respuesta no es instantánea:
 
 - **Todos los avisos** de vehículos.
 - **Solo vehículos sin posición reciente** (posible fin de servicio; no confirma una baja administrativa).
