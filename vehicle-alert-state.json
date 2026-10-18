@@ -24984,94 +24984,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:11efb65e8416256a01650083": {
-      "destination": "LARRABETZU",
-      "detectedAt": "2026-10-18T20:13+02:00",
-      "direction": "",
-      "eventId": "missing:11efb65e8416256a01650083",
-      "firstMissingAt": "2026-10-18T20:09:04+02:00",
-      "lastSeenAt": "2026-10-18T20:05:47+02:00",
-      "line": "A3223",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:13:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2113"
-    },
-    "missing:e40bbfa97f2e79980ab38e66": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-18T20:13+02:00",
-      "direction": "",
-      "eventId": "missing:e40bbfa97f2e79980ab38e66",
-      "firstMissingAt": "2026-10-18T20:09:04+02:00",
-      "lastSeenAt": "2026-10-18T20:05:47+02:00",
-      "line": "A2161",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:13:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2102"
-    },
-    "route:0bf481e827551edaef42ebfe": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3915",
-          "old": "A3916"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ONDARROA",
-          "old": "BILBAO (Aut.)"
-        }
-      ],
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-18T20:13+02:00",
-      "direction": "",
-      "eventId": "route:0bf481e827551edaef42ebfe",
-      "line": "A3915",
-      "queuedAt": "2026-10-18T20:13:09+02:00",
-      "type": "route_change",
-      "vehicleId": "8672"
-    },
-    "route:98f0026486b8da574dd79e3f": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "OTXANDIO-UBIDE"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T20:13+02:00",
-      "direction": "",
-      "eventId": "route:98f0026486b8da574dd79e3f",
-      "line": "A3925",
-      "queuedAt": "2026-10-18T20:13:09+02:00",
-      "type": "route_change",
-      "vehicleId": "3335"
-    },
-    "route:a3d1fcac27de78942f77af45": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "LA ARBOLEDA"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T20:13+02:00",
-      "direction": "",
-      "eventId": "route:a3d1fcac27de78942f77af45",
-      "line": "A3333",
-      "queuedAt": "2026-10-18T20:13:09+02:00",
-      "type": "route_change",
-      "vehicleId": "7856"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3381": {
@@ -25189,7 +25102,7 @@
       "requiredMissing": 2
     },
     "2102": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:e40bbfa97f2e79980ab38e66",
       "firstMissingAt": "2026-10-18T20:09:04+02:00",
@@ -25200,11 +25113,11 @@
         "line": "A2161"
       },
       "lastSeenAt": "2026-10-18T20:05:47+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2113": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:11efb65e8416256a01650083",
       "firstMissingAt": "2026-10-18T20:09:04+02:00",
@@ -25215,7 +25128,7 @@
         "line": "A3223"
       },
       "lastSeenAt": "2026-10-18T20:05:47+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2119": {
