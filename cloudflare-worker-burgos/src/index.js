@@ -327,16 +327,32 @@ async function dispatchBurgosTelegramWorkflow(env) {
     return;
   }
 
+  const headers = {
+    "Accept": "application/vnd.github+json",
+    "Authorization": "Bearer " + token,
+    "User-Agent": "SAE-Spotter-Burgos/1.0",
+    "X-GitHub-Api-Version": "2022-11-28"
+  };
+  const runsEndpoint = "https://api.github.com/repos/enekituss/sae/actions/workflows/telegram-burgos.yml/runs?branch=main&per_page=5";
+  const runsResponse = await fetch(runsEndpoint, { method: "GET", headers });
+  if (!runsResponse.ok) {
+    const detail = (await runsResponse.text()).slice(0, 300);
+    throw new Error("No se pudo revisar la cola de Telegram Burgos (HTTP " + runsResponse.status + ")" + (detail ? ": " + detail : ""));
+  }
+
+  const runsPayload = await runsResponse.json();
+  const activeRun = (Array.isArray(runsPayload?.workflow_runs) ? runsPayload.workflow_runs : [])
+    .find(run => ["queued", "in_progress", "waiting", "pending", "requested"].includes(String(run?.status || "").toLowerCase()));
+  if (activeRun) {
+    console.log("Se omite la comprobación de Burgos: ya hay una ejecución " +
+      String(activeRun.status) + " (run #" + String(activeRun.run_number || activeRun.id || "desconocido") + ").");
+    return;
+  }
+
   const endpoint = "https://api.github.com/repos/enekituss/sae/actions/workflows/telegram-burgos.yml/dispatches";
   const response = await fetch(endpoint, {
     method: "POST",
-    headers: {
-      "Accept": "application/vnd.github+json",
-      "Authorization": "Bearer " + token,
-      "Content-Type": "application/json",
-      "User-Agent": "SAE-Spotter-Burgos/1.0",
-      "X-GitHub-Api-Version": "2022-11-28"
-    },
+    headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify({ ref: "main" })
   });
 
