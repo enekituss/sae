@@ -11,6 +11,9 @@ const BURGOS_LINES = [
   ...Array.from({ length: 23 }, (_, i) => String(i + 1).padStart(2, "0")),
   "73", "87", "88", "89", "C1", "C2"
 ];
+// IDs de parada incluidos en la URL de resourceEstimations que ha facilitado el usuario.
+// Se usan como respaldo si resourceNodes no responde; la línea se cambia en cada petición.
+const BURGOS_KNOWN_NODE_IDS = ["402", "183", "209", "98", "26", "224", "71", "152", "164", "227", "228"];
 
 function responseHeaders(request, extra = {}) {
   const headers = new Headers(extra);
@@ -67,7 +70,7 @@ async function requestIsaenext(resource, extra = {}) {
   const errors = [];
   // La URL /es/ es la fuente oficial confirmada para las estimaciones.
   // Evita triplicar subpeticiones al consultar las 29 líneas desde el Worker.
-  const sources = resource === "resourceEstimations" ? [BURGOS_SOURCE] : BURGOS_SOURCE_FALLBACKS;
+  const sources = [BURGOS_SOURCE];
   for (const base of sources) {
     try {
       const url = resourceUrl(resource, extra, base);
@@ -78,7 +81,7 @@ async function requestIsaenext(resource, extra = {}) {
           "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
           "Referer": BURGOS_SOURCE
         },
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(resource === "resourceNodes" ? 8000 : 15000)
       });
       const body = await response.text();
       if (!response.ok) {
@@ -101,20 +104,33 @@ async function requestIsaenext(resource, extra = {}) {
 }
 
 async function fetchStopNodes() {
-  const result = await requestIsaenext("resourceNodes");
-  if (!Array.isArray(result.data) || !result.data.length) {
-    throw new Error("resourceNodes no devolvió una lista de paradas.");
+  try {
+    // Intentar obtener toda la lista oficial desde el mismo portal.
+    const result = await requestIsaenext("resourceNodes");
+    if (!Array.isArray(result.data) || !result.data.length) {
+      throw new Error("resourceNodes no devolvió una lista de paradas.");
+    }
+    const seen = new Set();
+    const nodes = [];
+    for (const node of result.data) {
+      const id = stopIdFrom(node);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      nodes.push({ ...node, __stopId: id });
+    }
+    if (!nodes.length) throw new Error("resourceNodes no devolvió IDs de parada reconocibles.");
+    return { nodes, source: result.source, nodeListFallback: false };
+  } catch (error) {
+    // El usuario ha aportado una URL de resourceEstimations con estos IDs.
+    // Usarlos permite probar el endpoint line-filtered aunque falle resourceNodes.
+    console.warn("resourceNodes no respondió; se usarán los IDs de parada de la URL aportada: " +
+      (error?.message || String(error)));
+    return {
+      nodes: BURGOS_KNOWN_NODE_IDS.map(id => ({ num: id, __stopId: id })),
+      source: BURGOS_SOURCE,
+      nodeListFallback: true
+    };
   }
-  const seen = new Set();
-  const nodes = [];
-  for (const node of result.data) {
-    const id = stopIdFrom(node);
-    if (!id || seen.has(id)) continue;
-    seen.add(id);
-    nodes.push({ ...node, __stopId: id });
-  }
-  if (!nodes.length) throw new Error("resourceNodes no devolvió IDs de parada reconocibles.");
-  return { nodes, source: result.source };
 }
 
 function extractLineEstimations(line, nodes, payload) {
