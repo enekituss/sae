@@ -433,30 +433,34 @@ export default {
     if (url.pathname === "/api/burgos/live") {
       const cache = caches.default;
       const cacheRequest = new Request(new URL("/__cache/burgos-live", url.origin).toString(), { method: "GET" });
-      try {
-        const cached = await cache.match(cacheRequest);
-        if (cached) {
-          const data = await cached.json();
-          const timestamp = Date.parse(data?.fetchedAt || "");
-          const ageMs = Number.isFinite(timestamp) ? Math.max(0, Date.now() - timestamp) : Infinity;
-          const stale = ageMs >= LIVE_REFRESH_AFTER_MS;
+      const forceRefresh = url.searchParams.get("fresh") === "1";
+      if (!forceRefresh) {
+        try {
+          const cached = await cache.match(cacheRequest);
+          if (cached) {
+            const data = await cached.json();
+            const timestamp = Date.parse(data?.fetchedAt || "");
+            const ageMs = Number.isFinite(timestamp) ? Math.max(0, Date.now() - timestamp) : Infinity;
+            const stale = ageMs >= LIVE_REFRESH_AFTER_MS;
 
-          // Return the saved estimate snapshot immediately. When it gets old,
-          // refresh in the background rather than making users wait for all stops again.
-          if (stale && ctx?.waitUntil) {
-            ctx.waitUntil(refreshLiveSnapshotCache(cache, cacheRequest).catch(error => {
-              console.error("No se pudo actualizar la caché de estimaciones de Burgos:", error?.message || String(error));
-            }));
+            // Return the saved estimate snapshot immediately. When it gets old,
+            // refresh in the background rather than making users wait for all stops again.
+            if (stale && ctx?.waitUntil) {
+              ctx.waitUntil(refreshLiveSnapshotCache(cache, cacheRequest).catch(error => {
+                console.error("No se pudo actualizar la caché de estimaciones de Burgos:", error?.message || String(error));
+              }));
+            }
+            return jsonResponse(request, {
+              ...data,
+              cacheHit: true,
+              stale,
+              cacheAgeSeconds: Number.isFinite(ageMs) ? Math.round(ageMs / 1000) : null
+            }, 200, { "Cache-Control": "public, max-age=8" });
           }
-          return jsonResponse(request, {
-            ...data,
-            cacheHit: true,
-            stale,
-            cacheAgeSeconds: Number.isFinite(ageMs) ? Math.round(ageMs / 1000) : null
-          }, 200, { "Cache-Control": "public, max-age=8" });
+        } catch {
+          // La caché es opcional.
         }
-      } catch {
-        // La caché es opcional.
+
       }
       try {
         const data = await refreshLiveSnapshotCache(cache, cacheRequest);
