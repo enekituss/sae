@@ -20007,39 +20007,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:e266bcdebb4975d6646e9e45": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T08:18+02:00",
-      "direction": "",
-      "eventId": "missing:e266bcdebb4975d6646e9e45",
-      "firstMissingAt": "2026-10-18T08:15:01+02:00",
-      "lastSeenAt": "2026-10-18T08:11:49+02:00",
-      "line": "A3926",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T08:18:59+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3381"
-    },
-    "route_after_gap:6d0e8a984c4071fbeec4b028": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GETXO (Azkorri)",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "GETXO (Azkorri)",
-      "detectedAt": "2026-10-18T08:18+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:6d0e8a984c4071fbeec4b028",
-      "line": "A3411",
-      "queuedAt": "2026-10-18T08:18:59+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "1720"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "5030": {
       "consecutiveChecks": 1,
@@ -20165,7 +20133,7 @@
       "requiredMissing": 2
     },
     "3381": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:e266bcdebb4975d6646e9e45",
       "firstMissingAt": "2026-10-18T08:15:01+02:00",
@@ -20176,7 +20144,7 @@
         "line": "A3926"
       },
       "lastSeenAt": "2026-10-18T08:11:49+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8670": {
