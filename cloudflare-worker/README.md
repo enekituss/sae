@@ -1,6 +1,6 @@
 # Programador rápido de Bizkaibus SAE
 
-Este Worker no descarga ni modifica los datos por su cuenta: despierta el flujo de GitHub Actions cada dos minutos. El flujo existente sigue siendo la única fuente de datos procesados para `vehicles.json`, la web y la cola de avisos de Telegram.
+Este Worker no descarga ni modifica los datos por su cuenta: cada dos minutos dispara por separado los workflows de GitHub Actions `update-siri.yml` (Bizkaibus) y `telegram-burgos.yml` (bot de Burgos). Comprueba si cada workflow ya está en cola o en curso para no duplicar ejecuciones. Así se procesan también los mensajes del menú de Telegram con una demora habitual de hasta dos minutos, sin esperar solo al cron nativo de cinco minutos.
 
 ## Configuración necesaria (una sola vez)
 
@@ -29,15 +29,15 @@ No configures aquí el token de Telegram: los mensajes continúan enviándose de
 
 ### 4. Verificar el Worker
 
-Abre la URL `workers.dev` que Cloudflare asignó, añadiendo `/health`. Debería aparecer un JSON con `"ok": true` y una cadencia `*/2 * * * *`.
+Abre la URL `workers.dev` que Cloudflare asignó, añadiendo `/health`. Debería aparecer un JSON con `"ok": true`, una cadencia `*/2 * * * *` y la propiedad `dispatchWorkflows` con `update-siri.yml` y `telegram-burgos.yml`.
 
 Después, en **Logs / Observability**, comprueba que en el siguiente ciclo aparezca el mensaje de que se ha solicitado una actualización de GitHub Actions. Si aparece un error de permisos, revisa que el token sea para el repositorio correcto y tenga `Actions: Read and write`.
 
 ## Importante: activación por etapas
 
-El flujo de GitHub Actions mantiene su programación actual de cinco minutos como respaldo durante la configuración. Cuando se compruebe que este Worker ya está disparando ejecuciones correctamente, se debe retirar la programación nativa de cinco minutos para evitar comprobaciones redundantes. No la quites antes de verificar el Worker.
+Los dos workflows conservan su programación nativa de cinco minutos como respaldo; el Worker dispara ambos cada dos minutos cuando no hay una ejecución pendiente o en curso. No quites esos respaldos hasta verificar que ambos workflows aparecen de forma regular en GitHub Actions.
 
-El Worker también comprueba si hay una ejecución del mismo flujo en cola o en curso; si la hay, omite ese ciclo para no acumular ejecuciones. La hora real de publicación depende de cuánto tarde GitHub Actions en descargar y procesar los feeds y publicar los archivos.
+El Worker comprueba de forma independiente si cada workflow está en cola o en curso; si lo está, omite ese workflow en ese ciclo y continúa con el otro. La respuesta del menú depende de cuándo se procese el siguiente mensaje y de cuánto tarde GitHub Actions; normalmente debería ser en un ciclo de dos minutos, no necesariamente instantáneo.
 
 
 ## Proxy de información en directo de Burgos
