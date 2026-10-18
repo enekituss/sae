@@ -21,8 +21,12 @@ OUTPUT = Path("burgos-vehicles.json")
 USER_AGENT = "Mozilla/5.0 (compatible; SAE-Spotter/1.0)"
 LINES = [f"{number:02d}" for number in range(1, 24)] + ["73", "87", "88", "89", "C1", "C2"]
 MAX_WORKERS = 8
-RETRIES = 2
-TIMEOUT_SECONDS = 10
+TIMEOUT_SECONDS = 8
+PROXIES = [
+    ("corsproxy.io", lambda url: "https://corsproxy.io/?" + urllib.parse.quote(url, safe="")),
+    ("allorigins", lambda url: "https://api.allorigins.win/raw?url=" + urllib.parse.quote(url, safe="")),
+    ("codetabs", lambda url: "https://api.codetabs.com/v1/proxy?quest=" + urllib.parse.quote(url, safe="")),
+]
 
 
 def first_text(item, *keys):
@@ -65,14 +69,16 @@ def build_url(line):
 
 def fetch_line(line):
     url = build_url(line)
-    last_error = None
-    for attempt in range(RETRIES):
+    candidates = [("directo", url)]
+    candidates.extend((name, make_url(url)) for name, make_url in PROXIES)
+    errors = []
+
+    for source_name, target_url in candidates:
         request = urllib.request.Request(
-            url,
+            target_url,
             headers={
                 "Accept": "application/json, text/plain, */*",
                 "User-Agent": USER_AGENT,
-                "Referer": "https://webburgos.com/bus/",
                 "Cache-Control": "no-cache",
             },
         )
@@ -81,7 +87,7 @@ def fetch_line(line):
                 body = response.read().decode("utf-8-sig")
             payload = json.loads(body)
             if not isinstance(payload, list):
-                raise ValueError(f"resourceVehicles de la línea {line} no devolvió una lista JSON")
+                raise ValueError("la respuesta no es una lista JSON")
             vehicles = []
             skipped_without_id = 0
             for item in payload:
@@ -107,18 +113,21 @@ def fetch_line(line):
                     "model": first_text(item, "model", "modelo", "vehicleModel"),
                     "registration": first_text(item, "matricula", "registration", "plate", "licensePlate"),
                 })
+            if source_name != "directo":
+                print(f"Línea {line}: consulta completada mediante el proxy {source_name}.")
             return {
                 "line": line,
                 "vehicles": vehicles,
                 "receivedCount": len(payload),
                 "skippedWithoutId": skipped_without_id,
                 "ok": True,
+                "via": source_name,
             }
         except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError, ValueError) as exc:
-            last_error = exc
-            if attempt + 1 < RETRIES:
-                time.sleep(0.5 + attempt)
-    raise RuntimeError(f"Línea {line}: {last_error}")
+            errors.append(source_name + ": " + str(exc))
+            print(f"Línea {line}: falló {source_name}; se prueba la siguiente fuente.")
+
+    raise RuntimeError(f"Línea {line}: fallaron todas las fuentes. " + " | ".join(errors[-3:]))
 
 
 def main():
