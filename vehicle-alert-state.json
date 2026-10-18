@@ -2098,7 +2098,7 @@
           "status": "",
           "stopId": "84",
           "stopSequence": 15,
-          "timeSource": "Horario GTFS"
+          "timeSource": "Horario GTFS · hora pasada"
         },
         {
           "arrivalTime": "2026-10-18T12:06:45+02:00",
@@ -8143,7 +8143,7 @@
           "status": "",
           "stopId": "2688",
           "stopSequence": 26,
-          "timeSource": "Horario GTFS"
+          "timeSource": "Horario GTFS · hora pasada"
         },
         {
           "arrivalTime": "2026-10-18T12:06:33+02:00",
@@ -8790,7 +8790,7 @@
           "status": "",
           "stopId": "4053",
           "stopSequence": 24,
-          "timeSource": "Horario GTFS"
+          "timeSource": "Horario GTFS · hora pasada"
         },
         {
           "arrivalTime": "2026-10-18T12:08:45+02:00",
@@ -9824,7 +9824,7 @@
           "status": "",
           "stopId": "183",
           "stopSequence": 4,
-          "timeSource": "Horario GTFS"
+          "timeSource": "Horario GTFS · hora pasada"
         },
         {
           "arrivalTime": "2026-10-18T12:05:22+02:00",
@@ -18490,7 +18490,7 @@
           "status": "",
           "stopId": "436",
           "stopSequence": 4,
-          "timeSource": "Horario GTFS"
+          "timeSource": "Horario GTFS · hora pasada"
         },
         {
           "arrivalTime": "2026-10-18T12:05:00+02:00",
@@ -24034,7 +24034,7 @@
           "status": "",
           "stopId": "4350",
           "stopSequence": 3,
-          "timeSource": "Horario GTFS"
+          "timeSource": "Horario GTFS · hora pasada"
         },
         {
           "arrivalTime": "2026-10-18T12:05:33+02:00",
@@ -24362,49 +24362,8 @@
       "upcomingStops": []
     }
   },
-  "outbox": {},
-  "pendingArrivals": {},
-  "pendingRouteChanges": {
-    "1733": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CRUCES/GURUTZETA",
-          "old": "AREETA/LAS ARENAS"
-        }
-      ],
-      "consecutiveChecks": 2,
-      "firstObservedAt": "2026-10-18T12:03:01+02:00",
-      "vehicleId": "1733"
-    },
-    "2100": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO  (Aut.)",
-          "old": "BERMEO"
-        }
-      ],
-      "consecutiveChecks": 2,
-      "firstObservedAt": "2026-10-18T12:03:01+02:00",
-      "vehicleId": "2100"
-    },
-    "3296": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALDAKAO Ospitalea",
-          "old": "ARRIGORRIAGA"
-        }
-      ],
-      "consecutiveChecks": 2,
-      "firstObservedAt": "2026-10-18T12:03:01+02:00",
-      "vehicleId": "3296"
-    },
-    "7811": {
+  "outbox": {
+    "route:1c6eeb5a91cfa89796075151": {
       "changed": [
         {
           "field": "destination",
@@ -24413,10 +24372,72 @@
           "old": "BARAKALDO"
         }
       ],
-      "consecutiveChecks": 2,
-      "firstObservedAt": "2026-10-18T12:03:01+02:00",
+      "destination": "BILBAO",
+      "detectedAt": "2026-10-18T12:05+02:00",
+      "direction": "",
+      "eventId": "route:1c6eeb5a91cfa89796075151",
+      "line": "A3137",
+      "queuedAt": "2026-10-18T12:05:02+02:00",
+      "type": "route_change",
       "vehicleId": "7811"
     },
+    "route:28c4ed0c299f06b646d99da9": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "BILBAO  (Aut.)",
+          "old": "BERMEO"
+        }
+      ],
+      "destination": "BILBAO  (Aut.)",
+      "detectedAt": "2026-10-18T12:05+02:00",
+      "direction": "",
+      "eventId": "route:28c4ed0c299f06b646d99da9",
+      "line": "A3527",
+      "queuedAt": "2026-10-18T12:05:02+02:00",
+      "type": "route_change",
+      "vehicleId": "2100"
+    },
+    "route:bda34915e60759379e4c85b0": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "GALDAKAO Ospitalea",
+          "old": "ARRIGORRIAGA"
+        }
+      ],
+      "destination": "GALDAKAO Ospitalea",
+      "detectedAt": "2026-10-18T12:05+02:00",
+      "direction": "",
+      "eventId": "route:bda34915e60759379e4c85b0",
+      "line": "A3641",
+      "queuedAt": "2026-10-18T12:05:02+02:00",
+      "type": "route_change",
+      "vehicleId": "3296"
+    },
+    "route:d82a04a5468d29f8b763b163": {
+      "changed": [
+        {
+          "field": "destination",
+          "label": "Destino",
+          "new": "CRUCES/GURUTZETA",
+          "old": "AREETA/LAS ARENAS"
+        }
+      ],
+      "destination": "CRUCES/GURUTZETA",
+      "detectedAt": "2026-10-18T12:05+02:00",
+      "direction": "",
+      "eventId": "route:d82a04a5468d29f8b763b163",
+      "line": "A3472",
+      "queuedAt": "2026-10-18T12:05:02+02:00",
+      "type": "route_change",
+      "vehicleId": "1733"
+    }
+  },
+  "pendingArrivals": {},
+  "pendingRouteChanges": {
     "7854": {
       "changed": [
         {
@@ -24426,7 +24447,7 @@
           "old": "BILBAO"
         }
       ],
-      "consecutiveChecks": 1,
+      "consecutiveChecks": 2,
       "firstObservedAt": "2026-10-18T12:04:19+02:00",
       "vehicleId": "7854"
     }
@@ -24434,7 +24455,7 @@
   "pendingVehicles": {
     "1719": {
       "alerted": false,
-      "consecutiveMissing": 1,
+      "consecutiveMissing": 2,
       "firstMissingAt": "2026-10-18T12:04:19+02:00",
       "lastKnown": {
         "destination": "AREETA (Artea)",
@@ -24448,7 +24469,7 @@
     },
     "2078": {
       "alerted": false,
-      "consecutiveMissing": 2,
+      "consecutiveMissing": 3,
       "firstMissingAt": "2026-10-18T12:03:01+02:00",
       "lastKnown": {
         "destination": "AIREPORTUA",
@@ -24507,7 +24528,7 @@
     },
     "3352": {
       "alerted": false,
-      "consecutiveMissing": 1,
+      "consecutiveMissing": 2,
       "firstMissingAt": "2026-10-18T12:04:19+02:00",
       "lastKnown": {
         "destination": "BILBAO",
@@ -24551,7 +24572,7 @@
     },
     "3386": {
       "alerted": false,
-      "consecutiveMissing": 2,
+      "consecutiveMissing": 3,
       "firstMissingAt": "2026-10-18T12:03:01+02:00",
       "lastKnown": {
         "destination": "BILBAO",
