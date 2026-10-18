@@ -185,7 +185,7 @@ async function fetchLiveJson(url) {
       "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
       "Referer": BURGOS_LIVE_SOURCE
     },
-    signal: AbortSignal.timeout(12000)
+    signal: AbortSignal.timeout(25000)
   });
   const body = await response.text();
   if (!response.ok) throw new Error("ISAENEXT respondió HTTP " + response.status + ".");
