@@ -2559,34 +2559,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:5c5950e61b2f33b50f56e2a3": {
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-18T23:29+02:00",
-      "direction": "",
-      "eventId": "missing:5c5950e61b2f33b50f56e2a3",
-      "firstMissingAt": "2026-10-18T23:25:05+02:00",
-      "lastSeenAt": "2026-10-18T23:21:58+02:00",
-      "line": "A3335",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T23:29:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7857"
-    },
-    "missing:89ebcc7ecebe68579b06c5d4": {
-      "destination": "GALDAKAO Ospital",
-      "detectedAt": "2026-10-18T23:29+02:00",
-      "direction": "",
-      "eventId": "missing:89ebcc7ecebe68579b06c5d4",
-      "firstMissingAt": "2026-10-18T23:25:05+02:00",
-      "lastSeenAt": "2026-10-18T23:21:58+02:00",
-      "line": "A3932",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T23:29:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3305"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {},
   "pendingVehicles": {
@@ -3025,7 +2998,7 @@
       "requiredMissing": 2
     },
     "3305": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:89ebcc7ecebe68579b06c5d4",
       "firstMissingAt": "2026-10-18T23:25:05+02:00",
@@ -3036,7 +3009,7 @@
         "line": "A3932"
       },
       "lastSeenAt": "2026-10-18T23:21:58+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3330": {
@@ -3474,7 +3447,7 @@
       "requiredMissing": 2
     },
     "7857": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:5c5950e61b2f33b50f56e2a3",
       "firstMissingAt": "2026-10-18T23:25:05+02:00",
@@ -3485,7 +3458,7 @@
         "line": "A3335"
       },
       "lastSeenAt": "2026-10-18T23:21:58+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7860": {
