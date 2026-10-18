@@ -25091,109 +25091,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:f0119c9ff81bf4ab7da03203": {
-      "destination": "OROZKO",
-      "detectedAt": "2026-10-18T14:01+02:00",
-      "direction": "",
-      "eventId": "missing:f0119c9ff81bf4ab7da03203",
-      "firstMissingAt": "2026-10-18T13:57:03+02:00",
-      "lastSeenAt": "2026-10-18T13:53:25+02:00",
-      "line": "A3613",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T14:01:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3387"
-    },
-    "route:3aee9b8e85e6ff5f0bfed994": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO  (Aut.)",
-          "old": "BERMEO"
-        }
-      ],
-      "destination": "BILBAO  (Aut.)",
-      "detectedAt": "2026-10-18T14:01+02:00",
-      "direction": "",
-      "eventId": "route:3aee9b8e85e6ff5f0bfed994",
-      "line": "A3527",
-      "queuedAt": "2026-10-18T14:01:01+02:00",
-      "type": "route_change",
-      "vehicleId": "2124"
-    },
-    "route:ccbe1e0a5cf986026260aa5d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "EHU/UPV",
-          "old": "AREETA/LAS ARENAS"
-        }
-      ],
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-18T14:01+02:00",
-      "direction": "",
-      "eventId": "route:ccbe1e0a5cf986026260aa5d",
-      "line": "A2161",
-      "queuedAt": "2026-10-18T14:01:01+02:00",
-      "type": "route_change",
-      "vehicleId": "2061"
-    },
-    "route:d863f68b57eddf5baf32b025": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BASAURI S.Miguel",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "BASAURI S.Miguel",
-      "detectedAt": "2026-10-18T14:01+02:00",
-      "direction": "",
-      "eventId": "route:d863f68b57eddf5baf32b025",
-      "line": "A3632",
-      "queuedAt": "2026-10-18T14:01:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3293"
-    },
-    "route_after_gap:b9f9190abe8b55f36b3d6ce6": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ-Cobaron",
-          "old": "PORTUGALETE"
-        }
-      ],
-      "destination": "MUSKIZ-Cobaron",
-      "detectedAt": "2026-10-18T14:01+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:b9f9190abe8b55f36b3d6ce6",
-      "line": "A3321",
-      "queuedAt": "2026-10-18T14:01:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7880"
-    },
-    "vehicle_returned:1da34df3d937e7661f8e0835": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T14:01+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:1da34df3d937e7661f8e0835",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "3335",
-        "line": "A3925"
-      },
-      "line": "A3925",
-      "queuedAt": "2026-10-18T14:01:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3335"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3265": {
@@ -25326,7 +25224,7 @@
       "requiredMissing": 2
     },
     "3387": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:f0119c9ff81bf4ab7da03203",
       "firstMissingAt": "2026-10-18T13:57:03+02:00",
@@ -25337,7 +25235,7 @@
         "line": "A3613"
       },
       "lastSeenAt": "2026-10-18T13:53:25+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3389": {
