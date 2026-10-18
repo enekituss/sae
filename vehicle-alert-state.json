@@ -25433,115 +25433,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:7fa66f33a3fdc0a08410252c": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T10:45+02:00",
-      "direction": "",
-      "eventId": "missing:7fa66f33a3fdc0a08410252c",
-      "firstMissingAt": "2026-10-18T10:40:59+02:00",
-      "lastSeenAt": "2026-10-18T10:37:54+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T10:45:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2090"
-    },
-    "route:5d78368e81c61469f554248b": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "DURANGO",
-          "old": "ARRAZOLA"
-        }
-      ],
-      "destination": "DURANGO",
-      "detectedAt": "2026-10-18T10:45+02:00",
-      "direction": "",
-      "eventId": "route:5d78368e81c61469f554248b",
-      "line": "A3913",
-      "queuedAt": "2026-10-18T10:45:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3367"
-    },
-    "route:a84f9a8e798cdabfc443d0ee": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3915",
-          "old": "A3916"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO (Aut.)",
-          "old": "ONDARROA"
-        }
-      ],
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T10:45+02:00",
-      "direction": "",
-      "eventId": "route:a84f9a8e798cdabfc443d0ee",
-      "line": "A3915",
-      "queuedAt": "2026-10-18T10:45:01+02:00",
-      "type": "route_change",
-      "vehicleId": "8678"
-    },
-    "route:c123bafbbb6b2ed055deaabd": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "GETXO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T10:45+02:00",
-      "direction": "",
-      "eventId": "route:c123bafbbb6b2ed055deaabd",
-      "line": "A3411",
-      "queuedAt": "2026-10-18T10:45:01+02:00",
-      "type": "route_change",
-      "vehicleId": "1101"
-    },
-    "route_after_gap:aefd13a5303e035c9e7d1d6a": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CABIECES",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "CABIECES",
-      "detectedAt": "2026-10-18T10:45+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:aefd13a5303e035c9e7d1d6a",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T10:45:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7860"
-    },
-    "vehicle_returned:4aa61d7d39745465cbd4fb19": {
-      "destination": "EIBAR (Aut.)",
-      "detectedAt": "2026-10-18T10:45+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:4aa61d7d39745465cbd4fb19",
-      "lastKnown": {
-        "destination": "BILBAO (Aut.)",
-        "direction": "",
-        "id": "3380",
-        "line": "A3923"
-      },
-      "line": "A3926",
-      "queuedAt": "2026-10-18T10:45:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3380"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3372": {
@@ -25616,7 +25508,7 @@
       "requiredMissing": 2
     },
     "2090": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:7fa66f33a3fdc0a08410252c",
       "firstMissingAt": "2026-10-18T10:40:59+02:00",
@@ -25627,7 +25519,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T10:37:54+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2099": {
