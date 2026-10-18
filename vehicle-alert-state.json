@@ -24623,52 +24623,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:b1601bfbf297259913c66e93": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T13:10+02:00",
-      "direction": "",
-      "eventId": "missing:b1601bfbf297259913c66e93",
-      "firstMissingAt": "2026-10-18T13:06:59+02:00",
-      "lastSeenAt": "2026-10-18T13:03:22+02:00",
-      "line": "A3925",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T13:10:59+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3335"
-    },
-    "missing:f13b51110785db31b9a42c25": {
-      "destination": "GALDAKAO Urreta",
-      "detectedAt": "2026-10-18T13:10+02:00",
-      "direction": "",
-      "eventId": "missing:f13b51110785db31b9a42c25",
-      "firstMissingAt": "2026-10-18T13:06:59+02:00",
-      "lastSeenAt": "2026-10-18T13:03:22+02:00",
-      "line": "A3631",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T13:10:59+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3362"
-    },
-    "route_after_gap:1af0f3fe402403bddd75e96f": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CABIECES",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "CABIECES",
-      "detectedAt": "2026-10-18T13:10+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:1af0f3fe402403bddd75e96f",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T13:10:59+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7866"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "5017": {
       "consecutiveChecks": 1,
@@ -24778,7 +24733,7 @@
       "requiredMissing": 2
     },
     "3335": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:b1601bfbf297259913c66e93",
       "firstMissingAt": "2026-10-18T13:06:59+02:00",
@@ -24789,11 +24744,11 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-18T13:03:22+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3362": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:f13b51110785db31b9a42c25",
       "firstMissingAt": "2026-10-18T13:06:59+02:00",
@@ -24804,7 +24759,7 @@
         "line": "A3631"
       },
       "lastSeenAt": "2026-10-18T13:03:22+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3368": {
