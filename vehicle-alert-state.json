@@ -25165,55 +25165,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:7b9dd07e2cb95bb04c5fce90": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:19+02:00",
-      "direction": "",
-      "eventId": "missing:7b9dd07e2cb95bb04c5fce90",
-      "firstMissingAt": "2026-10-18T09:14:59+02:00",
-      "lastSeenAt": "2026-10-18T09:11:51+02:00",
-      "line": "A3513",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T09:19:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8670"
-    },
-    "route_after_gap:5c917934aee731c4e935dce1": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "LARRABETZU",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "LARRABETZU",
-      "detectedAt": "2026-10-18T09:19+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:5c917934aee731c4e935dce1",
-      "line": "A3223",
-      "queuedAt": "2026-10-18T09:19:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2113"
-    },
-    "vehicle_returned:eecd8ccf17b66323bc26cf7e": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:19+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:eecd8ccf17b66323bc26cf7e",
-      "lastKnown": {
-        "destination": "GALDAKAO Elexalde",
-        "direction": "",
-        "id": "3362",
-        "line": "A3631"
-      },
-      "line": "A3631",
-      "queuedAt": "2026-10-18T09:19:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3362"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1512": {
@@ -25486,7 +25438,7 @@
       "requiredMissing": 2
     },
     "8670": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:7b9dd07e2cb95bb04c5fce90",
       "firstMissingAt": "2026-10-18T09:14:59+02:00",
@@ -25497,7 +25449,7 @@
         "line": "A3513"
       },
       "lastSeenAt": "2026-10-18T09:11:51+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
