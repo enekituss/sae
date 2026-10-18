@@ -24721,88 +24721,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "missing:9641174be0d1c319b46f675a": {
-      "destination": "SESTAO",
-      "detectedAt": "2026-10-18T10:05+02:00",
-      "direction": "",
-      "eventId": "missing:9641174be0d1c319b46f675a",
-      "firstMissingAt": "2026-10-18T10:01:01+02:00",
-      "lastSeenAt": "2026-10-18T09:57:38+02:00",
-      "line": "A3135",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T10:05:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7815"
-    },
-    "missing:d84c61e9fa991d5a77d970c1": {
-      "destination": "OTXANDIO-UBIDE",
-      "detectedAt": "2026-10-18T10:05+02:00",
-      "direction": "",
-      "eventId": "missing:d84c61e9fa991d5a77d970c1",
-      "firstMissingAt": "2026-10-18T10:01:01+02:00",
-      "lastSeenAt": "2026-10-18T09:57:38+02:00",
-      "line": "A3925",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T10:05:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3335"
-    },
-    "route:c5bebceab9083692f0ba4d26": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BASAURI S.Miguel",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "BASAURI S.Miguel",
-      "detectedAt": "2026-10-18T10:05+02:00",
-      "direction": "",
-      "eventId": "route:c5bebceab9083692f0ba4d26",
-      "line": "A3632",
-      "queuedAt": "2026-10-18T10:05:02+02:00",
-      "type": "route_change",
-      "vehicleId": "3293"
-    },
-    "route:df8af9e6dc30b65bbfc32ca3": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SESTAO",
-          "old": "CABIECES"
-        }
-      ],
-      "destination": "SESTAO",
-      "detectedAt": "2026-10-18T10:05+02:00",
-      "direction": "",
-      "eventId": "route:df8af9e6dc30b65bbfc32ca3",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T10:05:02+02:00",
-      "type": "route_change",
-      "vehicleId": "7860"
-    },
-    "route:fc55ed458e56124f4c6b188c": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GETXO",
-          "old": "MUSKIZ La Arena"
-        }
-      ],
-      "destination": "GETXO",
-      "detectedAt": "2026-10-18T10:05+02:00",
-      "direction": "",
-      "eventId": "route:fc55ed458e56124f4c6b188c",
-      "line": "A3338",
-      "queuedAt": "2026-10-18T10:05:02+02:00",
-      "type": "route_change",
-      "vehicleId": "7875"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2090": {
@@ -24900,7 +24819,7 @@
       "requiredMissing": 2
     },
     "3335": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:d84c61e9fa991d5a77d970c1",
       "firstMissingAt": "2026-10-18T10:01:01+02:00",
@@ -24911,7 +24830,7 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-18T09:57:38+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3367": {
@@ -24929,7 +24848,7 @@
       "requiredMissing": 2
     },
     "7815": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:9641174be0d1c319b46f675a",
       "firstMissingAt": "2026-10-18T10:01:01+02:00",
@@ -24940,7 +24859,7 @@
         "line": "A3135"
       },
       "lastSeenAt": "2026-10-18T09:57:38+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
