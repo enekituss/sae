@@ -13,7 +13,7 @@ permissions:
 jobs:
   diagnose:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
     steps:
       - name: Comprobar token, webhook y fuente de autobuses sin enviar mensajes
         env:
@@ -73,11 +73,9 @@ jobs:
               if url == expected:
                   print("OK: webhook de Burgos registrado en Cloudflare.")
               elif not url:
-                  failures.append("Webhook de Burgos todavía no está registrado.")
-                  print("FALLO: el webhook de Burgos está vacío; comprueba los Secrets del Worker bizkaibus-sae-dispatcher.")
+                  print("AVISO: webhook de menú sin registrar; las alertas por comparación del SAE pueden comprobarse igualmente.")
               else:
-                  failures.append("Webhook de Burgos apunta a otra URL.")
-                  print("FALLO: webhook apunta a una URL distinta: " + url)
+                  print("AVISO: webhook de menú apunta a otra URL: " + url)
               if webhook.get("last_error_message"):
                   print("AVISO de Telegram webhook: " + str(webhook.get("last_error_message"))[:300])
           except Exception as exc:
@@ -95,14 +93,13 @@ jobs:
               print("Secret TELEGRAM_WEBHOOK_SECRET presente: " + str(bool(flags.get("webhookSecret"))))
               print("Secret TELEGRAM_BURGOS_BOT_TOKEN presente: " + str(bool(flags.get("burgosBotToken"))))
               if not flags.get("githubToken"):
-                  failures.append("Falta GITHUB_TOKEN en bizkaibus-sae-dispatcher (necesario para guardar preferencias).")
+                  print("AVISO: falta GITHUB_TOKEN en el Worker de menús; no es requisito para consultar el SAE oficial.")
               if not flags.get("webhookSecret"):
-                  failures.append("Falta TELEGRAM_WEBHOOK_SECRET en bizkaibus-sae-dispatcher.")
+                  print("AVISO: falta TELEGRAM_WEBHOOK_SECRET; afecta al webhook de menú, no a la comparación del SAE.")
               if not flags.get("burgosBotToken"):
-                  failures.append("Falta TELEGRAM_BURGOS_BOT_TOKEN en bizkaibus-sae-dispatcher; copia allí el valor del secreto BURGOS_TELEGRAM_BOT_TOKEN.")
+                  print("AVISO: falta TELEGRAM_BURGOS_BOT_TOKEN en el Worker de menús; el monitor usa el token de GitHub Actions.")
           except Exception as exc:
-              failures.append("Health del Worker de menús Telegram: " + str(exc))
-              print("FALLO: Worker de menús Telegram: " + str(exc))
+              print("AVISO: Worker de menús Telegram no disponible (no bloquea la prueba de lectura del SAE): " + str(exc))
 
           worker_base = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev"
           try:
@@ -119,29 +116,119 @@ jobs:
               failures.append("Health del Worker de Burgos: " + str(exc))
               print("FALLO: Worker de Burgos: " + str(exc))
 
+          source_errors = []
+          worker_source_ok = False
+          direct_source_ok = False
+
+          # Primero se comprueba el snapshot oficial de estimaciones, que es la fuente
+          # que ahora prioriza el monitor de cambios.
           try:
               request = urllib.request.Request(
-                  worker_base + "/api/burgos/vehicles?line=01",
+                  worker_base + "/api/burgos/live",
                   headers={"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "SAE-Burgos-Diagnostics/1.0"}
               )
-              with urllib.request.urlopen(request, timeout=45) as response:
-                  payload = json.loads(response.read().decode("utf-8"))
-              if payload.get("ok") is not True or not isinstance(payload.get("vehicles"), list):
-                  raise RuntimeError(str(payload.get("error") or "respuesta sin lista de vehículos"))
-              if payload.get("partial"):
-                  raise RuntimeError("el endpoint devolvió datos parciales")
-              print("OK: fuente municipal de Burgos consultada por la línea 01; vehículos en feed: " + str(len(payload["vehicles"])) + ".")
-          except urllib.error.HTTPError as exc:
-              try:
-                  body = json.loads(exc.read().decode("utf-8", errors="replace"))
-                  detail = str(body.get("error") or body.get("message") or "")[:350]
-              except Exception:
-                  detail = ""
-              failures.append("Fuente municipal de Burgos: HTTP " + str(exc.code) + (": " + detail if detail else ""))
-              print("FALLO: fuente municipal de Burgos: HTTP " + str(exc.code) + (": " + detail if detail else ""))
+              with urllib.request.urlopen(request, timeout=70) as response:
+                  live = json.loads(response.read().decode("utf-8"))
+              if live.get("ok") is not True or not isinstance(live.get("observations"), list):
+                  raise RuntimeError(str(live.get("error") or "respuesta sin observaciones del SAE"))
+              total_groups = int(live.get("totalGroups") or 0)
+              completed_groups = int(live.get("completedGroups") or 0)
+              if live.get("partial") or (total_groups and completed_groups != total_groups):
+                  raise RuntimeError("snapshot parcial: " + str(completed_groups) + "/" + str(total_groups) + " grupos")
+              observations = live.get("observations") or []
+              vehicle_ids = {
+                  str(item.get("vehicleId") or item.get("vehicle") or item.get("vehicle_id") or "").strip()
+                  for item in observations if isinstance(item, dict)
+              }
+              vehicle_ids.discard("")
+              vehicle_ids.discard("0")
+              if not vehicle_ids:
+                  print("AVISO: el Worker leyó las estimaciones, pero ahora no hay IDs de autobús identificables.")
+              else:
+                  print("OK: SAE por estimaciones a través del Worker; " + str(len(vehicle_ids)) + " IDs identificables, " + str(len(observations)) + " observaciones.")
+              worker_source_ok = True
           except Exception as exc:
-              failures.append("Fuente municipal de Burgos: " + str(exc))
-              print("FALLO: fuente municipal de Burgos: " + str(exc))
+              source_errors.append("Worker /api/burgos/live: " + str(exc))
+              print("AVISO: lectura del SAE mediante Worker falló: " + str(exc))
+
+          # Comprobación directa de los recursos oficiales documentados en el cliente público
+          # de Burgos: resourceNodes y resourceEstimations para una parada concreta.
+          official_pages = [
+              "https://movilidad.aytoburgos.es/rutas-en-directo",
+              "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
+          ]
+
+          def official_resource(resource, extra=None):
+              params = {
+                  "p_p_id": "as_asac_isaenext_IsaenextWebPortlet",
+                  "p_p_lifecycle": "2",
+                  "p_p_state": "normal",
+                  "p_p_mode": "view",
+                  "p_p_resource_id": resource,
+                  "p_p_cacheability": "cacheLevelPage"
+              }
+              if extra:
+                  params.update(extra)
+              errors = []
+              for page in official_pages:
+                  request_url = page + "?" + urllib.parse.urlencode(params)
+                  request = urllib.request.Request(
+                      request_url,
+                      headers={
+                          "Accept": "application/json, text/plain, */*",
+                          "Cache-Control": "no-cache",
+                          "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo",
+                          "User-Agent": "Mozilla/5.0 (compatible; SAE-Burgos-Diagnostics/1.0)"
+                      }
+                  )
+                  try:
+                      with urllib.request.urlopen(request, timeout=15) as response:
+                          return json.loads(response.read().decode("utf-8"))
+                  except Exception as exc:
+                      errors.append(urllib.parse.urlparse(page).netloc + ": " + str(exc)[:120])
+              raise RuntimeError(resource + " no respondió: " + " | ".join(errors))
+
+          try:
+              nodes = official_resource("resourceNodes")
+              if not isinstance(nodes, list) or not nodes:
+                  raise RuntimeError("resourceNodes no devolvió la lista de paradas")
+              def stop_id(node):
+                  return str(node.get("num") or node.get("id") or node.get("stopId") or node.get("nodeId") or node.get("nodoId") or "").strip()
+              chosen_stop = next((stop_id(node) for node in nodes if isinstance(node, dict) and stop_id(node) == "200"), "")
+              if not chosen_stop:
+                  chosen_stop = next((stop_id(node) for node in nodes if isinstance(node, dict) and stop_id(node)), "")
+              if not chosen_stop:
+                  raise RuntimeError("resourceNodes devolvió paradas, pero ninguna con ID")
+              print("OK: recurso oficial resourceNodes; " + str(len(nodes)) + " paradas; se probará la parada " + chosen_stop + ".")
+
+              estimations = official_resource("resourceEstimations", {
+                  "_as_asac_isaenext_IsaenextWebPortlet_tipo": "1",
+                  "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": chosen_stop
+              })
+              if not isinstance(estimations, list):
+                  raise RuntimeError("resourceEstimations no devolvió una lista")
+              routes_count = 0
+              ids_seen = set()
+              for stop in estimations:
+                  if not isinstance(stop, dict):
+                      continue
+                  for route in (stop.get("routeEstimationByNode") or stop.get("routes") or []):
+                      if not isinstance(route, dict):
+                          continue
+                      routes_count += 1
+                      for item in (route.get("publicEstimationVHExts") or route.get("estimations") or []):
+                          if isinstance(item, dict):
+                              vehicle_id = str(item.get("vehicle") or item.get("vehicleId") or item.get("vehicle_id") or "").strip()
+                              if vehicle_id and vehicle_id != "0":
+                                  ids_seen.add(vehicle_id)
+              print("OK: recurso oficial resourceEstimations responde para parada " + chosen_stop + "; " + str(routes_count) + " grupos de línea y " + str(len(ids_seen)) + " IDs de autobús identificables.")
+              direct_source_ok = True
+          except Exception as exc:
+              source_errors.append("SAE oficial directo: " + str(exc))
+              print("AVISO: consulta directa al SAE oficial falló: " + str(exc))
+
+          if not (worker_source_ok or direct_source_ok):
+              failures.append("No se pudo leer ninguna fuente del SAE oficial. " + " | ".join(source_errors))
 
           if failures:
               print("\nRESULTADO: todavía no está listo el circuito completo.")
