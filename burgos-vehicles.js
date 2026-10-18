@@ -347,8 +347,26 @@
     try {
       const base = normalizeWorkerBase($("workerUrlInput").value);
       if (!base) throw new Error("Pega la URL base de tu Worker de Cloudflare.");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      let healthResponse;
+      try {
+        healthResponse = await fetch(base + "/health", {
+          method: "GET",
+          cache: "no-store",
+          headers: { "Accept": "application/json" },
+          signal: controller.signal
+        });
+      } catch {
+        throw new Error("No se puede abrir esa URL. Comprueba la dirección workers.dev y que el Worker esté desplegado.");
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      if (!healthResponse.ok) throw new Error("El Worker respondió HTTP " + healthResponse.status + " en /health.");
+      const health = await healthResponse.json();
+      if (health?.ok !== true) throw new Error("La URL no parece corresponder al Worker de SAE Spotter.");
       localStorage.setItem(WORKER_STORAGE_KEY, base);
-      setStatus("Conexión guardada · comprobando Worker…", "");
+      setStatus("Worker verificado · consultando autobuses…", "");
       await load();
     } catch (error) {
       setStatus(error?.message || "No se ha podido guardar la conexión.", "error");
