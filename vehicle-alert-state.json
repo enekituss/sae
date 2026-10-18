@@ -11864,39 +11864,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:ea9eb46a1bc54e47f7c46f92": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T07:33+02:00",
-      "direction": "",
-      "eventId": "missing:ea9eb46a1bc54e47f7c46f92",
-      "firstMissingAt": "2026-10-18T07:29:01+02:00",
-      "lastSeenAt": "2026-10-18T07:25:54+02:00",
-      "line": "A3632",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T07:33:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3293"
-    },
-    "route_after_gap:9b17acfa9832d62a44bbfe5d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "Metro BOLUETA",
-          "old": "GALDAKAO Ospital"
-        }
-      ],
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-18T07:33+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:9b17acfa9832d62a44bbfe5d",
-      "line": "A3932",
-      "queuedAt": "2026-10-18T07:33:00+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3305"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2096": {
       "consecutiveChecks": 2,
@@ -11988,7 +11956,7 @@
       "requiredMissing": 2
     },
     "3293": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:ea9eb46a1bc54e47f7c46f92",
       "firstMissingAt": "2026-10-18T07:29:01+02:00",
@@ -11999,7 +11967,7 @@
         "line": "A3632"
       },
       "lastSeenAt": "2026-10-18T07:25:54+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3303": {
