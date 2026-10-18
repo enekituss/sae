@@ -201,7 +201,7 @@ jobs:
               if clean(subscription.get("mode")) == "off":
                   message += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro."
               message += "\n\nConfigura tus preferencias en el chat privado con @SAEBUR_bot. La falta de posición publicada no confirma por sí sola una baja administrativa."
-              message += "\n\n⚡ Las preferencias se guardan al momento. Los avisos se ajustan en la siguiente comprobación de autobuses."
+              message += "\n\n⚡ Con el webhook de Cloudflare activo, las preferencias se guardan al momento. Los avisos se ajustan en la siguiente comprobación de autobuses."
               telegram_api("sendMessage", {
                   "chat_id": chat_id,
                   "text": message,
