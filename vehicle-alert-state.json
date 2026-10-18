@@ -25326,123 +25326,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:7678d6c0844edf1bebdeb5cc": {
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T09:57+02:00",
-      "direction": "",
-      "eventId": "missing:7678d6c0844edf1bebdeb5cc",
-      "firstMissingAt": "2026-10-18T09:53:01+02:00",
-      "lastSeenAt": "2026-10-18T09:49:22+02:00",
-      "line": "A2151",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T09:57:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2135"
-    },
-    "route:10f998f668f467cc1863fdd8": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3513",
-          "old": "A3523"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "LEKEITIO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:57+02:00",
-      "direction": "",
-      "eventId": "route:10f998f668f467cc1863fdd8",
-      "line": "A3513",
-      "queuedAt": "2026-10-18T09:57:04+02:00",
-      "type": "route_change",
-      "vehicleId": "8645"
-    },
-    "route:74716b728cbef22077aa1be5": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3518",
-          "old": "A3517"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BAKIO (Aut.)",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "BAKIO (Aut.)",
-      "detectedAt": "2026-10-18T09:57+02:00",
-      "direction": "",
-      "eventId": "route:74716b728cbef22077aa1be5",
-      "line": "A3518",
-      "queuedAt": "2026-10-18T09:57:04+02:00",
-      "type": "route_change",
-      "vehicleId": "2099"
-    },
-    "route:7fd15dc1f60f57c81a810cb8": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ZEANURI",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "ZEANURI",
-      "detectedAt": "2026-10-18T09:57+02:00",
-      "direction": "",
-      "eventId": "route:7fd15dc1f60f57c81a810cb8",
-      "line": "A3917",
-      "queuedAt": "2026-10-18T09:57:04+02:00",
-      "type": "route_change",
-      "vehicleId": "3383"
-    },
-    "route:ed9a987ba002e341b475250c": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "BASAURI S.Miguel"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:57+02:00",
-      "direction": "",
-      "eventId": "route:ed9a987ba002e341b475250c",
-      "line": "A3632",
-      "queuedAt": "2026-10-18T09:57:04+02:00",
-      "type": "route_change",
-      "vehicleId": "3292"
-    },
-    "route_after_gap:198c168ba4f2f659a6a79ccc": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ-Cobaron",
-          "old": "PORTUGALETE"
-        }
-      ],
-      "destination": "MUSKIZ-Cobaron",
-      "detectedAt": "2026-10-18T09:57+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:198c168ba4f2f659a6a79ccc",
-      "line": "A3321",
-      "queuedAt": "2026-10-18T09:57:04+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7880"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "7856": {
       "consecutiveChecks": 1,
@@ -25515,7 +25399,7 @@
       "requiredMissing": 2
     },
     "2135": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:7678d6c0844edf1bebdeb5cc",
       "firstMissingAt": "2026-10-18T09:53:01+02:00",
@@ -25526,7 +25410,7 @@
         "line": "A2151"
       },
       "lastSeenAt": "2026-10-18T09:49:22+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3335": {
