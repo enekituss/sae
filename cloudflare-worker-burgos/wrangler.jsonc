@@ -3,5 +3,8 @@
   "name": "burgos-sae-spotter",
   "main": "src/index.js",
   "compatibility_date": "2026-10-17",
-  "workers_dev": true
+  "workers_dev": true,
+  "triggers": {
+    "crons": ["*/2 * * * *"]
+  }
 }
