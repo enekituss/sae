@@ -24396,60 +24396,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "route:8915c0c2042bc853ae944b70": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T12:07+02:00",
-      "direction": "",
-      "eventId": "route:8915c0c2042bc853ae944b70",
-      "line": "A3115",
-      "queuedAt": "2026-10-18T12:07:02+02:00",
-      "type": "route_change",
-      "vehicleId": "7854"
-    },
-    "route_after_gap:d799909e0d7fdda3fdf78452": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "AIREPORTUA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T12:07+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:d799909e0d7fdda3fdf78452",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T12:07:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2078"
-    },
-    "vehicle_returned:feab2fe0099925d0457acfef": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T12:07+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:feab2fe0099925d0457acfef",
-      "lastKnown": {
-        "destination": "EHU/UPV",
-        "direction": "",
-        "id": "2102",
-        "line": "A2161"
-      },
-      "line": "A3225",
-      "queuedAt": "2026-10-18T12:07:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2102"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2120": {
@@ -24681,5 +24628,5 @@
       "vehicleId": ""
     }
   },
-  "telegramUpdateOffset": 30217590
+  "telegramUpdateOffset": 30217591
 }
