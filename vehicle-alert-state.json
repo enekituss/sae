@@ -25234,88 +25234,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:843099db7649b32bc7119969": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T14:53+02:00",
-      "direction": "",
-      "eventId": "missing:843099db7649b32bc7119969",
-      "firstMissingAt": "2026-10-18T14:49:02+02:00",
-      "lastSeenAt": "2026-10-18T14:45:52+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T14:53:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3296"
-    },
-    "missing:d01950ffb961cb8fb45a3c41": {
-      "destination": "GETXO",
-      "detectedAt": "2026-10-18T14:53+02:00",
-      "direction": "",
-      "eventId": "missing:d01950ffb961cb8fb45a3c41",
-      "firstMissingAt": "2026-10-18T14:49:02+02:00",
-      "lastSeenAt": "2026-10-18T14:45:52+02:00",
-      "line": "A3338",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T14:53:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7875"
-    },
-    "route:c1aa968b45bdabb3bdbef385": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "LUTXANA"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T14:53+02:00",
-      "direction": "",
-      "eventId": "route:c1aa968b45bdabb3bdbef385",
-      "line": "A3129",
-      "queuedAt": "2026-10-18T14:53:02+02:00",
-      "type": "route_change",
-      "vehicleId": "7849"
-    },
-    "route:e43240f1c91b9a41b8a94967": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BARAKALDO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "BARAKALDO",
-      "detectedAt": "2026-10-18T14:53+02:00",
-      "direction": "",
-      "eventId": "route:e43240f1c91b9a41b8a94967",
-      "line": "A3137",
-      "queuedAt": "2026-10-18T14:53:02+02:00",
-      "type": "route_change",
-      "vehicleId": "7826"
-    },
-    "route_after_gap:fa8f837b85e9d1c538fe8db2": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ELANTXOBE-EA",
-          "old": "GERNIKA LUMO"
-        }
-      ],
-      "destination": "ELANTXOBE-EA",
-      "detectedAt": "2026-10-18T14:53+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:fa8f837b85e9d1c538fe8db2",
-      "line": "A3532",
-      "queuedAt": "2026-10-18T14:53:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "8681"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1101": {
@@ -25490,7 +25409,7 @@
       "requiredMissing": 2
     },
     "3296": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:843099db7649b32bc7119969",
       "firstMissingAt": "2026-10-18T14:49:02+02:00",
@@ -25501,7 +25420,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T14:45:52+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3376": {
@@ -25564,7 +25483,7 @@
       "requiredMissing": 2
     },
     "7875": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:d01950ffb961cb8fb45a3c41",
       "firstMissingAt": "2026-10-18T14:49:02+02:00",
@@ -25575,7 +25494,7 @@
         "line": "A3338"
       },
       "lastSeenAt": "2026-10-18T14:45:52+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7879": {
