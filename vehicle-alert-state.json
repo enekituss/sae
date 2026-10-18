@@ -26290,34 +26290,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:064f9d1e1bf4de7877f6b51f": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T19:25+02:00",
-      "direction": "",
-      "eventId": "missing:064f9d1e1bf4de7877f6b51f",
-      "firstMissingAt": "2026-10-18T19:21:01+02:00",
-      "lastSeenAt": "2026-10-18T19:17:47+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T19:25:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3303"
-    },
-    "missing:89a863d4fd9ce7d611680ca1": {
-      "destination": "PLENTZIA (Metro)",
-      "detectedAt": "2026-10-18T19:25+02:00",
-      "direction": "",
-      "eventId": "missing:89a863d4fd9ce7d611680ca1",
-      "firstMissingAt": "2026-10-18T19:21:01+02:00",
-      "lastSeenAt": "2026-10-18T19:17:47+02:00",
-      "line": "A3499",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T19:25:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1715"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1514": {
@@ -26466,7 +26439,7 @@
       "requiredMissing": 2
     },
     "1715": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:89a863d4fd9ce7d611680ca1",
       "firstMissingAt": "2026-10-18T19:21:01+02:00",
@@ -26477,7 +26450,7 @@
         "line": "A3499"
       },
       "lastSeenAt": "2026-10-18T19:17:47+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2089": {
@@ -26541,7 +26514,7 @@
       "requiredMissing": 2
     },
     "3303": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:064f9d1e1bf4de7877f6b51f",
       "firstMissingAt": "2026-10-18T19:21:01+02:00",
@@ -26552,7 +26525,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T19:17:47+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3382": {
