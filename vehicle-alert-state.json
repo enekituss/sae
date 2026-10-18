@@ -26570,127 +26570,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:440ced458082196db499d81f": {
-      "destination": "EREÑO",
-      "detectedAt": "2026-10-18T10:39+02:00",
-      "direction": "",
-      "eventId": "missing:440ced458082196db499d81f",
-      "firstMissingAt": "2026-10-18T10:35:03+02:00",
-      "lastSeenAt": "2026-10-18T10:32:01+02:00",
-      "line": "A3534",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T10:39:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8680"
-    },
-    "route:142314ba0e9c8913c8403ca8": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "DERIO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "DERIO",
-      "detectedAt": "2026-10-18T10:39+02:00",
-      "direction": "",
-      "eventId": "route:142314ba0e9c8913c8403ca8",
-      "line": "A2153",
-      "queuedAt": "2026-10-18T10:39:01+02:00",
-      "type": "route_change",
-      "vehicleId": "2088"
-    },
-    "route:20a537706d2f7418ef2373d2": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "Metro BOLUETA",
-          "old": "GALDAKAO"
-        }
-      ],
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-18T10:39+02:00",
-      "direction": "",
-      "eventId": "route:20a537706d2f7418ef2373d2",
-      "line": "A3932",
-      "queuedAt": "2026-10-18T10:39:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3332"
-    },
-    "route:4395d16cf4957bb843e7d57d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AIREPORTUA",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T10:39+02:00",
-      "direction": "",
-      "eventId": "route:4395d16cf4957bb843e7d57d",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T10:39:01+02:00",
-      "type": "route_change",
-      "vehicleId": "2120"
-    },
-    "route:70817a6c99180a84201c7806": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "LEKEITIO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "LEKEITIO",
-      "detectedAt": "2026-10-18T10:39+02:00",
-      "direction": "",
-      "eventId": "route:70817a6c99180a84201c7806",
-      "line": "A3513",
-      "queuedAt": "2026-10-18T10:39:01+02:00",
-      "type": "route_change",
-      "vehicleId": "8670"
-    },
-    "route:f7106961e3b15a90a9727ff7": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SESTAO",
-          "old": "MUSKIZ"
-        }
-      ],
-      "destination": "SESTAO",
-      "detectedAt": "2026-10-18T10:39+02:00",
-      "direction": "",
-      "eventId": "route:f7106961e3b15a90a9727ff7",
-      "line": "A3335",
-      "queuedAt": "2026-10-18T10:39:01+02:00",
-      "type": "route_change",
-      "vehicleId": "7862"
-    },
-    "vehicle_returned:2f3a3416bf60ed31527c324c": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T10:39+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:2f3a3416bf60ed31527c324c",
-      "lastKnown": {
-        "destination": "GALDAKAO Ospitalea",
-        "direction": "",
-        "id": "3364",
-        "line": "A3641"
-      },
-      "line": "A3641",
-      "queuedAt": "2026-10-18T10:39:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3364"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1714": {
@@ -26859,7 +26739,7 @@
       "requiredMissing": 2
     },
     "8680": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:440ced458082196db499d81f",
       "firstMissingAt": "2026-10-18T10:35:03+02:00",
@@ -26870,7 +26750,7 @@
         "line": "A3534"
       },
       "lastSeenAt": "2026-10-18T10:32:01+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
