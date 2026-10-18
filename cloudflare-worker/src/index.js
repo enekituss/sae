@@ -5,8 +5,10 @@ const WORKFLOWS = [
 ];
 const BRANCH = "main";
 const GITHUB_API = "https://api.github.com";
-const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
-const BURGOS_VEHICLES_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
+// Ruta oficial vigente del portlet ISAENEXT. Las páginas públicas enlazan bajo /web/movilidad/.
+const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo";
+const BURGOS_VEHICLES_SOURCE = BURGOS_SOURCE;
+// Respaldo del dominio antiguo del Ayuntamiento; se mantiene separado de Bizkaibus.
 const BURGOS_VEHICLES_LEGACY_SOURCE = "https://www.aytoburgos.es/web/movilidad/rutas-en-directo";
 const BURGOS_LINES = [...Array.from({ length: 23 }, (_, i) => String(i + 1).padStart(2, "0")), "73", "87", "88", "89", "C1", "C2"];
 const ALLOWED_ORIGIN = "https://enekituss.github.io";
@@ -250,24 +252,43 @@ function isaenextURL(resource, extra = {}) {
 }
 
 async function fetchIsaenextJson(url) {
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "Accept": "application/json, text/plain, */*",
-      "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter/1.0)",
-      "Referer": BURGOS_SOURCE
-    },
-    signal: AbortSignal.timeout(12000)
-  });
-  const body = await response.text();
-  if (!response.ok) {
-    throw new Error("ISAENEXT respondió HTTP " + response.status);
+  const originalUrl = new URL(url.toString());
+  const candidates = [originalUrl];
+  if (originalUrl.hostname === "movilidad.aytoburgos.es") {
+    const legacyUrl = new URL(originalUrl.toString());
+    legacyUrl.hostname = "www.aytoburgos.es";
+    candidates.push(legacyUrl);
   }
-  try {
-    return JSON.parse(body);
-  } catch {
-    throw new Error("ISAENEXT no devolvió JSON; puede haber expirado o cambiado el servicio.");
+  const errors = [];
+
+  // El Ayuntamiento publica el directo en el portal /web/movilidad/.
+  // Se prueba primero el dominio canónico y luego el antiguo como respaldo.
+  for (const candidate of candidates) {
+    try {
+      const response = await fetch(candidate.toString(), {
+        method: "GET",
+        headers: {
+          "Accept": "application/json, text/plain, */*",
+          "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter/1.0)",
+          "Referer": candidate.origin + "/web/movilidad/rutas-en-directo"
+        },
+        signal: AbortSignal.timeout(20000)
+      });
+      const body = await response.text();
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+      try {
+        return JSON.parse(body);
+      } catch {
+        throw new Error("respuesta no JSON");
+      }
+    } catch (error) {
+      errors.push(candidate.hostname + ": " + (error?.message || String(error)));
+    }
   }
+
+  throw new Error("ISAENEXT falló en las fuentes oficiales de Burgos. " + errors.join(" | "));
 }
 
 
