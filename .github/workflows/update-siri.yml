@@ -1610,7 +1610,7 @@ jobs:
                           if raw_text:
                               command = raw_text.split()[0].split("@")[0].lower()
 
-                              if command in ("/start", "/help", "/menu", "/config"):
+                              if command in ("/start", "/help", "/menu", "/menú", "menu", "menú", "/config"):
                                   show_settings(incoming_chat_id, "Bot conectado. Puedes cambiar estas opciones cuando quieras.")
                               elif raw_text in ("🔔 Todos los avisos", "Todos los avisos"):
                                   subscription["mode"] = "all"
