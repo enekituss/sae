@@ -25102,81 +25102,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:16d99c745196c5f01d3a0493": {
-      "destination": "AREETA (Artea)",
-      "detectedAt": "2026-10-18T17:11+02:00",
-      "direction": "",
-      "eventId": "missing:16d99c745196c5f01d3a0493",
-      "firstMissingAt": "2026-10-18T17:07:01+02:00",
-      "lastSeenAt": "2026-10-18T17:03:24+02:00",
-      "line": "A3422",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T17:11:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1723"
-    },
-    "missing:a916b4e69ddae299db02bd2d": {
-      "destination": "GALDAKAO Urreta",
-      "detectedAt": "2026-10-18T17:11+02:00",
-      "direction": "",
-      "eventId": "missing:a916b4e69ddae299db02bd2d",
-      "firstMissingAt": "2026-10-18T17:07:01+02:00",
-      "lastSeenAt": "2026-10-18T17:03:24+02:00",
-      "line": "A3631",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T17:11:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3362"
-    },
-    "missing:c953d29d799a5e2a0051f676": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T17:11+02:00",
-      "direction": "",
-      "eventId": "missing:c953d29d799a5e2a0051f676",
-      "firstMissingAt": "2026-10-18T17:07:01+02:00",
-      "lastSeenAt": "2026-10-18T17:03:24+02:00",
-      "line": "A3925",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T17:11:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3335"
-    },
-    "route_after_gap:854d7e8f5d8c45e95515d4d3": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MENDATA",
-          "old": "MORGA"
-        }
-      ],
-      "destination": "MENDATA",
-      "detectedAt": "2026-10-18T17:11+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:854d7e8f5d8c45e95515d4d3",
-      "line": "A3533",
-      "queuedAt": "2026-10-18T17:11:00+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "8682"
-    },
-    "vehicle_returned:2c44521fa851ae8b5fb43cf1": {
-      "destination": "ARRIGORRIAGA",
-      "detectedAt": "2026-10-18T17:11+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:2c44521fa851ae8b5fb43cf1",
-      "lastKnown": {
-        "destination": "ZEBERIO",
-        "direction": "",
-        "id": "3360",
-        "line": "A3928"
-      },
-      "line": "A3928",
-      "queuedAt": "2026-10-18T17:11:00+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3360"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2089": {
@@ -25208,7 +25134,7 @@
   },
   "pendingVehicles": {
     "1723": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:16d99c745196c5f01d3a0493",
       "firstMissingAt": "2026-10-18T17:07:01+02:00",
@@ -25219,7 +25145,7 @@
         "line": "A3422"
       },
       "lastSeenAt": "2026-10-18T17:03:24+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2087": {
@@ -25281,7 +25207,7 @@
       "requiredMissing": 2
     },
     "3335": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:c953d29d799a5e2a0051f676",
       "firstMissingAt": "2026-10-18T17:07:01+02:00",
@@ -25292,11 +25218,11 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-18T17:03:24+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3362": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a916b4e69ddae299db02bd2d",
       "firstMissingAt": "2026-10-18T17:07:01+02:00",
@@ -25307,7 +25233,7 @@
         "line": "A3631"
       },
       "lastSeenAt": "2026-10-18T17:03:24+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3367": {
