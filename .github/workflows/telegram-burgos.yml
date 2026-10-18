@@ -263,7 +263,7 @@ jobs:
                       elif raw_text in ("🔔 Todos los avisos", "Todos los avisos"):
                           subscription.update({"mode": "all", "awaitingVehicleId": False})
                           dirty = True
-                          send_menu(incoming_chat_id, subscription, "✅ Preferencias guardadas.")
+                          send_menu(incoming_chat_id, subscription, "✅ Seleccionado: recibirás todos los avisos de los autobuses de Burgos.")
                       elif raw_text in ("⚠️ Solo fuera de servicio", "⚠️ Solo fuera de servicio (sin posición reciente)", "⚠️ Solo sin posición reciente", "Solo sin posición reciente"):
                           subscription.update({"mode": "missing", "awaitingVehicleId": False})
                           dirty = True
