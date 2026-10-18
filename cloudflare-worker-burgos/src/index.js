@@ -51,21 +51,40 @@ function vehicleUrl(line, base = BURGOS_SOURCE) {
 }
 
 async function fetchVehiclesForLine(line) {
+  const targetUrl = vehicleUrl(line, BURGOS_SOURCE).toString();
+  const attempts = [
+    ...BURGOS_SOURCE_FALLBACKS.map(base => ({
+      label: new URL(base).host,
+      url: vehicleUrl(line, base).toString(),
+      timeoutMs: 5000
+    })),
+    {
+      label: "AllOrigins",
+      url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl),
+      timeoutMs: 8000
+    },
+    {
+      label: "CodeTabs",
+      url: "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl),
+      timeoutMs: 8000
+    }
+  ];
   const errors = [];
-  for (const base of BURGOS_SOURCE_FALLBACKS) {
+
+  for (const attempt of attempts) {
     try {
-      const response = await fetch(vehicleUrl(line, base).toString(), {
+      const response = await fetch(attempt.url, {
         method: "GET",
         headers: {
           "Accept": "application/json, text/plain, */*",
           "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
           "Referer": BURGOS_SOURCE
         },
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(attempt.timeoutMs)
       });
       const body = await response.text();
       if (!response.ok) {
-        errors.push(new URL(base).host + " HTTP " + response.status);
+        errors.push(attempt.label + " HTTP " + response.status);
         continue;
       }
 
@@ -73,11 +92,11 @@ async function fetchVehiclesForLine(line) {
       try {
         rows = JSON.parse(body);
       } catch {
-        errors.push(new URL(base).host + " no devolvió JSON");
+        errors.push(attempt.label + " no devolvió JSON");
         continue;
       }
       if (!Array.isArray(rows)) {
-        errors.push(new URL(base).host + " no devolvió una lista");
+        errors.push(attempt.label + " no devolvió una lista");
         continue;
       }
 
@@ -87,10 +106,10 @@ async function fetchVehiclesForLine(line) {
         lineId: String(vehicle?.lineId ?? vehicle?.line ?? vehicle?.route ?? line).trim()
       })).filter(vehicle => vehicle.id);
     } catch (error) {
-      errors.push(new URL(base).host + ": " + (error?.message || String(error)));
+      errors.push(attempt.label + ": " + (error?.message || String(error)));
     }
   }
-  throw new Error("No se pudo consultar la línea " + line + " en las fuentes municipales: " + errors.join(" | "));
+  throw new Error("No se pudo consultar la línea " + line + " en las fuentes municipales/proxies: " + errors.join(" | "));
 }
 
 async function fetchSnapshot() {
