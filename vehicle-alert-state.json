@@ -25504,39 +25504,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:47eaec0940f3a2377ca4db57": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T14:55+02:00",
-      "direction": "",
-      "eventId": "missing:47eaec0940f3a2377ca4db57",
-      "firstMissingAt": "2026-10-18T14:51:02+02:00",
-      "lastSeenAt": "2026-10-18T14:47:33+02:00",
-      "line": "A3518",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T14:55:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2125"
-    },
-    "route_after_gap:2a8a75424b45aa7852047d56": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ",
-          "old": "PORTUGALETE"
-        }
-      ],
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-18T14:55+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:2a8a75424b45aa7852047d56",
-      "line": "A3321",
-      "queuedAt": "2026-10-18T14:55:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7864"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1101": {
@@ -25727,7 +25695,7 @@
       "requiredMissing": 2
     },
     "2125": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:47eaec0940f3a2377ca4db57",
       "firstMissingAt": "2026-10-18T14:51:02+02:00",
@@ -25738,7 +25706,7 @@
         "line": "A3518"
       },
       "lastSeenAt": "2026-10-18T14:47:33+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2129": {
