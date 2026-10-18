@@ -119,6 +119,24 @@ jobs:
                         map: (() => { const e=document.querySelector('.leaflet-container'); return e ? {class:e.className, markers:e.querySelectorAll('.leaflet-marker-icon').length, layers:e.querySelectorAll('.leaflet-overlay-pane path').length, html:e.outerHTML.slice(0,600)} : null })()
                       })""")
                       print("CONTROLS:",json.dumps(controls,ensure_ascii=False)[:8000])
+                      reconnect = page.get_by_role("button", name="Reconectar", exact=True)
+                      if await reconnect.count():
+                          try:
+                              await reconnect.first.click(timeout=3000)
+                              print("UI_ACTION: pulsado Reconectar")
+                              await page.wait_for_timeout(12000)
+                          except Exception as exc:
+                              print("UI_ACTION_ERROR:", "Reconectar", str(exc)[:180])
+                      # Si se abre el selector de líneas, "Todas" conserva la selección
+                      # pública por defecto; no se altera ninguna preferencia del usuario.
+                      save_load = page.get_by_role("button", name="GUARDAR Y CARGAR", exact=True)
+                      if await save_load.count():
+                          try:
+                              await save_load.first.click(timeout=3000)
+                              print("UI_ACTION: pulsado GUARDAR Y CARGAR")
+                              await page.wait_for_timeout(18000)
+                          except Exception as exc:
+                              print("UI_ACTION_ERROR:", "GUARDAR Y CARGAR", str(exc)[:180])
                       await page.wait_for_timeout(18000)
                   except Exception as exc:
                       print("PAGE_ERROR:",repr(exc)[:250])
