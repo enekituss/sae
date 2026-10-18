@@ -94,6 +94,33 @@ jobs:
                       ws.on("framereceived",frame_received)
                   page.on("websocket",ws_handler)
 
+                  asset_inspections = []
+                  async def inspect_response(response):
+                      parsed = urlparse(response.url)
+                      path_only = parsed.path
+                      if parsed.netloc == "webburgos.com" and (
+                          path_only.endswith(".json") or path_only.endswith(".php") or path_only.endswith(".js")
+                      ):
+                          try:
+                              raw = await response.body()
+                              record = {"path":path_only,"status":response.status,"bytes":len(raw),"type":response.headers.get("content-type","")}
+                              if path_only.endswith(".json") and len(raw) < 12000:
+                                  try:
+                                      payload = json.loads(raw.decode("utf-8",errors="replace"))
+                                      record["jsonType"] = type(payload).__name__
+                                      if isinstance(payload,list):
+                                          record["count"] = len(payload)
+                                          if payload and isinstance(payload[0],dict):
+                                              record["sampleKeys"] = sorted(payload[0].keys())[:20]
+                                      elif isinstance(payload,dict):
+                                          record["keys"] = sorted(payload.keys())[:20]
+                                  except Exception:
+                                      record["notJson"] = raw[:100].decode("utf-8",errors="replace")
+                              asset_inspections.append(record)
+                          except Exception:
+                              pass
+                  page.on("response", inspect_response)
+
                   try:
                       response=await page.goto(ROOT,wait_until="domcontentloaded",timeout=35000)
                       print("PAGE:",json.dumps({"status":response.status if response else None,"url":page.url,"title":await page.title(),"mobile":await page.evaluate("matchMedia('(pointer: coarse)').matches")},ensure_ascii=False))
@@ -137,25 +164,46 @@ jobs:
                         hasSaveLoad:typeof window.g==='function'
                       })""")
                       print("UI_STATE:",json.dumps(state,ensure_ascii=False)[:5000])
-                      functions = await page.evaluate("""() => ({
-                        reconectar: typeof window.reconectarAhora === 'function' ? String(window.reconectarAhora).slice(0,2200) : '',
-                        saveLoad: typeof window.g === 'function' ? String(window.g).slice(0,2200) : '',
-                        visibleAppFunctions: Object.keys(window).filter(k=>/reconect|guardar|linea|cargar|prefer/i.test(k)).slice(0,80)
-                      })""")
-                      print("APP_FUNCTIONS:",json.dumps(functions,ensure_ascii=False)[:6000])
-                      # Llama a la misma función pública que utiliza el botón Reconectar.
-                      # No se construyen cabeceras ni se llaman endpoints privados.
-                      try:
-                          if await page.evaluate("typeof window.reconectarAhora === 'function'"):
-                              await page.evaluate("window.reconectarAhora()")
-                              print("UI_ACTION: llamada a la función pública reconectarAhora")
-                              await page.wait_for_timeout(10000)
-                      except Exception as exc:
-                          print("UI_ACTION_ERROR:", "reconectarAhora()", str(exc)[:180])
+                      functions = await page.evaluate("""async () => {
+                        const resp = await fetch('/bus/assets/app.76386513f25e.js', {cache:'no-store'});
+                        const source = await resp.text();
+                        const snippets = {};
+                        for (const term of [
+                          'linea-checkbox','new bootstrap.Modal(q("m"))','B.show()','B.show',
+                          'showLineSelector','seleccionarDestinoLineas','lineas.json',
+                          'todas_las_paradas.json','appBusBurgosConfig','reconectarAhora',
+                          'function g()','rtStarted','localStorage.getItem','modal.show()',
+                          'new bootstrap.Modal'
+                        ]) {
+                          const i=source.indexOf(term);
+                          snippets[term]=i<0?'NOT_FOUND':source.slice(Math.max(0,i-260),Math.min(source.length,i+430)).replace(/\\s+/g,' ');
+                        }
+                        const buttons=Array.from(document.querySelectorAll('button')).map(e=>({
+                          text:(e.innerText||'').trim().slice(0,60),
+                          title:e.title||'',aria:e.getAttribute('aria-label')||'',id:e.id||'',
+                          cls:(typeof e.className==='string'?e.className:'').slice(0,80),
+                          onclick:e.getAttribute('onclick')||'',
+                          visible:!!(e.offsetWidth||e.offsetHeight),
+                          parent:e.closest('.modal')?.id||''
+                        }));
+                        return {
+                          reconectar: typeof window.reconectarAhora==='function' ? String(window.reconectarAhora).slice(0,900) : '',
+                          saveLoad: typeof window.g==='function' ? String(window.g).slice(0,900) : '',
+                          visibleAppFunctions:Object.keys(window).filter(k=>/reconect|guardar|linea|cargar|prefer/i.test(k)).slice(0,80),
+                          checkboxCount:document.querySelectorAll('.linea-checkbox').length,
+                          appButtons:buttons.filter(x=>/line|config|reconect|pausa|seleccion|mapa/i.test(x.onclick+' '+x.text+' '+x.id+' '+x.title)),
+                          storageKeys:Object.keys(localStorage),
+                          snippets
+                        }
+                      }""")
+                      print("APP_FUNCTIONS:",json.dumps(functions,ensure_ascii=False)[:15000])
+                      # Reconectar normalmente no hace nada si la app aún no terminó de inicializar rtStarted.
+                      # Por eso no se fuerza la función ni se envían parámetros fabricados.
                       await page.wait_for_timeout(12000)
                   except Exception as exc:
                       print("PAGE_ERROR:",repr(exc)[:250])
 
+                  print("ASSET_INSPECTIONS:",json.dumps(asset_inspections[-80:],ensure_ascii=False)[:14000])
                   print("SUMMARY:",json.dumps({"liveResponses":len(captured),"liveResponseStatuses":dict(Counter(x["status"] for x in captured)),"websocket":dict(ws_counts),"requestFailures":failures[:10],"consoleErrors":console_errors[:10],"pageErrors":page_errors[:10]},ensure_ascii=False))
                   await context.close()
                   await browser.close()
