@@ -25376,69 +25376,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:31b0b40794764938f0dd105f": {
-      "destination": "AREETA (Artea)",
-      "detectedAt": "2026-10-18T19:15+02:00",
-      "direction": "",
-      "eventId": "missing:31b0b40794764938f0dd105f",
-      "firstMissingAt": "2026-10-18T19:11:00+02:00",
-      "lastSeenAt": "2026-10-18T19:07:59+02:00",
-      "line": "A3422",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T19:15:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1718"
-    },
-    "route_after_gap:114fe63c189e542f419df70f": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3915",
-          "old": "A3916"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ONDARROA",
-          "old": "BILBAO (Aut.)"
-        }
-      ],
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-18T19:15+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:114fe63c189e542f419df70f",
-      "line": "A3915",
-      "queuedAt": "2026-10-18T19:15:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "8676"
-    },
-    "route_after_gap:5c743534d2a58a6e0b7fb090": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3913",
-          "old": "A3911"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ARRAZOLA",
-          "old": "DURANGO"
-        }
-      ],
-      "destination": "ARRAZOLA",
-      "detectedAt": "2026-10-18T19:15+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:5c743534d2a58a6e0b7fb090",
-      "line": "A3913",
-      "queuedAt": "2026-10-18T19:15:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3389"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1715": {
@@ -25587,7 +25525,7 @@
   },
   "pendingVehicles": {
     "1718": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:31b0b40794764938f0dd105f",
       "firstMissingAt": "2026-10-18T19:11:00+02:00",
@@ -25598,7 +25536,7 @@
         "line": "A3422"
       },
       "lastSeenAt": "2026-10-18T19:07:59+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "1733": {
