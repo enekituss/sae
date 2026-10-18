@@ -1,4 +1,8 @@
 const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
+const BURGOS_SOURCE_FALLBACKS = [
+  BURGOS_SOURCE,
+  "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
+];
 const PORTLET_ID = "as_asac_isaenext_IsaenextWebPortlet";
 const PORTLET_PREFIX = "_as_asac_isaenext_IsaenextWebPortlet_";
 const ALLOWED_ORIGIN = "https://enekituss.github.io";
@@ -30,9 +34,9 @@ function jsonResponse(request, data, status = 200, extra = {}) {
   });
 }
 
-function vehicleUrl(line) {
+function vehicleUrl(line, base = BURGOS_SOURCE) {
   const timestamp = String(Date.now());
-  const url = new URL(BURGOS_SOURCE);
+  const url = new URL(base);
   url.searchParams.set("p_p_id", PORTLET_ID);
   url.searchParams.set("p_p_lifecycle", "2");
   url.searchParams.set("p_p_state", "normal");
@@ -47,35 +51,46 @@ function vehicleUrl(line) {
 }
 
 async function fetchVehiclesForLine(line) {
-  const response = await fetch(vehicleUrl(line).toString(), {
-    method: "GET",
-    headers: {
-      "Accept": "application/json, text/plain, */*",
-      "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
-      "Referer": BURGOS_SOURCE
-    },
-    signal: AbortSignal.timeout(12000)
-  });
-  const body = await response.text();
-  if (!response.ok) {
-    throw new Error("ISAENEXT respondió HTTP " + response.status + " para la línea " + line + ".");
-  }
+  const errors = [];
+  for (const base of BURGOS_SOURCE_FALLBACKS) {
+    try {
+      const response = await fetch(vehicleUrl(line, base).toString(), {
+        method: "GET",
+        headers: {
+          "Accept": "application/json, text/plain, */*",
+          "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
+          "Referer": BURGOS_SOURCE
+        },
+        signal: AbortSignal.timeout(5000)
+      });
+      const body = await response.text();
+      if (!response.ok) {
+        errors.push(new URL(base).host + " HTTP " + response.status);
+        continue;
+      }
 
-  let rows;
-  try {
-    rows = JSON.parse(body);
-  } catch {
-    throw new Error("ISAENEXT no devolvió JSON para la línea " + line + ".");
-  }
-  if (!Array.isArray(rows)) {
-    throw new Error("ISAENEXT no devolvió una lista para la línea " + line + ".");
-  }
+      let rows;
+      try {
+        rows = JSON.parse(body);
+      } catch {
+        errors.push(new URL(base).host + " no devolvió JSON");
+        continue;
+      }
+      if (!Array.isArray(rows)) {
+        errors.push(new URL(base).host + " no devolvió una lista");
+        continue;
+      }
 
-  return rows.map(vehicle => ({
-    ...vehicle,
-    id: String(vehicle?.id ?? vehicle?.vehicleId ?? vehicle?.vehicle_id ?? "").trim(),
-    lineId: line
-  })).filter(vehicle => vehicle.id);
+      return rows.map(vehicle => ({
+        ...vehicle,
+        id: String(vehicle?.id ?? vehicle?.vehicleId ?? vehicle?.vehicle_id ?? "").trim(),
+        lineId: String(vehicle?.lineId ?? vehicle?.line ?? vehicle?.route ?? line).trim()
+      })).filter(vehicle => vehicle.id);
+    } catch (error) {
+      errors.push(new URL(base).host + ": " + (error?.message || String(error)));
+    }
+  }
+  throw new Error("No se pudo consultar la línea " + line + " en las fuentes municipales: " + errors.join(" | "));
 }
 
 async function fetchSnapshot() {
