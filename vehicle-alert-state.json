@@ -25908,21 +25908,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "missing:0337e4a2accf25556a2ffcb3": {
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T16:21+02:00",
-      "direction": "",
-      "eventId": "missing:0337e4a2accf25556a2ffcb3",
-      "firstMissingAt": "2026-10-18T16:17:02+02:00",
-      "lastSeenAt": "2026-10-18T16:13:35+02:00",
-      "line": "A3332",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T16:21:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7861"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1512": {
@@ -26179,7 +26165,7 @@
       "requiredMissing": 2
     },
     "7861": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:0337e4a2accf25556a2ffcb3",
       "firstMissingAt": "2026-10-18T16:17:02+02:00",
@@ -26190,7 +26176,7 @@
         "line": "A3332"
       },
       "lastSeenAt": "2026-10-18T16:13:35+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7864": {
@@ -26226,9 +26212,9 @@
   "telegramSubscriptions": {
     "5333330154": {
       "awaitingVehicleId": false,
-      "mode": "line",
+      "mode": "all",
       "vehicleId": "7830"
     }
   },
-  "telegramUpdateOffset": 30217612
+  "telegramUpdateOffset": 30217613
 }
