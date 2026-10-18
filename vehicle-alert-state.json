@@ -2290,34 +2290,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:309b00832a9cdb5cabdc1326": {
-      "destination": "BARAKALDO",
-      "detectedAt": "2026-10-18T23:35+02:00",
-      "direction": "",
-      "eventId": "missing:309b00832a9cdb5cabdc1326",
-      "firstMissingAt": "2026-10-18T23:31:06+02:00",
-      "lastSeenAt": "2026-10-18T23:28:02+02:00",
-      "line": "A3137",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T23:35:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7872"
-    },
-    "missing:8c73687b4e162869ca864186": {
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T23:35+02:00",
-      "direction": "",
-      "eventId": "missing:8c73687b4e162869ca864186",
-      "firstMissingAt": "2026-10-18T23:31:06+02:00",
-      "lastSeenAt": "2026-10-18T23:28:02+02:00",
-      "line": "A3115",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T23:35:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7882"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "7813": {
@@ -3233,7 +3206,7 @@
       "requiredMissing": 2
     },
     "7872": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:309b00832a9cdb5cabdc1326",
       "firstMissingAt": "2026-10-18T23:31:06+02:00",
@@ -3244,7 +3217,7 @@
         "line": "A3137"
       },
       "lastSeenAt": "2026-10-18T23:28:02+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7875": {
@@ -3322,7 +3295,7 @@
       "requiredMissing": 2
     },
     "7882": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:8c73687b4e162869ca864186",
       "firstMissingAt": "2026-10-18T23:31:06+02:00",
@@ -3333,7 +3306,7 @@
         "line": "A3115"
       },
       "lastSeenAt": "2026-10-18T23:28:02+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7883": {
