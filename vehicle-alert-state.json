@@ -23822,50 +23822,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:97eccdec60653f94c4ab36a3": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T09:03+02:00",
-      "direction": "",
-      "eventId": "entered:97eccdec60653f94c4ab36a3",
-      "firstObservedAt": "2026-10-18T09:01:02+02:00",
-      "line": "A3915",
-      "queuedAt": "2026-10-18T09:03:03+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "8678"
-    },
-    "missing:d4f582fcf671fc27b42634cc": {
-      "destination": "GALDAKAO Elexalde",
-      "detectedAt": "2026-10-18T09:03+02:00",
-      "direction": "",
-      "eventId": "missing:d4f582fcf671fc27b42634cc",
-      "firstMissingAt": "2026-10-18T08:59:01+02:00",
-      "lastSeenAt": "2026-10-18T08:55:46+02:00",
-      "line": "A3631",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T09:03:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3362"
-    },
-    "route:0d0ab979ada52e92327d8e34": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "ZARATAMO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:03+02:00",
-      "direction": "",
-      "eventId": "route:0d0ab979ada52e92327d8e34",
-      "line": "A3632",
-      "queuedAt": "2026-10-18T09:03:03+02:00",
-      "type": "route_change",
-      "vehicleId": "3293"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "7826": {
       "consecutiveChecks": 1,
@@ -23955,7 +23912,7 @@
       "requiredMissing": 2
     },
     "3362": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:d4f582fcf671fc27b42634cc",
       "firstMissingAt": "2026-10-18T08:59:01+02:00",
@@ -23966,7 +23923,7 @@
         "line": "A3631"
       },
       "lastSeenAt": "2026-10-18T08:55:46+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3368": {
