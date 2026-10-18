@@ -1,17 +1,71 @@
 {
   "sourceUrl": "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml",
   "tripUpdatesUrl": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFSRealTime/FeedTripUpdates.pb",
-  "fetchedAt": "2026-10-18T03:07:01+00:00",
-  "vehicleCount": 1,
+  "fetchedAt": "2026-10-18T03:09:01+00:00",
+  "vehicleCount": 2,
   "stopLookupCount": 2325,
-  "stopMatches": 1,
-  "destinationMatches": 1,
+  "stopMatches": 2,
+  "destinationMatches": 2,
   "vehicleBlocks": 0,
   "tripShortNames": 0,
-  "vehiclesWithServiceNumber": 1,
-  "vehiclesWithUpcomingStops": 1,
+  "vehiclesWithServiceNumber": 2,
+  "vehiclesWithUpcomingStops": 2,
   "vehiclesWithRealtimeStopTimes": 0,
   "vehicles": [
+    {
+      "id": "2076",
+      "idType": "ID de vehículo",
+      "line": "A3247",
+      "lineRef": "",
+      "direction": "",
+      "destination": "AIREPORTUA",
+      "destinationSource": "GTFS · horario",
+      "destinationRef": "",
+      "tripId": "trp_A3247_775_OP42FPPV_18900_O42FPP3247_324702_2",
+      "tripShortName": "",
+      "blockId": "",
+      "calendarServiceId": "OP42FPPV",
+      "serviceNumber": "2",
+      "serviceCode": "324702",
+      "upcomingStops": [
+        {
+          "stopId": "896",
+          "stopSequence": 3,
+          "name": "MOYUA PLAZA (OGASUNA/HACIENDA) (896)",
+          "arrivalTime": "2026-10-18T05:19:10+02:00",
+          "departureTime": "2026-10-18T05:19:12+02:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "4133",
+          "stopSequence": 4,
+          "name": "ALAMEDA RECALDE 11 (4133)",
+          "arrivalTime": "2026-10-18T05:20:16+02:00",
+          "departureTime": "2026-10-18T05:20:18+02:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "3372",
+          "stopSequence": 5,
+          "name": "AIREPORTUA/AEROPUERTO (IRTEERAK/SALIDAS) (3372)",
+          "arrivalTime": "2026-10-18T05:45:00+02:00",
+          "departureTime": "2026-10-18T05:45:02+02:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        }
+      ],
+      "time": "2026-10-18T05:08:04+02:00",
+      "stop": "632",
+      "stopName": "GRAN VÍA 79 (632)",
+      "stopLat": "43.264604915025",
+      "stopLon": "-2.94265486929186",
+      "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
+      "journeyRef": "trp_A3247_775_OP42FPPV_18900_O42FPP3247_324702_2",
+      "lat": "43.261024",
+      "lon": "-2.9490159"
+    },
     {
       "id": "2090",
       "idType": "ID de vehículo",
@@ -47,15 +101,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-18T05:06:16+02:00",
+      "time": "2026-10-18T05:08:04+02:00",
       "stop": "896",
       "stopName": "MOYUA PLAZA (OGASUNA/HACIENDA) (896)",
       "stopLat": "43.2626475896687",
       "stopLon": "-2.9354274348789",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3247_775_OP42FPPV_18000_O42FPP3247_324771_2",
-      "lat": "43.26412",
-      "lon": "-2.9400923"
+      "lat": "43.262657",
+      "lon": "-2.9352887"
     }
   ]
 }
