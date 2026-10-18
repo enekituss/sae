@@ -26159,57 +26159,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:31b8b65792c336ed438944b5": {
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-18T16:49+02:00",
-      "direction": "",
-      "eventId": "missing:31b8b65792c336ed438944b5",
-      "firstMissingAt": "2026-10-18T16:45:02+02:00",
-      "lastSeenAt": "2026-10-18T16:41:09+02:00",
-      "line": "A3916",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T16:49:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8678"
-    },
-    "route_after_gap:87c7fc3476c3eef14d6f8717": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ",
-          "old": "PORTUGALETE"
-        }
-      ],
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-18T16:49+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:87c7fc3476c3eef14d6f8717",
-      "line": "A3321",
-      "queuedAt": "2026-10-18T16:49:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7864"
-    },
-    "route_after_gap:ce379686a501fadbce7416cc": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "AIREPORTUA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T16:49+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:ce379686a501fadbce7416cc",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T16:49:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2120"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1101": {
@@ -26393,7 +26343,7 @@
       "requiredMissing": 2
     },
     "8678": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:31b8b65792c336ed438944b5",
       "firstMissingAt": "2026-10-18T16:45:02+02:00",
@@ -26404,7 +26354,7 @@
         "line": "A3916"
       },
       "lastSeenAt": "2026-10-18T16:41:09+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8682": {
