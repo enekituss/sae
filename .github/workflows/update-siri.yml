@@ -1493,35 +1493,163 @@ jobs:
               updates = []
               update_offset = max(0, int(state.get("telegramUpdateOffset", 0) or 0))
 
-          expected_chat_id = str(chat_info.get("id") or chat_id)
+          subscriptions = state.get("telegramSubscriptions", {})
+          if not isinstance(subscriptions, dict):
+              subscriptions = {}
+          primary_chat_id = str(chat_info.get("id") or chat_id)
+          if primary_chat_id not in subscriptions:
+              subscriptions[primary_chat_id] = {"mode": "all", "vehicleId": "", "awaitingVehicleId": False}
+              state_dirty = True
+
+          def settings_keyboard(subscription):
+              current_mode = str(subscription.get("mode") or "all")
+              choices = [
+                  ("all", "🔔 Todos los avisos"),
+                  ("missing", "⚠️ Solo sin posición reciente"),
+                  ("line", "🔄 Solo cambios de línea"),
+                  ("vehicle", "🚌 Seguir un coche por ID"),
+              ]
+              keyboard = []
+              for mode, label in choices:
+                  prefix = "✅ " if current_mode == mode else ""
+                  keyboard.append([{"text": prefix + label, "callback_data": "mode:" + mode}])
+              return {"inline_keyboard": keyboard}
+
+          def subscription_description(subscription):
+              mode = str(subscription.get("mode") or "all")
+              if mode == "missing":
+                  return "Solo vehículos sin posición reciente (posible fin de servicio)"
+              if mode == "line":
+                  return "Solo cambios de línea"
+              if mode == "vehicle":
+                  vehicle_id = str(subscription.get("vehicleId") or "").strip()
+                  return "Solo el coche ID " + vehicle_id if vehicle_id else "Seguir un coche (falta indicar el ID)"
+              return "Todos los avisos"
+
+          def show_settings(destination_chat_id, notice=""):
+              subscription = subscriptions.get(str(destination_chat_id), {})
+              text = "🚌 Configuración de alertas SAE Bizkaibus\n\n"
+              if notice:
+                  text += notice + "\n\n"
+              text += "Configuración actual: " + subscription_description(subscription) + "\n\nSelecciona qué avisos quieres recibir:"
+              if str(subscription.get("mode") or "all") == "vehicle" and not str(subscription.get("vehicleId") or "").strip():
+                  text += "\n\nPulsa «Seguir un coche por ID» y después envía su ID numérico."
+              text += "\n\nNota: «sin posición reciente» significa que el vehículo deja de aparecer en el feed SIRI; no confirma por sí solo una baja administrativa."
+              telegram_api("sendMessage", {
+                  "chat_id": destination_chat_id,
+                  "text": text,
+                  "reply_markup": settings_keyboard(subscription),
+                  "disable_web_page_preview": True,
+              })
+
+          update_offset = max(0, int(state.get("telegramUpdateOffset", 0) or 0))
+          try:
+              updates = telegram_api("getUpdates", {
+                  "offset": update_offset,
+                  "timeout": 0,
+                  "allowed_updates": ["message", "callback_query"],
+              })
+          except Exception as exc:
+              print("AVISO: no se pudieron consultar comandos de Telegram; las alertas de vehículos seguirán funcionando: " + str(exc))
+              updates = []
+
           highest_processed_update = update_offset - 1
           for update in sorted(updates, key=lambda item: int(item.get("update_id", -1))):
               try:
                   update_id = int(update.get("update_id", -1))
               except (TypeError, ValueError):
                   continue
-              message = update.get("message") or {}
-              incoming_chat_id = str((message.get("chat") or {}).get("id", ""))
-              raw_text = (message.get("text") or "").strip()
-              if incoming_chat_id == expected_chat_id and raw_text:
-                  command = raw_text.split()[0].split("@")[0].lower()
-                  if command in ("/start", "/help"):
-                      try:
-                          telegram_api("sendMessage", {
-                              "chat_id": chat_id,
-                              "text": "🚌 SAE Bizkaibus está conectado.\n\nTe enviaré avisos cuando detecte cambios publicados de línea, destino o sentido, y cuando un vehículo deje de aparecer en el feed durante varias consultas consecutivas.\n\nLa desaparición del feed no demuestra por sí sola una baja administrativa: también puede ser el fin de un servicio o un fallo de publicación.\n\nLa consulta rápida está diseñada para ejecutarse aproximadamente cada 2 minutos cuando el planificador externo está activo; la publicación final también depende del tiempo de procesamiento.\nConsulta SAE: https://enekituss.github.io/sae/",
-                              "disable_web_page_preview": True,
-                          })
-                          print("Comando " + command + " atendido.")
-                      except Exception as exc:
-                          print("ERROR al responder a " + command + ": " + str(exc))
-                          break
+
+              try:
+                  callback = update.get("callback_query") or {}
+                  message = callback.get("message") or update.get("message") or {}
+                  incoming_chat_id = str((message.get("chat") or {}).get("id", "")).strip()
+                  if incoming_chat_id:
+                      if incoming_chat_id not in subscriptions or not isinstance(subscriptions.get(incoming_chat_id), dict):
+                          subscriptions[incoming_chat_id] = {"mode": "all", "vehicleId": "", "awaitingVehicleId": False}
+                          state_dirty = True
+                      subscription = subscriptions[incoming_chat_id]
+
+                      if callback:
+                          callback_id = callback.get("id")
+                          action = str(callback.get("data") or "")
+                          if action.startswith("mode:"):
+                              mode = action.split(":", 1)[1]
+                              if mode in ("all", "missing", "line", "vehicle"):
+                                  subscription["mode"] = mode
+                                  subscription["awaitingVehicleId"] = mode == "vehicle"
+                                  state_dirty = True
+                                  if callback_id:
+                                      telegram_api("answerCallbackQuery", {
+                                          "callback_query_id": callback_id,
+                                          "text": "Envía el ID del coche" if mode == "vehicle" else "Preferencias guardadas",
+                                      })
+                                  if mode == "vehicle":
+                                      telegram_api("sendMessage", {
+                                          "chat_id": incoming_chat_id,
+                                          "text": "🚌 Escribe ahora el ID numérico del autobús que quieres seguir.\n\nPuedes cancelar con /cancelar.",
+                                          "reply_markup": settings_keyboard(subscription),
+                                      })
+                                  else:
+                                      show_settings(incoming_chat_id, "✅ Preferencias guardadas.")
+                              elif callback_id:
+                                  telegram_api("answerCallbackQuery", {
+                                      "callback_query_id": callback_id,
+                                      "text": "Opción no reconocida.",
+                                  })
+                      else:
+                          raw_text = (message.get("text") or "").strip()
+                          if raw_text:
+                              command = raw_text.split()[0].split("@")[0].lower()
+
+                              if command in ("/start", "/help", "/menu", "/config"):
+                                  show_settings(incoming_chat_id, "Bot conectado. Puedes cambiar estas opciones cuando quieras.")
+                              elif command in ("/cancel", "/cancelar"):
+                                  subscription["awaitingVehicleId"] = False
+                                  if not str(subscription.get("vehicleId") or "").strip():
+                                      subscription["mode"] = "all"
+                                  state_dirty = True
+                                  show_settings(incoming_chat_id, "Operación cancelada.")
+                              elif command in ("/id", "/coche"):
+                                  parts = raw_text.split(maxsplit=1)
+                                  candidate = parts[1].strip() if len(parts) > 1 else ""
+                                  if candidate.isdigit() and len(candidate) <= 12:
+                                      subscription["mode"] = "vehicle"
+                                      subscription["vehicleId"] = candidate
+                                      subscription["awaitingVehicleId"] = False
+                                      state_dirty = True
+                                      show_settings(incoming_chat_id, "✅ Seguiré el coche ID " + candidate + ".")
+                                  else:
+                                      subscription["mode"] = "vehicle"
+                                      subscription["awaitingVehicleId"] = True
+                                      state_dirty = True
+                                      telegram_api("sendMessage", {
+                                          "chat_id": incoming_chat_id,
+                                          "text": "Escribe el ID numérico del autobús que quieres seguir. Puedes usar /cancelar para volver.",
+                                          "reply_markup": settings_keyboard(subscription),
+                                      })
+                              elif subscription.get("awaitingVehicleId"):
+                                  candidate = raw_text.strip()
+                                  if candidate.isdigit() and len(candidate) <= 12:
+                                      subscription["mode"] = "vehicle"
+                                      subscription["vehicleId"] = candidate
+                                      subscription["awaitingVehicleId"] = False
+                                      state_dirty = True
+                                      show_settings(incoming_chat_id, "✅ Seguiré el coche ID " + candidate + ".")
+                                  else:
+                                      telegram_api("sendMessage", {
+                                          "chat_id": incoming_chat_id,
+                                          "text": "El ID debe ser numérico. Prueba otra vez o escribe /cancelar.",
+                                      })
+              except Exception as exc:
+                  print("AVISO: no se pudo procesar una actualización de Telegram: " + str(exc))
+
               highest_processed_update = update_id
+
           if highest_processed_update >= update_offset:
               state["telegramUpdateOffset"] = highest_processed_update + 1
               state_dirty = True
               print("Actualizaciones de Telegram procesadas hasta el ID " + str(highest_processed_update) + ".")
-
           # No enviar mensajes de prueba en workflow_dispatch: el Worker usa
           # ese evento para actualizar el feed periódicamente. Telegram solo debe
           # recibir avisos reales generados por cambios confirmados en vehículos.
@@ -1612,25 +1740,73 @@ jobs:
                   lines.append("Hora del aviso: " + safe(event.get("detectedAt")))
               return "\n".join(lines)
 
+          def event_matches_subscription(event, subscription):
+              mode = str(subscription.get("mode") or "all")
+              event_type = str(event.get("type") or "")
+              if mode == "all":
+                  return True
+              if mode == "missing":
+                  return event_type == "vehicle_missing"
+              if mode == "line":
+                  if event_type not in ("route_change", "route_change_after_gap"):
+                      return False
+                  changed = event.get("changed", [])
+                  return isinstance(changed, list) and any(
+                      isinstance(item, dict) and item.get("field") == "line"
+                      for item in changed
+                  )
+              if mode == "vehicle":
+                  watched_id = str(subscription.get("vehicleId") or "").strip()
+                  return bool(watched_id) and str(event.get("vehicleId") or "").strip() == watched_id
+              return False
+
           delivered_ids = []
           failed_events = []
           max_events_per_run = 50
           selected_events = events[:max_events_per_run]
           for index, event in enumerate(selected_events):
-              try:
-                  telegram_api("sendMessage", {
-                      "chat_id": chat_id,
-                      "text": render_event(event) + "\n\nConsulta SAE: https://enekituss.github.io/sae/",
-                      "disable_web_page_preview": True,
-                  })
-                  if event.get("eventId"):
-                      delivered_ids.append(str(event.get("eventId")))
-                  print("Telegram aceptó un aviso individual del vehículo " + safe(event.get("vehicleId")) + ".")
-              except Exception as exc:
-                  failed_events.append((event, str(exc)))
-                  print("ERROR al enviar el aviso individual del vehículo " + safe(event.get("vehicleId")) + ": " + str(exc))
-              if index + 1 < len(selected_events):
-                  time.sleep(1.1)
+              event_id = str(event.get("eventId") or "")
+              if not event_id:
+                  continue
+
+              target_chats = event.get("targetChats")
+              if not isinstance(target_chats, list):
+                  target_chats = [
+                      str(destination_chat_id)
+                      for destination_chat_id, subscription in subscriptions.items()
+                      if isinstance(subscription, dict) and event_matches_subscription(event, subscription)
+                  ]
+                  event["targetChats"] = sorted(set(target_chats))
+                  event["deliveredTo"] = []
+                  state_dirty = True
+
+              delivered_to = event.get("deliveredTo", [])
+              if not isinstance(delivered_to, list):
+                  delivered_to = []
+              sent_all = True
+              for destination_chat_id in target_chats:
+                  destination_chat_id = str(destination_chat_id)
+                  if destination_chat_id in delivered_to:
+                      continue
+                  try:
+                      telegram_api("sendMessage", {
+                          "chat_id": destination_chat_id,
+                          "text": render_event(event) + "\n\nConsulta SAE: https://enekituss.github.io/sae/",
+                          "disable_web_page_preview": True,
+                      })
+                      delivered_to.append(destination_chat_id)
+                      event["deliveredTo"] = delivered_to
+                      state_dirty = True
+                      print("Telegram aceptó un aviso individual del vehículo " + safe(event.get("vehicleId")) + ".")
+                      time.sleep(1.1)
+                  except Exception as exc:
+                      sent_all = False
+                      failed_events.append((event, str(exc)))
+                      print("ERROR al enviar el aviso del vehículo " + safe(event.get("vehicleId")) + ": " + str(exc))
+                      break
+
+              if sent_all and all(str(destination_chat_id) in delivered_to for destination_chat_id in target_chats):
+                  delivered_ids.append(event_id)
 
           if delivered_ids:
               for event_id in delivered_ids:
@@ -1649,6 +1825,7 @@ jobs:
               state["schemaVersion"] = 1
               state["pendingVehicles"] = pending
               state["outbox"] = outbox
+              state["telegramSubscriptions"] = subscriptions
               with open(state_path, "w", encoding="utf-8") as handle:
                   json.dump(state, handle, ensure_ascii=False, indent=2, sort_keys=True)
                   handle.write("\n")
