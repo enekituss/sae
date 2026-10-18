@@ -2435,45 +2435,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "entered:96d80dc08cf183037a76c7c5": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T23:45+02:00",
-      "direction": "",
-      "eventId": "entered:96d80dc08cf183037a76c7c5",
-      "firstObservedAt": "2026-10-18T23:43:03+02:00",
-      "line": "A3915",
-      "queuedAt": "2026-10-18T23:45:09+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "8661"
-    },
-    "missing:01540934a0a959b81cec3913": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T23:45+02:00",
-      "direction": "",
-      "eventId": "missing:01540934a0a959b81cec3913",
-      "firstMissingAt": "2026-10-18T23:41:04+02:00",
-      "lastSeenAt": "2026-10-18T23:37:44+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T23:45:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3372"
-    },
-    "missing:a396fe4e3a05bc406c86ba2d": {
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-18T23:45+02:00",
-      "direction": "",
-      "eventId": "missing:a396fe4e3a05bc406c86ba2d",
-      "firstMissingAt": "2026-10-18T23:41:04+02:00",
-      "lastSeenAt": "2026-10-18T23:37:44+02:00",
-      "line": "A3336",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T23:45:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7817"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {},
   "pendingVehicles": {
@@ -2823,7 +2785,7 @@
       "requiredMissing": 2
     },
     "3372": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:01540934a0a959b81cec3913",
       "firstMissingAt": "2026-10-18T23:41:04+02:00",
@@ -2834,7 +2796,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T23:37:44+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3377": {
@@ -3018,7 +2980,7 @@
       "requiredMissing": 2
     },
     "7817": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a396fe4e3a05bc406c86ba2d",
       "firstMissingAt": "2026-10-18T23:41:04+02:00",
@@ -3029,7 +2991,7 @@
         "line": "A3336"
       },
       "lastSeenAt": "2026-10-18T23:37:44+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7824": {
