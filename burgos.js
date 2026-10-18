@@ -344,11 +344,8 @@
   }
 
   async function proxyLiveSnapshot(base) {
-    const response = await jsonGet(base + '/api/burgos/live');
-    if (!Array.isArray(response.observations)) {
-      throw new Error(response.error || 'El proxy no ha devuelto la lista de estimaciones.');
-    }
-    return response;
+    // El Worker consulta una línea por petición; evita superar su límite de subpeticiones.
+    return proxyVehicleSnapshot(base);
   }
 
 
@@ -389,11 +386,65 @@
   }
 
   async function proxyVehicleSnapshot(base) {
-    const response = await jsonGet(base + '/api/burgos/vehicles');
-    if (!Array.isArray(response.vehicles)) {
-      throw new Error(response.error || 'El proxy no ha devuelto los vehículos por línea.');
+    const results = new Array(BURGOS_LINES.length);
+    const errors = [];
+    let cursor = 0;
+    const concurrency = Math.min(5, BURGOS_LINES.length);
+
+    await Promise.all(Array.from({ length: concurrency }, async () => {
+      while (true) {
+        const index = cursor++;
+        if (index >= BURGOS_LINES.length) return;
+        const line = BURGOS_LINES[index];
+        try {
+          const query = new URLSearchParams({ line, fresh: '1', _t: String(Date.now()) });
+          const response = await jsonGet(base + '/api/burgos/vehicles?' + query.toString());
+          if (response.ok !== true || !Array.isArray(response.vehicles) || response.partial) {
+            throw new Error(response.error || 'Respuesta incompleta del SAE para línea ' + line + '.');
+          }
+          const requiredResources = ['resourceRoutes', 'resourceVehicles', 'resourceEstimations'];
+          if (!requiredResources.every(resource => String(response.sourceType || '').includes(resource))) {
+            throw new Error('El Worker no confirma los tres recursos del SAE para línea ' + line + '.');
+          }
+          results[index] = response.vehicles.map(bus => ({
+            ...bus,
+            id: String(bus.id ?? bus.vehicleId ?? bus.vehicle_id ?? '').trim(),
+            lineId: line,
+            line
+          })).filter(bus => bus.id);
+        } catch (error) {
+          results[index] = null;
+          errors.push('Línea ' + line + ': ' + String(error.message || error));
+        }
+      }
+    }));
+
+    const completed = results.filter(Array.isArray);
+    if (!completed.length) {
+      throw new Error('No se pudo consultar ninguna línea a través del Worker. ' + errors.slice(0, 3).join(' | '));
     }
-    return normalizePublishedVehiclesSnapshot(response);
+    const uniqueVehicles = new Map();
+    for (const rows of completed) {
+      for (const bus of rows) {
+        const old = uniqueVehicles.get(bus.id);
+        const eta = Number.isFinite(Number(bus.seconds)) ? Number(bus.seconds) : Infinity;
+        const oldEta = old && Number.isFinite(Number(old.seconds)) ? Number(old.seconds) : Infinity;
+        if (!old || eta < oldEta) uniqueVehicles.set(bus.id, bus);
+      }
+    }
+
+    return normalizePublishedVehiclesSnapshot({
+      ok: true,
+      fetchedAt: new Date().toISOString(),
+      source: BURGOS_VEHICLES_SOURCE,
+      sourceType: 'ISAENEXT · resourceRoutes + resourceVehicles + resourceEstimations por línea',
+      lineCount: completed.length,
+      totalLines: BURGOS_LINES.length,
+      partial: errors.length > 0,
+      warnings: errors.slice(0, 5),
+      count: uniqueVehicles.size,
+      vehicles: [...uniqueVehicles.values()]
+    });
   }
 
   function normalizeLineKey(value) {
