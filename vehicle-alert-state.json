@@ -27232,165 +27232,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:24f22ebcbe3618f487eafd6e": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T18:45+02:00",
-      "direction": "",
-      "eventId": "missing:24f22ebcbe3618f487eafd6e",
-      "firstMissingAt": "2026-10-18T18:41:02+02:00",
-      "lastSeenAt": "2026-10-18T18:37:34+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T18:45:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2119"
-    },
-    "route:0c0769f42cdc8074774de226": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MORGA",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "MORGA",
-      "detectedAt": "2026-10-18T18:45+02:00",
-      "direction": "",
-      "eventId": "route:0c0769f42cdc8074774de226",
-      "line": "A3631",
-      "queuedAt": "2026-10-18T18:45:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3265"
-    },
-    "route:75f78edb4f3c2c5ccc2a46b8": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO (Aut.)",
-          "old": "BAKIO (Aut.)"
-        }
-      ],
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T18:45+02:00",
-      "direction": "",
-      "eventId": "route:75f78edb4f3c2c5ccc2a46b8",
-      "line": "A3518",
-      "queuedAt": "2026-10-18T18:45:01+02:00",
-      "type": "route_change",
-      "vehicleId": "2124"
-    },
-    "route:8cb860aa8181e253cb4d118c": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "DURANGO",
-          "old": "ARRAZOLA"
-        }
-      ],
-      "destination": "DURANGO",
-      "detectedAt": "2026-10-18T18:45+02:00",
-      "direction": "",
-      "eventId": "route:8cb860aa8181e253cb4d118c",
-      "line": "A3913",
-      "queuedAt": "2026-10-18T18:45:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3367"
-    },
-    "route:913338f006ded9a62c2beb8f": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "DURANGO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "DURANGO",
-      "detectedAt": "2026-10-18T18:45+02:00",
-      "direction": "",
-      "eventId": "route:913338f006ded9a62c2beb8f",
-      "line": "A3911",
-      "queuedAt": "2026-10-18T18:45:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3372"
-    },
-    "route:9a8b839b3c0bca3499ae1b4f": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "DERIO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "DERIO",
-      "detectedAt": "2026-10-18T18:45+02:00",
-      "direction": "",
-      "eventId": "route:9a8b839b3c0bca3499ae1b4f",
-      "line": "A2153",
-      "queuedAt": "2026-10-18T18:45:01+02:00",
-      "type": "route_change",
-      "vehicleId": "2088"
-    },
-    "route:9ee2aa2ee1b3d4f9f4776f59": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "PLENTZIA (Metro)",
-          "old": "GORLIZ"
-        }
-      ],
-      "destination": "PLENTZIA (Metro)",
-      "detectedAt": "2026-10-18T18:45+02:00",
-      "direction": "",
-      "eventId": "route:9ee2aa2ee1b3d4f9f4776f59",
-      "line": "A3499",
-      "queuedAt": "2026-10-18T18:45:01+02:00",
-      "type": "route_change",
-      "vehicleId": "1714"
-    },
-    "route:e8de71dbe27f21ecf97e3b40": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T18:45+02:00",
-      "direction": "",
-      "eventId": "route:e8de71dbe27f21ecf97e3b40",
-      "line": "A3136",
-      "queuedAt": "2026-10-18T18:45:01+02:00",
-      "type": "route_change",
-      "vehicleId": "7813"
-    },
-    "route_after_gap:dfc7f89fbfd06da267cfd292": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "AIREPORTUA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T18:45+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:dfc7f89fbfd06da267cfd292",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T18:45:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2076"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "7849": {
@@ -27483,7 +27325,7 @@
       "requiredMissing": 2
     },
     "2119": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:24f22ebcbe3618f487eafd6e",
       "firstMissingAt": "2026-10-18T18:41:02+02:00",
@@ -27494,7 +27336,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T18:37:34+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2129": {
