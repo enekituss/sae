@@ -26567,97 +26567,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "missing:004e7edd4bb103cdb78dca4d": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T12:17+02:00",
-      "direction": "",
-      "eventId": "missing:004e7edd4bb103cdb78dca4d",
-      "firstMissingAt": "2026-10-18T12:13:04+02:00",
-      "lastSeenAt": "2026-10-18T12:09:57+02:00",
-      "line": "A3613",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T12:17:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3386"
-    },
-    "route:4f5496e18a89b50acbc2c1e0": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GORLIZ",
-          "old": "PLENTZIA (Metro)"
-        }
-      ],
-      "destination": "GORLIZ",
-      "detectedAt": "2026-10-18T12:17+02:00",
-      "direction": "",
-      "eventId": "route:4f5496e18a89b50acbc2c1e0",
-      "line": "A3499",
-      "queuedAt": "2026-10-18T12:17:01+02:00",
-      "type": "route_change",
-      "vehicleId": "1714"
-    },
-    "route:cf90cbcefcc9f6048e914638": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3517",
-          "old": "A3518"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUNGIA",
-          "old": "BILBAO (Aut.)"
-        }
-      ],
-      "destination": "MUNGIA",
-      "detectedAt": "2026-10-18T12:17+02:00",
-      "direction": "",
-      "eventId": "route:cf90cbcefcc9f6048e914638",
-      "line": "A3517",
-      "queuedAt": "2026-10-18T12:17:01+02:00",
-      "type": "route_change",
-      "vehicleId": "2099"
-    },
-    "route:fb9f86b25313af9676b4ab97": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T12:17+02:00",
-      "direction": "",
-      "eventId": "route:fb9f86b25313af9676b4ab97",
-      "line": "A3136",
-      "queuedAt": "2026-10-18T12:17:01+02:00",
-      "type": "route_change",
-      "vehicleId": "7855"
-    },
-    "vehicle_returned:50bd124343b6204c4a209aec": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T12:17+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:50bd124343b6204c4a209aec",
-      "lastKnown": {
-        "destination": "TEKNO. PARKEA",
-        "direction": "",
-        "id": "2137",
-        "line": "A3224"
-      },
-      "line": "A3224",
-      "queuedAt": "2026-10-18T12:17:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2137"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "8641": {
       "consecutiveChecks": 1,
@@ -26853,7 +26763,7 @@
       "requiredMissing": 2
     },
     "3386": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:004e7edd4bb103cdb78dca4d",
       "firstMissingAt": "2026-10-18T12:13:04+02:00",
@@ -26864,7 +26774,7 @@
         "line": "A3613"
       },
       "lastSeenAt": "2026-10-18T12:09:57+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3389": {
@@ -26933,5 +26843,5 @@
       "vehicleId": ""
     }
   },
-  "telegramUpdateOffset": 30217598
+  "telegramUpdateOffset": 30217599
 }
