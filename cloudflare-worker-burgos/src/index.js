@@ -52,106 +52,168 @@ function resourceUrl(resource, extra = {}, base = BURGOS_SOURCE) {
   return url;
 }
 
-function stopIdFrom(value) {
-  return String(value?.num ?? value?.id ?? value?.stopId ?? value?.nodeId ??
-    value?.nodoId ?? value?.idNodo ?? value?.numNodo ?? "").trim();
+function stopIdFrom(value, allowGenericId = false) {
+  const direct = value?.numNodo ?? value?.idNodo ?? value?.num ?? value?.stopId ??
+    value?.stop_id ?? value?.nodeId ?? value?.node_id ?? value?.nodoId ??
+    value?.paradaId ?? value?.idParada ?? value?.numParada ??
+    value?.stop ?? value?.node ?? value?.nodo ?? value?.parada ??
+    (allowGenericId ? value?.id : undefined);
+  if (direct && typeof direct === "object") {
+    return String(direct.num ?? direct.id ?? direct.stopId ?? direct.nodeId ?? "").trim();
+  }
+  return String(direct ?? "").trim();
 }
 
 function normalizeLineCode(value) {
   let line = String(value ?? "").trim().toUpperCase();
-  line = line.replace(/^L[IÍ]NEA\s*/, "").replace(/^L(?=\d)/, "");
-  const match = line.match(/(?:^|[^A-Z0-9])(C[12]|\d{1,2})(?=$|[^A-Z0-9])/);
+  line = line.replace(/^L[IÍ]NEA\\s*/, "").replace(/^L(?=\\d)/, "");
+  const match = line.match(/(?:^|[^A-Z0-9])(C[12]|\\d{1,2})(?=$|[^A-Z0-9])/);
   const token = match ? match[1] : line;
-  if (/^\d+$/.test(token)) return String(Number(token));
+  if (/^\\d+$/.test(token)) return String(Number(token));
   return token;
 }
 
 async function requestIsaenext(resource, extra = {}) {
-  const errors = [];
-  // La URL /es/ es la fuente oficial confirmada para las estimaciones.
-  // Evita triplicar subpeticiones al consultar las 29 líneas desde el Worker.
-  const sources = [BURGOS_SOURCE];
-  for (const base of sources) {
-    try {
-      const url = resourceUrl(resource, extra, base);
-      const response = await fetch(url.toString(), {
-        method: "GET",
-        headers: {
-          "Accept": "application/json, text/plain, */*",
-          "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
-          "Referer": BURGOS_SOURCE
-        },
-        signal: AbortSignal.timeout(resource === "resourceNodes" ? 8000 : 15000)
-      });
-      const body = await response.text();
-      if (!response.ok) {
-        errors.push(new URL(base).host + " HTTP " + response.status);
-        continue;
-      }
-      let data;
-      try {
-        data = JSON.parse(body);
-      } catch {
-        errors.push(new URL(base).host + " no devolvió JSON");
-        continue;
-      }
-      return { data, source: base };
-    } catch (error) {
-      errors.push(new URL(base).host + ": " + (error?.message || String(error)));
-    }
+  const url = new URL(BURGOS_SOURCE);
+  url.searchParams.set("p_p_id", PORTLET_ID);
+  url.searchParams.set("p_p_lifecycle", "2");
+  url.searchParams.set("p_p_state", "normal");
+  url.searchParams.set("p_p_mode", "view");
+  url.searchParams.set("p_p_resource_id", resource);
+  url.searchParams.set("p_p_cacheability", "cacheLevelPage");
+  for (const [key, value] of Object.entries(extra)) {
+    url.searchParams.set(key, String(value));
   }
-  throw new Error(resource + " no respondió en el SAE municipal: " + errors.join(" | "));
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "Accept": "application/json, text/plain, */*",
+      "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
+      "Referer": BURGOS_SOURCE
+    },
+    signal: AbortSignal.timeout(15000)
+  });
+  const body = await response.text();
+  if (!response.ok) {
+    throw new Error(resource + " línea " + String(extra[PORTLET_PREFIX + "line"] || "?") +
+      " respondió HTTP " + response.status + ".");
+  }
+  try {
+    return { data: JSON.parse(body), source: BURGOS_SOURCE };
+  } catch {
+    throw new Error(resource + " no devolvió JSON válido.");
+  }
 }
 
-async function fetchStopNodes() {
-  try {
-    // Intentar obtener toda la lista oficial desde el mismo portal.
-    const result = await requestIsaenext("resourceNodes");
-    if (!Array.isArray(result.data) || !result.data.length) {
-      throw new Error("resourceNodes no devolvió una lista de paradas.");
+// resourceRoutes contiene el trazado y, según el formato publicado, los IDs de parada.
+function extractRouteStopIds(payload) {
+  const ids = [];
+  const seen = new Set();
+  const stopCollectionKey = /(?:stops?|paradas?|nodes?|nodos?|routepoints?|route_nodes?|route_stops?|waypoints?|itinerary|itinerario|puntos?)/i;
+  const stopIdKey = /^(?:numNodo|idNodo|stopId|stop_id|nodeId|node_id|nodoId|paradaId|idParada|numParada)$/i;
+  const add = value => {
+    const id = String(value ?? "").trim();
+    if (!/^\\d{1,12}$/.test(id) || seen.has(id)) return;
+    seen.add(id);
+    ids.push(id);
+  };
+
+  function visit(value, key = "", inStopCollection = false, depth = 0) {
+    if (depth > 14 || value === null || value === undefined) return;
+    const context = inStopCollection || stopCollectionKey.test(key);
+
+    if (typeof value === "string" || typeof value === "number") {
+      if (context) {
+        const text = String(value).trim();
+        if (/^\\d{1,12}(?:\\s*,\\s*\\d{1,12})+$/.test(text)) text.split(",").forEach(add);
+        else add(text);
+      }
+      return;
     }
-    const seen = new Set();
-    const nodes = [];
-    for (const node of result.data) {
-      const id = stopIdFrom(node);
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      nodes.push({ ...node, __stopId: id });
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (context && (typeof item === "string" || typeof item === "number")) add(item);
+        visit(item, "", context, depth + 1);
+      }
+      return;
     }
-    if (!nodes.length) throw new Error("resourceNodes no devolvió IDs de parada reconocibles.");
-    return { nodes, source: result.source, nodeListFallback: false };
-  } catch (error) {
-    // El usuario ha aportado una URL de resourceEstimations con estos IDs.
-    // Usarlos permite probar el endpoint line-filtered aunque falle resourceNodes.
-    console.warn("resourceNodes no respondió; se usarán los IDs de parada de la URL aportada: " +
-      (error?.message || String(error)));
-    return {
-      nodes: BURGOS_KNOWN_NODE_IDS.map(id => ({ num: id, __stopId: id })),
-      source: BURGOS_SOURCE,
-      nodeListFallback: true
-    };
+    if (typeof value !== "object") return;
+
+    for (const [field, fieldValue] of Object.entries(value)) {
+      if (stopIdKey.test(field) && typeof fieldValue !== "object") add(fieldValue);
+      if (field === "num" && context && typeof fieldValue !== "object") add(fieldValue);
+      if (field === "id" && context && typeof fieldValue !== "object") add(fieldValue);
+    }
+    if (context) {
+      const id = stopIdFrom(value, true);
+      if (id) add(id);
+    }
+    for (const [field, fieldValue] of Object.entries(value)) {
+      if (/(?:nodeIds|nodoIds|stopIds|paradaIds|idsNodos|idsParadas)/i.test(field) &&
+          typeof fieldValue === "string") {
+        fieldValue.split(",").forEach(add);
+      } else {
+        visit(fieldValue, field, context, depth + 1);
+      }
+    }
   }
+  visit(payload);
+  return ids;
+}
+
+function arrayFromResource(payload, resourceName) {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") {
+    throw new Error(resourceName + " no devolvió una lista.");
+  }
+  const preferred = resourceName === "resourceVehicles"
+    ? ["vehicles", "vehicleList", "resourceVehicles", "data", "result", "rows", "items", "list"]
+    : ["routes", "route", "resourceRoutes", "data", "result", "rows", "items", "list"];
+  for (const key of preferred) {
+    if (Array.isArray(payload[key])) return payload[key];
+  }
+  const candidates = Object.values(payload).filter(Array.isArray);
+  if (candidates.length === 1) return candidates[0];
+  throw new Error(resourceName + " devolvió un formato JSON no reconocido.");
+}
+
+function extractVehicleRows(payload, line) {
+  const rows = arrayFromResource(payload, "resourceVehicles");
+  const vehicles = [];
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const id = String(row.vehicleId ?? row.vehicle_id ?? row.vehicle ?? row.idVehicle ??
+      row.numeroCoche ?? row.numVehiculo ?? row.id ?? "").trim();
+    if (!id || id === "0") continue;
+    vehicles.push({
+      ...row,
+      id,
+      lineId: String(row.lineId ?? row.line ?? row.route ?? row.ruta ?? line).trim() || line,
+      line: String(row.line ?? row.lineId ?? row.route ?? line).trim() || line,
+      destination: String(row.destination ?? row.destino ?? row.destinationName ?? row.headsign ?? row.destiny ?? "").trim(),
+      direction: String(row.direction ?? row.sentido ?? row.direccion ?? "").trim()
+    });
+  }
+  return vehicles;
 }
 
 function extractLineEstimations(line, nodes, payload) {
   if (!Array.isArray(payload)) {
     throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
   }
-
-  const nodeById = new Map(nodes.map(node => [node.__stopId || stopIdFrom(node), node]));
+  const nodeById = new Map(nodes.map(node => [node.__stopId || stopIdFrom(node, true), node]));
   const requestedLine = normalizeLineCode(line);
   const observations = [];
 
   payload.forEach((result, resultIndex) => {
     if (!result || typeof result !== "object") return;
-    const explicitId = stopIdFrom(result);
+    const explicitId = stopIdFrom(result, true);
     let stopId = explicitId;
     let stop = nodeById.get(explicitId) || null;
-
-    // El SAE suele devolver los resultados en el mismo orden solicitado.
     if (!stop && payload.length === nodes.length && nodes[resultIndex]) {
       stop = nodes[resultIndex];
-      stopId = stop.__stopId || stopIdFrom(stop);
+      stopId = stop.__stopId || stopIdFrom(stop, true);
     }
 
     const routeGroups = result.routeEstimationByNode || result.routes || [];
@@ -187,190 +249,129 @@ function extractLineEstimations(line, nodes, payload) {
       }
     }
   });
-
   return observations;
 }
 
-async function fetchLineObservations(line, nodes) {
-  const nodeIds = nodes.map(node => node.__stopId || stopIdFrom(node)).filter(Boolean);
-  if (!nodeIds.length) throw new Error("No hay IDs de paradas para consultar la línea " + line + ".");
-  const response = await requestIsaenext("resourceEstimations", {
+async function fetchVehiclesForLine(line) {
+  const lineParams = {
+    [PORTLET_PREFIX + "line"]: line,
+    [PORTLET_PREFIX + "label"]: line
+  };
+
+  // Cada consulta usa los tres recursos municipales con el mismo número de línea.
+  const [routeResult, vehicleResult] = await Promise.all([
+    requestIsaenext("resourceRoutes", lineParams),
+    requestIsaenext("resourceVehicles", lineParams)
+  ]);
+
+  const routePayload = routeResult.data;
+  if (!routePayload || (Array.isArray(routePayload) && routePayload.length === 0)) {
+    throw new Error("resourceRoutes no devolvió el recorrido de la línea " + line + ".");
+  }
+
+  let nodeIds = extractRouteStopIds(routePayload);
+  if (!nodeIds.length && line === "01") {
+    // IDs que aparecen en el enlace de resourceEstimations facilitado por el usuario.
+    nodeIds = [...BURGOS_KNOWN_NODE_IDS];
+  }
+  if (!nodeIds.length) {
+    throw new Error("resourceRoutes respondió para la línea " + line +
+      ", pero no se pudieron extraer IDs de parada para resourceEstimations.");
+  }
+
+  const estimationResult = await requestIsaenext("resourceEstimations", {
     [PORTLET_PREFIX + "line"]: line,
     [PORTLET_PREFIX + "tipo"]: "1",
     [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
   });
-  if (!Array.isArray(response.data) || response.data.length === 0) {
-    throw new Error("resourceEstimations devolvió una respuesta vacía o no reconocible para la línea " + line + ".");
+  if (!Array.isArray(estimationResult.data)) {
+    throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
   }
-  if (response.data.length === 1 && nodes.length > 2) {
-    throw new Error("resourceEstimations devolvió un único resultado para " +
-      nodes.length + " IDs de parada; la respuesta podría estar incompleta.");
-  }
-  return {
-    observations: extractLineEstimations(line, nodes, response.data),
-    source: response.source
-  };
-}
 
-function vehiclesFromObservations(observations, line) {
+  const routeNodes = nodeIds.map(id => ({ num: id, __stopId: id }));
+  const vehicleRows = extractVehicleRows(vehicleResult.data, line);
+  const observations = extractLineEstimations(line, routeNodes, estimationResult.data);
   const byId = new Map();
+
+  // resourceVehicles es la lista principal de coches publicados por línea.
+  for (const row of vehicleRows) {
+    const lat = Number(row.lat ?? row.latitude);
+    const lon = Number(row.lng ?? row.lon ?? row.longitude);
+    byId.set(row.id, {
+      ...row,
+      id: row.id,
+      lineId: line,
+      line,
+      destination: row.destination || "Destino no publicado",
+      direction: row.direction || "",
+      seconds: null,
+      meters: null,
+      stopId: "",
+      stopName: "",
+      position: {
+        lat: Number.isFinite(lat) && lat >= 42 && lat <= 43 ? lat : null,
+        lon: Number.isFinite(lon) && lon >= -4 && lon <= -3 ? lon : null,
+        source: Number.isFinite(lat) && lat >= 42 && lat <= 43 && Number.isFinite(lon) && lon >= -4 && lon <= -3
+          ? "GPS publicado por resourceVehicles" : ""
+      }
+    });
+  }
+
+  // resourceEstimations complementa destino y próxima parada, y puede aportar IDs
+  // que no estuviesen presentes en resourceVehicles.
+  const bestEta = new Map();
   for (const observation of observations) {
-    const current = byId.get(observation.vehicleId);
-    const seconds = Number.isFinite(observation.seconds) && observation.seconds >= 0 ? observation.seconds : Infinity;
-    const previousSeconds = current && Number.isFinite(current.seconds) && current.seconds >= 0 ? current.seconds : Infinity;
-    if (!current || seconds < previousSeconds) {
+    const seconds = Number.isFinite(observation.seconds) && observation.seconds >= 0
+      ? observation.seconds : Infinity;
+    const old = byId.get(observation.vehicleId);
+    const oldEta = bestEta.get(observation.vehicleId) ?? Infinity;
+    if (!old || seconds < oldEta) {
+      const validLat = observation.vehicleLat !== null && observation.vehicleLat >= 42 && observation.vehicleLat <= 43;
+      const validLon = observation.vehicleLon !== null && observation.vehicleLon >= -4 && observation.vehicleLon <= -3;
       byId.set(observation.vehicleId, {
+        ...(old || {}),
         id: observation.vehicleId,
         lineId: line,
         line,
-        destination: observation.destination,
-        direction: observation.direction,
+        destination: observation.destination || old?.destination || "Destino no publicado",
+        direction: observation.direction || old?.direction || "",
         seconds: observation.seconds,
         meters: observation.meters,
         stopId: observation.stopId,
-        stopName: observation.stopName
+        stopName: observation.stopName,
+        position: old?.position || {
+          lat: validLat ? observation.vehicleLat : null,
+          lon: validLon ? observation.vehicleLon : null,
+          source: validLat && validLon ? "GPS publicado por resourceEstimations" : ""
+        }
       });
+      bestEta.set(observation.vehicleId, seconds);
     }
   }
-  return [...byId.values()];
-}
-
-async function fetchVehiclesForLine(line, cachedNodes = null) {
-  const stopData = cachedNodes || await fetchStopNodes();
-  const result = await fetchLineObservations(line, stopData.nodes);
-  return vehiclesFromObservations(result.observations, line);
-}
-
-async function fetchSnapshot() {
-  const stopData = await fetchStopNodes();
-  const results = new Array(BURGOS_LINES.length);
-  const errors = [];
-  let cursor = 0;
-  const concurrency = Math.min(5, BURGOS_LINES.length);
-
-  await Promise.all(Array.from({ length: concurrency }, async () => {
-    while (true) {
-      const index = cursor++;
-      if (index >= BURGOS_LINES.length) return;
-      const line = BURGOS_LINES[index];
-      try {
-        const result = await fetchLineObservations(line, stopData.nodes);
-        results[index] = vehiclesFromObservations(result.observations, line);
-      } catch (error) {
-        results[index] = null;
-        errors.push({ line, error: error?.message || String(error) });
-      }
-    }
-  }));
-
-  const completed = results.filter(Array.isArray);
-  if (!completed.length) {
-    throw new Error("No se pudo consultar ninguna línea de Burgos. " +
-      errors.slice(0, 3).map(item => item.error).join(" "));
-  }
-
-  const byId = new Map();
-  results.forEach(rows => {
-    if (!Array.isArray(rows)) return;
-    rows.forEach(vehicle => {
-      const old = byId.get(vehicle.id);
-      // Si el mismo coche aparece en más de una observación, prefiere el
-      // registro con menor estimación de llegada, pero conserva la línea reportada.
-      if (!old || (Number.isFinite(vehicle.seconds) &&
-          (!Number.isFinite(old.seconds) || vehicle.seconds < old.seconds))) {
-        byId.set(vehicle.id, vehicle);
-      }
-    });
-  });
 
   return {
     ok: true,
+    line,
     fetchedAt: new Date().toISOString(),
-    source: stopData.source,
-    sourceType: "ISAENEXT · resourceEstimations filtrado por línea",
-    lineCount: completed.length,
-    totalLines: BURGOS_LINES.length,
-    partial: errors.length > 0,
-    failedLines: errors.map(item => item.line),
-    warnings: errors.slice(0, 5).map(item => "Línea " + item.line + ": " + item.error),
+    source: BURGOS_SOURCE,
+    sourceType: "ISAENEXT · resourceRoutes + resourceVehicles + resourceEstimations por línea",
+    routeStopCount: nodeIds.length,
+    routeCount: Array.isArray(routePayload) ? routePayload.length : 1,
+    vehicleRowCount: vehicleRows.length,
+    estimationCount: observations.length,
     count: byId.size,
-    vehicles: [...byId.values()]
-  };
-}
-
-// Live ISAENEXT feed: query each line using the municipal resourceEstimations endpoint.
-async function fetchLiveSnapshot() {
-  const stopData = await fetchStopNodes();
-  const results = new Array(BURGOS_LINES.length);
-  const errors = [];
-  let cursor = 0;
-  const concurrency = Math.min(5, BURGOS_LINES.length);
-
-  await Promise.all(Array.from({ length: concurrency }, async () => {
-    while (true) {
-      const index = cursor++;
-      if (index >= BURGOS_LINES.length) return;
-      const line = BURGOS_LINES[index];
-      try {
-        const result = await fetchLineObservations(line, stopData.nodes);
-        results[index] = result.observations;
-      } catch (error) {
-        results[index] = null;
-        errors.push({ line, error: error?.message || String(error) });
-      }
-    }
-  }));
-
-  const complete = results.filter(Array.isArray);
-  if (!complete.length) {
-    throw new Error("No se pudo consultar ninguna línea mediante resourceEstimations. " +
-      errors.slice(0, 4).map(item => "Línea " + item.line + ": " + item.error).join(" | "));
-  }
-
-  const observations = [];
-  for (const rows of complete) observations.push(...rows);
-
-  return {
-    ok: true,
-    fetchedAt: new Date().toISOString(),
-    source: stopData.source,
-    sourceType: "ISAENEXT · resourceEstimations por línea y parada",
-    stopCount: stopData.nodes.length,
-    resultCount: observations.length,
-    completedGroups: complete.length,
-    totalGroups: BURGOS_LINES.length,
-    partial: errors.length > 0,
-    warnings: errors.slice(0, 5).map(item => "Línea " + item.line + ": " + item.error),
+    partial: false,
+    vehicles: [...byId.values()],
     observations
   };
 }
 
-const LIVE_CACHE_TTL_SECONDS = 300;
-const LIVE_REFRESH_AFTER_MS = 30 * 1000;
-let liveSnapshotRefreshPromise = null;
+async function fetchSnapshot() {
+  throw new Error("Consulta cada línea por separado: /api/burgos/vehicles?line=01&fresh=1");
+}
 
-async function refreshLiveSnapshotCache(cache, cacheRequest) {
-  if (liveSnapshotRefreshPromise) return liveSnapshotRefreshPromise;
-  const promise = (async () => {
-    const data = await fetchLiveSnapshot();
-    try {
-      await cache.put(cacheRequest, new Response(JSON.stringify(data), {
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Cache-Control": "public, max-age=" + LIVE_CACHE_TTL_SECONDS
-        }
-      }));
-    } catch {
-      // The fetched snapshot remains usable even if the edge cache is unavailable.
-    }
-    return data;
-  })();
-  liveSnapshotRefreshPromise = promise;
-  try {
-    return await promise;
-  } finally {
-    if (liveSnapshotRefreshPromise === promise) liveSnapshotRefreshPromise = null;
-  }
+async function fetchLiveSnapshot() {
+  throw new Error("Consulta estimaciones por línea: /api/burgos/live?line=01&fresh=1");
 }
 
 async function dispatchBurgosTelegramWorkflow(env) {
@@ -445,50 +446,36 @@ export default {
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(env?.BURGOS_GITHUB_TOKEN), cadence: "*/2 * * * *" },
-        endpoints: ["/api/burgos/vehicles", "/api/burgos/vehicles?line=01", "/api/burgos/live"]
+        endpoints: ["/api/burgos/vehicles?line=01&fresh=1", "/api/burgos/live?line=01&fresh=1"]
       });
     }
 
     if (url.pathname === "/api/burgos/live") {
-      const cache = caches.default;
-      const cacheRequest = new Request(new URL("/__cache/burgos-live", url.origin).toString(), { method: "GET" });
-      const forceRefresh = url.searchParams.get("fresh") === "1";
-      if (!forceRefresh) {
-        try {
-          const cached = await cache.match(cacheRequest);
-          if (cached) {
-            const data = await cached.json();
-            const timestamp = Date.parse(data?.fetchedAt || "");
-            const ageMs = Number.isFinite(timestamp) ? Math.max(0, Date.now() - timestamp) : Infinity;
-            const stale = ageMs >= LIVE_REFRESH_AFTER_MS;
-
-            // Return the saved estimate snapshot immediately. When it gets old,
-            // refresh in the background rather than making users wait for all stops again.
-            if (stale && ctx?.waitUntil) {
-              ctx.waitUntil(refreshLiveSnapshotCache(cache, cacheRequest).catch(error => {
-                console.error("No se pudo actualizar la caché de estimaciones de Burgos:", error?.message || String(error));
-              }));
-            }
-            return jsonResponse(request, {
-              ...data,
-              cacheHit: true,
-              stale,
-              cacheAgeSeconds: Number.isFinite(ageMs) ? Math.round(ageMs / 1000) : null
-            }, 200, { "Cache-Control": "public, max-age=8" });
-          }
-        } catch {
-          // La caché es opcional.
-        }
-
+      const line = String(url.searchParams.get("line") || "").trim().toUpperCase();
+      if (!line || !BURGOS_LINES.includes(line)) {
+        return jsonResponse(request, {
+          ok: false,
+          error: "Indica una línea concreta, por ejemplo /api/burgos/live?line=01&fresh=1.",
+          allowedLines: BURGOS_LINES
+        }, 400);
       }
       try {
-        const data = await refreshLiveSnapshotCache(cache, cacheRequest);
-        return jsonResponse(request, data, 200, { "Cache-Control": "public, max-age=8" });
+        const data = await fetchVehiclesForLine(line);
+        return jsonResponse(request, {
+          ...data,
+          lineCount: 1,
+          totalLines: 1,
+          completedGroups: 1,
+          totalGroups: 1,
+          partial: false,
+          resultCount: data.observations.length
+        });
       } catch (error) {
         return jsonResponse(request, {
           ok: false,
           error: error?.message || "No se pudieron consultar las estimaciones de Burgos.",
-          source: BURGOS_LIVE_SOURCE,
+          source: BURGOS_SOURCE,
+          line,
           fetchedAt: new Date().toISOString()
         }, 502);
       }
@@ -498,71 +485,54 @@ export default {
       return jsonResponse(request, { ok: false, error: "Ruta no encontrada." }, 404);
     }
 
-    const requestedLine = (url.searchParams.get("line") || "").trim().toUpperCase();
-    if (requestedLine && !BURGOS_LINES.includes(requestedLine)) {
+    const requestedLine = String(url.searchParams.get("line") || "").trim().toUpperCase();
+    if (!requestedLine || !BURGOS_LINES.includes(requestedLine)) {
       return jsonResponse(request, {
         ok: false,
-        error: "Línea no válida.",
+        error: "Consulta una línea por petición: /api/burgos/vehicles?line=01&fresh=1.",
         allowedLines: BURGOS_LINES
       }, 400);
     }
 
+    const forceRefresh = url.searchParams.get("fresh") === "1";
     const cache = caches.default;
     const cacheKey = new URL("/__cache/burgos-vehicles?line=" +
-      encodeURIComponent(requestedLine || "all"), url.origin);
+      encodeURIComponent(requestedLine), url.origin);
     const cacheRequest = new Request(cacheKey.toString(), { method: "GET" });
 
-    try {
-      const cached = await cache.match(cacheRequest);
-      if (cached) {
-        const data = await cached.json();
-        return jsonResponse(request, { ...data, cacheHit: true }, 200, {
-          "Cache-Control": "public, max-age=10"
-        });
+    if (!forceRefresh) {
+      try {
+        const cached = await cache.match(cacheRequest);
+        if (cached) {
+          const data = await cached.json();
+          return jsonResponse(request, { ...data, cacheHit: true }, 200, {
+            "Cache-Control": "public, max-age=8"
+          });
+        }
+      } catch {
+        // La caché es opcional.
       }
-    } catch {
-      // Un fallo de caché no debe impedir la consulta a la fuente.
     }
 
     try {
-      let data;
-      if (requestedLine) {
-        const vehicles = await fetchVehiclesForLine(requestedLine);
-        data = {
-          ok: true,
-          fetchedAt: new Date().toISOString(),
-          source: BURGOS_SOURCE,
-          sourceType: "ISAENEXT · resourceEstimations filtrado por línea",
-          line: requestedLine,
-          lineCount: 1,
-          totalLines: 1,
-          partial: false,
-          failedLines: [],
-          warnings: [],
-          count: vehicles.length,
-          vehicles
-        };
-      } else {
-        data = await fetchSnapshot();
-      }
-
+      const data = await fetchVehiclesForLine(requestedLine);
       try {
         await cache.put(cacheRequest, new Response(JSON.stringify(data), {
           headers: {
             "Content-Type": "application/json; charset=utf-8",
-            "Cache-Control": "public, max-age=10"
+            "Cache-Control": "public, max-age=8"
           }
         }));
       } catch {
-        // La respuesta sigue siendo válida si no se puede guardar en caché.
+        // La respuesta sigue siendo válida si no se puede guardar la caché.
       }
-
-      return jsonResponse(request, data, 200, { "Cache-Control": "public, max-age=10" });
+      return jsonResponse(request, data, 200, { "Cache-Control": "public, max-age=8" });
     } catch (error) {
       return jsonResponse(request, {
         ok: false,
         error: error?.message || "No se pudieron consultar los autobuses de Burgos.",
         source: BURGOS_SOURCE,
+        line: requestedLine,
         fetchedAt: new Date().toISOString()
       }, 502);
     }
