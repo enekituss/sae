@@ -14,12 +14,12 @@ permissions:
 
 concurrency:
   group: actualizar-vehiculos-burgos
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   refresh-burgos-vehicles:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 3
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
