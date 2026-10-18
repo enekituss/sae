@@ -119,25 +119,35 @@ jobs:
                         map: (() => { const e=document.querySelector('.leaflet-container'); return e ? {class:e.className, markers:e.querySelectorAll('.leaflet-marker-icon').length, layers:e.querySelectorAll('.leaflet-overlay-pane path').length, html:e.outerHTML.slice(0,600)} : null })()
                       })""")
                       print("CONTROLS:",json.dumps(controls,ensure_ascii=False)[:8000])
-                      reconnect = page.get_by_role("button", name="Reconectar", exact=True)
-                      if await reconnect.count():
+                      state = await page.evaluate("""() => ({
+                        modals: Array.from(document.querySelectorAll('.modal')).map(e => ({
+                          id:e.id, cls:e.className, display:getComputedStyle(e).display,
+                          visibility:getComputedStyle(e).visibility, ariaHidden:e.getAttribute('aria-hidden'),
+                          text:(e.innerText||'').trim().slice(0,280)
+                        })),
+                        backdrops: document.querySelectorAll('.modal-backdrop').length,
+                        targetButtons: Array.from(document.querySelectorAll('button')).filter(e => /reconectar|guardar y cargar/i.test(e.innerText||'')).map(e => ({
+                          text:(e.innerText||'').trim(), display:getComputedStyle(e).display,
+                          visibility:getComputedStyle(e).visibility, visible:!!(e.offsetWidth||e.offsetHeight),
+                          disabled:e.disabled, parentModal:e.closest('.modal')?.id || '',
+                          parentModalClass:e.closest('.modal')?.className || ''
+                        })),
+                        localStorageKeys:Object.keys(localStorage),
+                        hasReconnect:typeof window.reconectarAhora==='function',
+                        hasSaveLoad:typeof window.g==='function'
+                      })""")
+                      print("UI_STATE:",json.dumps(state,ensure_ascii=False)[:5000])
+                      # Solo pulsa controles si están visibles dentro de un diálogo abierto.
+                      for selector, label in [('button[onclick="reconectarAhora()"]','Reconectar'),('button[onclick="g()"]','GUARDAR Y CARGAR')]:
+                          ctl = page.locator(selector)
                           try:
-                              await reconnect.first.click(timeout=3000)
-                              print("UI_ACTION: pulsado Reconectar")
-                              await page.wait_for_timeout(12000)
+                              if await ctl.count() and await ctl.first.is_visible():
+                                  await ctl.first.click(timeout=3000)
+                                  print("UI_ACTION: pulsado " + label)
+                                  await page.wait_for_timeout(10000)
                           except Exception as exc:
-                              print("UI_ACTION_ERROR:", "Reconectar", str(exc)[:180])
-                      # Si se abre el selector de líneas, "Todas" conserva la selección
-                      # pública por defecto; no se altera ninguna preferencia del usuario.
-                      save_load = page.get_by_role("button", name="GUARDAR Y CARGAR", exact=True)
-                      if await save_load.count():
-                          try:
-                              await save_load.first.click(timeout=3000)
-                              print("UI_ACTION: pulsado GUARDAR Y CARGAR")
-                              await page.wait_for_timeout(18000)
-                          except Exception as exc:
-                              print("UI_ACTION_ERROR:", "GUARDAR Y CARGAR", str(exc)[:180])
-                      await page.wait_for_timeout(18000)
+                              print("UI_ACTION_ERROR:", label, str(exc)[:160])
+                      await page.wait_for_timeout(12000)
                   except Exception as exc:
                       print("PAGE_ERROR:",repr(exc)[:250])
 
