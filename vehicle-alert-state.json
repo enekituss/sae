@@ -2345,39 +2345,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "missing:02669995b5c31fce885b1cf5": {
-      "destination": "GALDAKAO",
-      "detectedAt": "2026-10-18T23:41+02:00",
-      "direction": "",
-      "eventId": "missing:02669995b5c31fce885b1cf5",
-      "firstMissingAt": "2026-10-18T23:37:06+02:00",
-      "lastSeenAt": "2026-10-18T23:34:06+02:00",
-      "line": "A3932",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T23:41:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3388"
-    },
-    "route:9344d4d2a5345e65b6b0cc3b": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T23:41+02:00",
-      "direction": "",
-      "eventId": "route:9344d4d2a5345e65b6b0cc3b",
-      "line": "A3136",
-      "queuedAt": "2026-10-18T23:41:04+02:00",
-      "type": "route_change",
-      "vehicleId": "7831"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {},
   "pendingVehicles": {
@@ -2831,7 +2799,7 @@
       "requiredMissing": 2
     },
     "3388": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:02669995b5c31fce885b1cf5",
       "firstMissingAt": "2026-10-18T23:37:06+02:00",
@@ -2842,7 +2810,7 @@
         "line": "A3932"
       },
       "lastSeenAt": "2026-10-18T23:34:06+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3389": {
