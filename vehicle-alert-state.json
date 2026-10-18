@@ -26387,37 +26387,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:a01f2c788ead5e21eb52dde7": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T19:57+02:00",
-      "direction": "",
-      "eventId": "missing:a01f2c788ead5e21eb52dde7",
-      "firstMissingAt": "2026-10-18T19:53:02+02:00",
-      "lastSeenAt": "2026-10-18T19:49:16+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T19:57:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3365"
-    },
-    "vehicle_returned:c96693e54a2807b90a6b88d8": {
-      "destination": "ERRIGOITI",
-      "detectedAt": "2026-10-18T19:57+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:c96693e54a2807b90a6b88d8",
-      "lastKnown": {
-        "destination": "ERRIGOITI",
-        "direction": "",
-        "id": "8680",
-        "line": "A3534"
-      },
-      "line": "A3534",
-      "queuedAt": "2026-10-18T19:57:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "8680"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2132": {
@@ -26610,7 +26580,7 @@
       "requiredMissing": 2
     },
     "3365": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a01f2c788ead5e21eb52dde7",
       "firstMissingAt": "2026-10-18T19:53:02+02:00",
@@ -26621,7 +26591,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T19:49:16+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "5017": {
