@@ -25785,159 +25785,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "missing:3148f0a8ca416f874e8c345e": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T14:25+02:00",
-      "direction": "",
-      "eventId": "missing:3148f0a8ca416f874e8c345e",
-      "firstMissingAt": "2026-10-18T14:21:02+02:00",
-      "lastSeenAt": "2026-10-18T14:17:50+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T14:25:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3364"
-    },
-    "route:2e334cad3775b6cf1ef05ee9": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BERMEO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "BERMEO",
-      "detectedAt": "2026-10-18T14:25+02:00",
-      "direction": "",
-      "eventId": "route:2e334cad3775b6cf1ef05ee9",
-      "line": "A3515",
-      "queuedAt": "2026-10-18T14:25:01+02:00",
-      "type": "route_change",
-      "vehicleId": "8665"
-    },
-    "route:84b7b451bd2bfa252609cf56": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "ZEANURI"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T14:25+02:00",
-      "direction": "",
-      "eventId": "route:84b7b451bd2bfa252609cf56",
-      "line": "A3917",
-      "queuedAt": "2026-10-18T14:25:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3383"
-    },
-    "route:acacc6152048637728a1bab1": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "MUNGIA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T14:25+02:00",
-      "direction": "",
-      "eventId": "route:acacc6152048637728a1bab1",
-      "line": "A3517",
-      "queuedAt": "2026-10-18T14:25:01+02:00",
-      "type": "route_change",
-      "vehicleId": "2100"
-    },
-    "route:bd42431e7b323052462e033d": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3916",
-          "old": "A3915"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO (Aut.)",
-          "old": "ONDARROA"
-        }
-      ],
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T14:25+02:00",
-      "direction": "",
-      "eventId": "route:bd42431e7b323052462e033d",
-      "line": "A3916",
-      "queuedAt": "2026-10-18T14:25:01+02:00",
-      "type": "route_change",
-      "vehicleId": "8672"
-    },
-    "route:e4f4f93667dad3426305805e": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "OTXANDIO-UBIDE"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T14:25+02:00",
-      "direction": "",
-      "eventId": "route:e4f4f93667dad3426305805e",
-      "line": "A3925",
-      "queuedAt": "2026-10-18T14:25:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3311"
-    },
-    "route_after_gap:148ad28f8af747f96e2ae22e": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3334",
-          "old": "A3323"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BALMASEDA",
-          "old": "MUSKIZ"
-        }
-      ],
-      "destination": "BALMASEDA",
-      "detectedAt": "2026-10-18T14:25+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:148ad28f8af747f96e2ae22e",
-      "line": "A3334",
-      "queuedAt": "2026-10-18T14:25:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "5024"
-    },
-    "route_after_gap:764c5abda36ac47d4bf34dad": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TRAPAGARAN",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "TRAPAGARAN",
-      "detectedAt": "2026-10-18T14:25+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:764c5abda36ac47d4bf34dad",
-      "line": "A3332",
-      "queuedAt": "2026-10-18T14:25:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7861"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1112": {
@@ -26096,7 +25944,7 @@
       "requiredMissing": 2
     },
     "3364": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:3148f0a8ca416f874e8c345e",
       "firstMissingAt": "2026-10-18T14:21:02+02:00",
@@ -26107,7 +25955,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T14:17:50+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3366": {
