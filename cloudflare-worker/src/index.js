@@ -795,33 +795,51 @@ async function processTelegramWebhook(request, env, city) {
 
 async function ensureTelegramWebhooks(env, origin = TELEGRAM_WEBHOOK_BASE_URL) {
   const secret = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
-  const missing = [
-    ["TELEGRAM_BIZKAIBUS_BOT_TOKEN", env.TELEGRAM_BIZKAIBUS_BOT_TOKEN],
-    ["TELEGRAM_BURGOS_BOT_TOKEN", env.TELEGRAM_BURGOS_BOT_TOKEN],
+  const missingCommon = [
     ["TELEGRAM_WEBHOOK_SECRET", secret],
     ["GITHUB_TOKEN", env.GITHUB_TOKEN]
   ].filter(([name, value]) => !String(value || "").trim()).map(([name]) => name);
-  if (missing.length) {
-    throw new Error("Faltan secretos del Worker: " + missing.join(", "));
+  if (missingCommon.length) {
+    throw new Error("Faltan secretos comunes del Worker: " + missingCommon.join(", "));
   }
 
   const configured = [];
   for (const city of ["bizkaibus", "burgos"]) {
-    const token = String(env[TELEGRAM_BOTS[city].tokenEnv]).trim();
-    const expectedUrl = origin + "/telegram/" + city;
-    const info = await callTelegramApi(token, "getWebhookInfo", {});
-    if (String(info?.url || "") === expectedUrl) {
-      configured.push({ bot: city, configured: true, alreadyConfigured: true });
+    const tokenName = TELEGRAM_BOTS[city].tokenEnv;
+    const token = String(env[tokenName] || "").trim();
+    if (!token) {
+      configured.push({
+        bot: city,
+        configured: false,
+        alreadyConfigured: false,
+        error: "Falta el secreto " + tokenName
+      });
       continue;
     }
-    const result = await callTelegramApi(token, "setWebhook", {
-      url: expectedUrl,
-      secret_token: secret,
-      max_connections: 1,
-      allowed_updates: ["message"],
-      drop_pending_updates: false
-    });
-    configured.push({ bot: city, configured: Boolean(result), alreadyConfigured: false });
+
+    const expectedUrl = origin + "/telegram/" + city;
+    try {
+      const info = await callTelegramApi(token, "getWebhookInfo", {});
+      if (String(info?.url || "") === expectedUrl) {
+        configured.push({ bot: city, configured: true, alreadyConfigured: true });
+        continue;
+      }
+      const result = await callTelegramApi(token, "setWebhook", {
+        url: expectedUrl,
+        secret_token: secret,
+        max_connections: 1,
+        allowed_updates: ["message"],
+        drop_pending_updates: false
+      });
+      configured.push({ bot: city, configured: Boolean(result), alreadyConfigured: false });
+    } catch (error) {
+      configured.push({
+        bot: city,
+        configured: false,
+        alreadyConfigured: false,
+        error: error?.message || String(error)
+      });
+    }
   }
   return configured;
 }
@@ -887,6 +905,12 @@ export default {
         dispatchWorkflows: WORKFLOWS.map(workflow => workflow.file),
         endpoints: ["/api/burgos/nodes", "/api/burgos/estimates?stopId=200", "/api/burgos/vehicles", "/api/burgos/vehicles?line=01", "/api/burgos/live"],
         telegramEndpoints: ["/telegram/bizkaibus", "/telegram/burgos", "POST /admin/telegram/setup"],
+        telegramSecretStatus: {
+          githubToken: Boolean(String(env.GITHUB_TOKEN || "").trim()),
+          webhookSecret: Boolean(String(env.TELEGRAM_WEBHOOK_SECRET || "").trim()),
+          bizkaibusBotToken: Boolean(String(env.TELEGRAM_BIZKAIBUS_BOT_TOKEN || "").trim()),
+          burgosBotToken: Boolean(String(env.TELEGRAM_BURGOS_BOT_TOKEN || "").trim())
+        },
         note: "Los webhooks de Telegram responden a las preferencias en el momento y guardan la configuración en una rama de datos separada. El Worker sigue lanzando los workflows de detección cada dos minutos. La fuente pública de Burgos entrega estimaciones por parada; las coordenadas sólo se consideran GPS si el servicio las publica."
       });
     }
