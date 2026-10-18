@@ -1604,7 +1604,7 @@ jobs:
 
           update_offset = max(0, int(state.get("telegramUpdateOffset", 0) or 0))
           try:
-              updates = telegram_api("getUpdates", {
+              updates = [] if telegram_api("getWebhookInfo", {}).get("url") else telegram_api("getUpdates", {
                   "offset": update_offset,
                   "timeout": 0,
                   "allowed_updates": ["message", "callback_query"],
