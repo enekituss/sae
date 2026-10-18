@@ -27569,157 +27569,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:252e09fe2c7e91c0363d30aa": {
-      "destination": "OROZKO Ibarra",
-      "detectedAt": "2026-10-18T19:29+02:00",
-      "direction": "",
-      "eventId": "missing:252e09fe2c7e91c0363d30aa",
-      "firstMissingAt": "2026-10-18T19:25:01+02:00",
-      "lastSeenAt": "2026-10-18T19:21:55+02:00",
-      "line": "A3613",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T19:29:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3386"
-    },
-    "route:08cb26cc71bd033f693144f4": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3323",
-          "old": "A3334"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALDAMES",
-          "old": "MUSKIZ"
-        }
-      ],
-      "destination": "GALDAMES",
-      "detectedAt": "2026-10-18T19:29+02:00",
-      "direction": "",
-      "eventId": "route:08cb26cc71bd033f693144f4",
-      "line": "A3323",
-      "queuedAt": "2026-10-18T19:29:01+02:00",
-      "type": "route_change",
-      "vehicleId": "5024"
-    },
-    "route:24a028a93e15b6cdeb55b48c": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SESTAO",
-          "old": "CABIECES"
-        }
-      ],
-      "destination": "SESTAO",
-      "detectedAt": "2026-10-18T19:29+02:00",
-      "direction": "",
-      "eventId": "route:24a028a93e15b6cdeb55b48c",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T19:29:01+02:00",
-      "type": "route_change",
-      "vehicleId": "7862"
-    },
-    "route:4ce23f0258a2f3db9d796c50": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "Metro BOLUETA",
-          "old": "GALDAKAO Ospital"
-        }
-      ],
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-18T19:29+02:00",
-      "direction": "",
-      "eventId": "route:4ce23f0258a2f3db9d796c50",
-      "line": "A3932",
-      "queuedAt": "2026-10-18T19:29:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3305"
-    },
-    "route:8fa3a2910248346dafb378dc": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3335",
-          "old": "A3135"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-18T19:29+02:00",
-      "direction": "",
-      "eventId": "route:8fa3a2910248346dafb378dc",
-      "line": "A3335",
-      "queuedAt": "2026-10-18T19:29:01+02:00",
-      "type": "route_change",
-      "vehicleId": "7860"
-    },
-    "route:96cd0e614d6c2981fd54da4d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BERMEO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "BERMEO",
-      "detectedAt": "2026-10-18T19:29+02:00",
-      "direction": "",
-      "eventId": "route:96cd0e614d6c2981fd54da4d",
-      "line": "A3515",
-      "queuedAt": "2026-10-18T19:29:01+02:00",
-      "type": "route_change",
-      "vehicleId": "8677"
-    },
-    "route:bdd8c61558b772ad26c69e45": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T19:29+02:00",
-      "direction": "",
-      "eventId": "route:bdd8c61558b772ad26c69e45",
-      "line": "A3115",
-      "queuedAt": "2026-10-18T19:29:01+02:00",
-      "type": "route_change",
-      "vehicleId": "7883"
-    },
-    "vehicle_returned:e242ba5530d0912e895f864b": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T19:29+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:e242ba5530d0912e895f864b",
-      "lastKnown": {
-        "destination": "GALDAKAO Ospitalea",
-        "direction": "",
-        "id": "3303",
-        "line": "A3641"
-      },
-      "line": "A3641",
-      "queuedAt": "2026-10-18T19:29:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3303"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1719": {
@@ -27891,7 +27741,7 @@
       "requiredMissing": 2
     },
     "3386": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:252e09fe2c7e91c0363d30aa",
       "firstMissingAt": "2026-10-18T19:25:01+02:00",
@@ -27902,7 +27752,7 @@
         "line": "A3613"
       },
       "lastSeenAt": "2026-10-18T19:21:55+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7877": {
