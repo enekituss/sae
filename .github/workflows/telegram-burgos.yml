@@ -43,6 +43,7 @@ jobs:
           import urllib.parse
           import urllib.request
           from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
 
           TOKEN = (os.environ.get("BURGOS_TELEGRAM_BOT_TOKEN") or "").strip()
           PRIMARY_CHAT = (os.environ.get("BURGOS_TELEGRAM_CHAT_ID") or "").strip()
@@ -67,6 +68,7 @@ jobs:
                   "pendingArrivals": {},
                   "pendingMissing": {},
                   "pendingRouteChanges": {},
+                  "recentlyMissing": {},
                   "outbox": {},
                   "telegramSubscriptions": {},
                   "telegramUpdateOffset": 0,
@@ -137,7 +139,8 @@ jobs:
                       [{"text": "🔔 Todos los avisos"}],
                       [{"text": "⚠️ Solo fuera de servicio (sin posición reciente)"}],
                       [{"text": "🔄 Solo cambios de línea"}],
-                      [{"text": "🚌 Seguir un coche por ID"}]
+                      [{"text": "🚌 Seguir un coche por ID"}],
+                      [{"text": "⏸️ Pausar avisos"}]
                   ],
                   "resize_keyboard": True,
                   "is_persistent": True,
@@ -147,6 +150,8 @@ jobs:
 
           def mode_description(subscription):
               mode = clean(subscription.get("mode")) or "all"
+              if mode == "off":
+                  return "Avisos pausados"
               if mode == "missing":
                   return "Solo vehículos sin posición reciente (posible fin de servicio)"
               if mode == "line":
@@ -161,7 +166,11 @@ jobs:
               if notice:
                   message += notice + "\n\n"
               message += "Configuración actual: " + mode_description(subscription) + "\n\nElige qué alertas quieres recibir con los botones del teclado."
-              message += "\n\nNota: la ausencia del feed indica que el coche deja de aparecer en los datos publicados; no confirma por sí sola una baja administrativa."
+              if clean(subscription.get("mode")) == "vehicle" and not clean(subscription.get("vehicleId")):
+                  message += "\n\nPulsa «Seguir un coche por ID» y después envía su ID numérico."
+              if clean(subscription.get("mode")) == "off":
+                  message += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro."
+              message += "\n\nConfigura tus preferencias en el chat privado con @SAEBUR_bot. La falta de posición publicada no confirma por sí sola una baja administrativa."
               telegram_api("sendMessage", {
                   "chat_id": chat_id,
                   "text": message,
@@ -207,17 +216,23 @@ jobs:
               except (TypeError, ValueError):
                   continue
               message = update.get("message") or {}
-              incoming_chat_id = str((message.get("chat") or {}).get("id", "")).strip()
+              chat = message.get("chat") or {}
+              incoming_chat_id = str(chat.get("id", "")).strip()
+              chat_type = clean(chat.get("type"))
               raw_text = (message.get("text") or "").strip()
-              if incoming_chat_id and raw_text:
+              if incoming_chat_id and raw_text and chat_type == "private":
                   if incoming_chat_id not in subscriptions or not isinstance(subscriptions.get(incoming_chat_id), dict):
                       subscriptions[incoming_chat_id] = {"mode": "all", "vehicleId": "", "awaitingVehicleId": False}
                       dirty = True
                   subscription = subscriptions[incoming_chat_id]
                   command = raw_text.split()[0].split("@")[0].lower()
                   try:
-                      if command in ("/start", "/help", "/menu", "/menú", "menu", "menú", "/config"):
-                          send_menu(incoming_chat_id, subscription, "Bot conectado. Puedes cambiar las preferencias cuando quieras.")
+                      if command in ("/start", "/help", "/menu", "/menú", "menu", "menú", "/config", "/misavisos", "/estado"):
+                          send_menu(incoming_chat_id, subscription, "Bot conectado. Tus preferencias son independientes de las de otros usuarios.")
+                      elif command in ("/stop", "/pausar") or raw_text in ("⏸️ Pausar avisos", "Pausar avisos"):
+                          subscription.update({"mode": "off", "awaitingVehicleId": False})
+                          dirty = True
+                          send_menu(incoming_chat_id, subscription, "⏸️ Avisos pausados. Puedes reactivarlos en cualquier momento desde este menú.")
                       elif raw_text in ("🔔 Todos los avisos", "Todos los avisos"):
                           subscription.update({"mode": "all", "awaitingVehicleId": False})
                           dirty = True
@@ -282,6 +297,7 @@ jobs:
           pending_arrivals = state.get("pendingArrivals", {})
           pending_missing = state.get("pendingMissing", {})
           pending_routes = state.get("pendingRouteChanges", {})
+          recently_missing = state.get("recentlyMissing", {})
           outbox = state.get("outbox", {})
           if not isinstance(confirmed, dict):
               confirmed = {}
@@ -293,6 +309,8 @@ jobs:
               pending_routes = {}
           if not isinstance(outbox, dict):
               outbox = {}
+          if not isinstance(recently_missing, dict):
+              recently_missing = {}
 
           def normalise_vehicle(vehicle):
               vehicle_id = clean(vehicle.get("id") or vehicle.get("vehicleId") or vehicle.get("vehicle_id") or vehicle.get("vehicle"))
@@ -397,7 +415,9 @@ jobs:
                                   pending = {"old": old, "new": vehicle, "checks": 1, "firstDetectedAt": now}
                                   pending_routes[vehicle_id] = pending
                               dirty = True
-                              if pending["checks"] >= 2:
+                              first_change_dt = parse_time(pending.get("firstDetectedAt"))
+                              elapsed_change = (datetime.now(timezone.utc) - first_change_dt.astimezone(timezone.utc)).total_seconds() if first_change_dt else 0
+                              if pending["checks"] >= 2 and elapsed_change >= 120:
                                   queue_event({
                                       "type": "route_change",
                                       "vehicleId": vehicle_id,
@@ -426,15 +446,47 @@ jobs:
                               candidate = {"vehicle": vehicle, "checks": 1, "firstDetectedAt": now}
                               pending_arrivals[vehicle_id] = candidate
                           dirty = True
-                          if candidate["checks"] >= 2:
-                              queue_event({
-                                  "type": "vehicle_entered",
-                                  "vehicleId": vehicle_id,
-                                  "line": vehicle.get("line", ""),
-                                  "destination": vehicle.get("destination", ""),
-                                  "direction": vehicle.get("direction", ""),
-                                  "firstObservedAt": candidate.get("firstDetectedAt", now)
-                              })
+                          first_seen_dt = parse_time(candidate.get("firstDetectedAt"))
+                          elapsed_since_seen = (datetime.now(timezone.utc) - first_seen_dt.astimezone(timezone.utc)).total_seconds() if first_seen_dt else 0
+                          if candidate["checks"] >= 2 and elapsed_since_seen >= 120:
+                              gap_record = recently_missing.get(vehicle_id)
+                              if isinstance(gap_record, dict):
+                                  previous_vehicle = gap_record.get("vehicle", {})
+                                  changes = changed_fields(previous_vehicle, vehicle)
+                                  first_missing_dt = parse_time(gap_record.get("firstMissingAt"))
+                                  recent_gap = bool(first_missing_dt and (datetime.now(timezone.utc) - first_missing_dt.astimezone(timezone.utc)).total_seconds() <= 15 * 60)
+                                  if changes and recent_gap:
+                                      queue_event({
+                                          "type": "route_change_after_gap",
+                                          "vehicleId": vehicle_id,
+                                          "line": vehicle.get("line", ""),
+                                          "destination": vehicle.get("destination", ""),
+                                          "direction": vehicle.get("direction", ""),
+                                          "old": previous_vehicle,
+                                          "new": vehicle,
+                                          "changed": changes
+                                      })
+                                  else:
+                                      queue_event({
+                                          "type": "vehicle_returned",
+                                          "vehicleId": vehicle_id,
+                                          "line": vehicle.get("line", ""),
+                                          "destination": vehicle.get("destination", ""),
+                                          "direction": vehicle.get("direction", ""),
+                                          "lastKnown": previous_vehicle,
+                                          "lastSeenAt": gap_record.get("lastSeenAt", ""),
+                                          "firstMissingAt": gap_record.get("firstMissingAt", "")
+                                      })
+                                  recently_missing.pop(vehicle_id, None)
+                              else:
+                                  queue_event({
+                                      "type": "vehicle_entered",
+                                      "vehicleId": vehicle_id,
+                                      "line": vehicle.get("line", ""),
+                                      "destination": vehicle.get("destination", ""),
+                                      "direction": vehicle.get("direction", ""),
+                                      "firstObservedAt": candidate.get("firstDetectedAt", now)
+                                  })
                               confirmed[vehicle_id] = vehicle
                               pending_arrivals.pop(vehicle_id, None)
                               dirty = True
@@ -457,7 +509,9 @@ jobs:
                           candidate = {"vehicle": old_vehicle, "checks": 1, "firstMissingAt": now}
                           pending_missing[vehicle_id] = candidate
                       dirty = True
-                      if candidate["checks"] >= 2:
+                      first_missing_dt = parse_time(candidate.get("firstMissingAt"))
+                      elapsed_missing = (datetime.now(timezone.utc) - first_missing_dt.astimezone(timezone.utc)).total_seconds() if first_missing_dt else 0
+                      if candidate["checks"] >= 2 and elapsed_missing >= 180:
                           queue_event({
                               "type": "vehicle_missing",
                               "vehicleId": vehicle_id,
@@ -467,6 +521,12 @@ jobs:
                               "lastSeenAt": candidate.get("firstMissingAt", now),
                               "missingChecks": candidate["checks"]
                           })
+                          recently_missing[vehicle_id] = {
+                              "vehicle": old_vehicle,
+                              "lastSeenAt": candidate.get("firstMissingAt", now),
+                              "firstMissingAt": candidate.get("firstMissingAt", now),
+                              "alerted": True
+                          }
                           confirmed.pop(vehicle_id, None)
                           pending_missing.pop(vehicle_id, None)
                           dirty = True
@@ -478,20 +538,36 @@ jobs:
               state["emptyFeedState"] = empty_state
               state["outbox"] = outbox
 
+          # Conserva durante una hora el contexto de los coches cuyo aviso de desaparición
+          # ya se confirmó, para distinguir una reaparición de una incorporación nueva.
+          for vehicle_id, record in list(recently_missing.items()):
+              missing_at = parse_time(record.get("firstMissingAt")) if isinstance(record, dict) else None
+              if missing_at and (datetime.now(timezone.utc) - missing_at.astimezone(timezone.utc)).total_seconds() > 60 * 60:
+                  recently_missing.pop(vehicle_id, None)
+                  dirty = True
+
           def event_matches(event, subscription):
               mode = clean(subscription.get("mode")) or "all"
               event_type = clean(event.get("type"))
+              if mode in ("off", "paused"):
+                  return False
               if mode == "all":
                   return True
               if mode == "missing":
                   return event_type == "vehicle_missing"
               if mode == "line":
-                  return event_type == "route_change" and any(
+                  return event_type in ("route_change", "route_change_after_gap") and any(
                       item.get("field") == "line" for item in (event.get("changed") or []) if isinstance(item, dict)
                   )
               if mode == "vehicle":
                   return bool(clean(subscription.get("vehicleId"))) and clean(event.get("vehicleId")) == clean(subscription.get("vehicleId"))
               return False
+
+          def local_time(value):
+              parsed = parse_time(value)
+              if parsed is None:
+                  return clean(value) or "No disponible"
+              return parsed.astimezone(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y %H:%M:%S")
 
           def render_event(event):
               vehicle_id = clean(event.get("vehicleId")) or "No disponible"
@@ -506,32 +582,56 @@ jobs:
                       "Última línea publicada: " + line,
                       "Último destino publicado: " + destination,
                       "Último sentido publicado: " + direction,
+                      "Primera ausencia observada: " + local_time(event.get("lastSeenAt")),
                       "Confirmación: el coche ha faltado en varias consultas completas del servicio municipal.",
-                      "Nota: no aparecer en el feed no confirma por sí solo una baja administrativa.",
-                      "Hora del aviso: " + clean(event.get("detectedAt"))
+                      "Importante: no aparecer en el feed no confirma por sí solo una baja administrativa ni que esté físicamente fuera de servicio.",
+                      "Hora del aviso: " + local_time(event.get("detectedAt"))
                   ]
               elif event_type == "vehicle_entered":
                   lines = [
-                      "🟢 AUTOBÚS DETECTADO EN SERVICIO",
+                      "🟢 AUTOBÚS DETECTADO ENTRANDO EN SERVICIO",
                       "Coche: " + vehicle_id,
-                      "Línea publicada: " + line,
-                      "Destino publicado: " + destination,
-                      "Sentido publicado: " + direction,
-                      "Primera detección: " + clean(event.get("firstObservedAt")),
-                      "Confirmación: el coche aparece en dos consultas completas consecutivas.",
-                      "Hora del aviso: " + clean(event.get("detectedAt"))
+                      "Línea actual: " + line,
+                      "Destino actual: " + destination,
+                      "Sentido actual: " + direction,
+                      "Primera detección: " + local_time(event.get("firstObservedAt")),
+                      "Confirmación: aparece en dos consultas completas consecutivas separadas al menos dos minutos.",
+                      "Nota: el aviso confirma su aparición en el feed; no es una señal administrativa de alta del operador.",
+                      "Hora del aviso: " + local_time(event.get("detectedAt"))
+                  ]
+              elif event_type == "vehicle_returned":
+                  last_known = event.get("lastKnown", {})
+                  lines = [
+                      "✅ AUTOBÚS REAPARECE EN EL FEED",
+                      "Coche: " + vehicle_id,
+                      "Línea actual: " + line,
+                      "Destino actual: " + destination,
+                      "Sentido actual: " + direction,
+                      "Antes de desaparecer: línea " + (clean(last_known.get("line")) or "No disponible") + ", destino " + (clean(last_known.get("destination")) or "No disponible"),
+                      "Primera ausencia observada: " + local_time(event.get("firstMissingAt")),
+                      "Hora del aviso: " + local_time(event.get("detectedAt"))
                   ]
               else:
+                  route_after_gap = event_type == "route_change_after_gap"
                   lines = [
-                      "🔄 CAMBIO DE DATOS PUBLICADOS DEL AUTOBÚS",
+                      "🔁 CAMBIO DETECTADO TRAS REAPARICIÓN" if route_after_gap else "🔄 CAMBIO DE DATOS PUBLICADOS DEL AUTOBÚS",
                       "Coche: " + vehicle_id
                   ]
                   labels = {"line": "Línea", "destination": "Destino", "direction": "Sentido"}
                   for item in event.get("changed", []):
-                      if isinstance(item, dict):
-                          lines.append(labels.get(item.get("field"), clean(item.get("label"))) + ": " + clean(item.get("old")) + " → " + clean(item.get("new")))
-                  lines.append("Hora del aviso: " + clean(event.get("detectedAt")))
-              return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
+                      if not isinstance(item, dict):
+                          continue
+                      field = clean(item.get("field"))
+                      old_value = clean(item.get("old")) or "No disponible"
+                      new_value = clean(item.get("new")) or "No disponible"
+                      if route_after_gap and field == "line":
+                          lines.append("Última línea antes de desaparecer: " + old_value)
+                          lines.append("Nueva línea al reaparecer: " + new_value)
+                      else:
+                          lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)
+                  lines.append("Destino actual: " + destination)
+                  lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))
+              return "\\n".join(lines) + "\\n\\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
 
           # Freeze the intended recipients per event so retrying a failed send cannot
           # unexpectedly broadcast an old alert to somebody who joined later.
@@ -581,6 +681,7 @@ jobs:
           state["pendingMissing"] = pending_missing
           state["pendingRouteChanges"] = pending_routes
           state["confirmedVehicles"] = confirmed
+          state["recentlyMissing"] = recently_missing
           if dirty:
               with open(STATE_PATH + ".tmp", "w", encoding="utf-8") as handle:
                   json.dump(state, handle, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
