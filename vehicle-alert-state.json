@@ -25801,34 +25801,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "missing:5ac54fc09d75a3e580d57153": {
-      "destination": "AREETA (Artea)",
-      "detectedAt": "2026-10-18T16:03+02:00",
-      "direction": "",
-      "eventId": "missing:5ac54fc09d75a3e580d57153",
-      "firstMissingAt": "2026-10-18T15:59:03+02:00",
-      "lastSeenAt": "2026-10-18T15:55:35+02:00",
-      "line": "A3422",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T16:03:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1719"
-    },
-    "missing:9221ced2a1ae3d9617602810": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T16:03+02:00",
-      "direction": "",
-      "eventId": "missing:9221ced2a1ae3d9617602810",
-      "firstMissingAt": "2026-10-18T15:59:03+02:00",
-      "lastSeenAt": "2026-10-18T15:55:35+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T16:03:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2078"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2129": {
       "consecutiveChecks": 2,
@@ -25882,7 +25855,7 @@
   },
   "pendingVehicles": {
     "1719": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:5ac54fc09d75a3e580d57153",
       "firstMissingAt": "2026-10-18T15:59:03+02:00",
@@ -25893,7 +25866,7 @@
         "line": "A3422"
       },
       "lastSeenAt": "2026-10-18T15:55:35+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2061": {
@@ -25912,7 +25885,7 @@
       "requiredMissing": 2
     },
     "2078": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:9221ced2a1ae3d9617602810",
       "firstMissingAt": "2026-10-18T15:59:03+02:00",
@@ -25923,7 +25896,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T15:55:35+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3354": {
