@@ -70,12 +70,9 @@ Después del login, `index.html` ofrece la elección entre Burgos y Bizkaibus. L
 
 El manifiesto `manifest.webmanifest`, el Service Worker y los iconos permiten que Chrome ofrezca la instalación de SAE Spotter. En Android, se puede usar la opción **Instalar aplicación** cuando Chrome la ofrezca, o el menú de Chrome si todavía no aparece el botón de instalación dentro de la web.
 
-## Horarios urbanos de Burgos
-- `burgos.html` permite consultar líneas y viajes, y abrir la tabla completa de horas programadas para cada parada.
-- `burgos.html` muestra solo líneas y autobuses activos, agrupados como en Bizkaibus, sin mapa ni consulta directa desde el navegador.
-- `scripts/update_burgos_vehicles.py` consulta el recurso municipal `resourceVehicles` por línea y genera `burgos-vehicles.json`; `.github/workflows/update-burgos-vehicles.yml` intenta renovar esta copia cada cinco minutos.
-- El seguimiento de Burgos consulta `resourceVehicles` del servicio ISAENEXT por línea a través de `/api/burgos/vehicles`; si el recurso falla, conserva `/api/burgos/live` como respaldo de estimaciones por parada. Los coches y las posiciones se muestran solo según los campos que publique la fuente.
-- `scripts/update_burgos_gtfs.py` descarga `https://www.aytoburgos.es/GTFS/Google_transit.zip` y genera `burgos-data.json`.
-- `.github/workflows/update-burgos-gtfs.yml` actualiza el fichero diariamente y se puede lanzar manualmente desde GitHub Actions.
-- Los identificadores `trip_id`, `service_id` y `block_id` son los campos del GTFS; no equivalen necesariamente al número físico de flota ni al turno operativo que conoce el conductor.
-- El GTFS estático no contiene posiciones GPS ni confirma si un autobús está circulando. El panel lo señala y separa horarios del seguimiento real. La vigencia se comprueba usando las fechas declaradas en los calendarios del fichero.
+## Autobuses urbanos de Burgos
+- `burgos.html` muestra únicamente las líneas con autobuses activos, agrupadas como en Bizkaibus, sin mapa ni tablas de horarios.
+- `burgos-vehicles.js` consulta `resourceVehicles` para cada línea del servicio municipal ISAENEXT mediante los proxies que usa SAMYT para salvar CORS; vuelve a consultar aproximadamente cada 60 segundos.
+- La lista muestra los identificadores y solo los campos adicionales que la fuente publique. Si alguna línea no responde, se conserva temporalmente su última respuesta y la cabecera indica que los datos son parciales.
+- `scripts/update_burgos_gtfs.py` y `.github/workflows/update-burgos-gtfs.yml` mantienen `burgos-data.json` como fichero de horarios de referencia, pero la pantalla actual de Burgos ya no muestra el mapa ni la tabla GTFS.
+- El Worker opcional también expone `/api/burgos/vehicles` y `/api/burgos/live`; el listado principal no depende de tener una URL de Worker configurada.
