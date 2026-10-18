@@ -25,7 +25,7 @@
     <div class="brand">
       <div class="eyebrow">SAE SPOTTER · BURGOS</div>
       <h1>Autobuses urbanos <span>de Burgos</span></h1>
-      <p>Posiciones estimadas en directo, líneas y horarios por parada.</p>
+      <p>Autobuses detectados por línea, posiciones publicadas y horarios por parada.</p>
       <nav class="page-nav" aria-label="Navegación">
         <a href="./index.html">← Cambiar ciudad</a>
       </nav>
@@ -70,16 +70,16 @@
         <p>Se utiliza solo como intermediario para acceder al servicio municipal si Chrome bloquea la conexión directa. La URL se guarda únicamente en este navegador.</p>
       </div>
       <div class="live-summary">
-        <div><strong id="liveBusCount">—</strong><span>autobuses/estimaciones detectadas</span></div>
+        <div><strong id="liveBusCount">—</strong><span>autobuses detectados</span></div>
         <div><strong id="livePositionCount">—</strong><span>posiciones en el mapa</span></div>
-        <div><strong id="liveStopCount">—</strong><span>paradas consultadas</span></div>
+        <div><strong id="liveStopCount">—</strong><span>líneas consultadas</span></div>
       </div>
       <div id="liveMap" aria-label="Mapa de autobuses de Burgos en directo"></div>
       <div id="liveStatus" class="live-status" role="status" aria-live="polite">
         <span class="spinner"></span> Consultando si el servicio municipal está publicando posiciones…
       </div>
       <div id="liveVehicleList" class="live-vehicle-list"></div>
-      <p class="live-disclaimer">La fuente pública consultada ofrece estimaciones por parada. Si no publica coordenadas GPS del vehículo, el punto del mapa se reconstruye a partir de la distancia declarada y del trazado GTFS; esas marcas se identifican como estimaciones, no como GPS exacto.</p>
+      <p class="live-disclaimer">SAE Spotter consulta primero el recurso municipal <code>resourceVehicles</code> por línea para identificar los coches publicados y usar sus coordenadas cuando estén disponibles. Si esa consulta falla, utiliza las estimaciones por parada como respaldo; cuando no se publica GPS, la posición se reconstruye de forma aproximada sobre el trazado GTFS y se identifica como estimación.</p>
     </section>
 
     <section id="dataNotice" class="notice" aria-live="polite">
@@ -102,7 +102,7 @@
     </section>
 
     <section class="notice secondary-notice">
-      <strong>Qué significa la información:</strong> el mapa consulta el servicio público de estimaciones de Burgos; cuando no se publica GPS, sitúa el autobús de forma estimada sobre el trazado. La tabla de viajes usa horarios GTFS, que se muestran por separado y no garantizan que un vehículo esté circulando.
+      <strong>Qué significa la información:</strong> el mapa consulta los vehículos publicados por línea en ISAENEXT y las coordenadas que ofrece el recurso. Si se usa la fuente de respaldo, una ubicación reconstruida sobre el trazado GTFS se identifica como estimación. La tabla de viajes usa horarios GTFS por separado y no garantiza que un vehículo esté circulando ahora.
     </section>
 
     <footer>
@@ -112,6 +112,6 @@
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="./burgos.js?v=20261017live3"></script>
+  <script src="./burgos.js?v=20261018vehicles1"></script>
 </body>
 </html>
