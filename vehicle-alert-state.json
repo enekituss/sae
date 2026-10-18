@@ -27104,21 +27104,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:4b343f8205dcae53612788b5": {
-      "destination": "OTXANDIO-UBIDE",
-      "detectedAt": "2026-10-18T17:49+02:00",
-      "direction": "",
-      "eventId": "missing:4b343f8205dcae53612788b5",
-      "firstMissingAt": "2026-10-18T17:45:01+02:00",
-      "lastSeenAt": "2026-10-18T17:41:50+02:00",
-      "line": "A3925",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T17:49:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3311"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1102": {
@@ -27360,7 +27346,7 @@
       "requiredMissing": 2
     },
     "3311": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:4b343f8205dcae53612788b5",
       "firstMissingAt": "2026-10-18T17:45:01+02:00",
@@ -27371,7 +27357,7 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-18T17:41:50+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3367": {
