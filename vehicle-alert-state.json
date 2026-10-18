@@ -25934,125 +25934,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:e66f8ca6d1026e014a3bc4ef": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T15:29+02:00",
-      "direction": "",
-      "eventId": "missing:e66f8ca6d1026e014a3bc4ef",
-      "firstMissingAt": "2026-10-18T15:25:02+02:00",
-      "lastSeenAt": "2026-10-18T15:21:52+02:00",
-      "line": "A3518",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T15:29:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2125"
-    },
-    "route:312c71b09478b52a880d3f39": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AREETA/LAS ARENAS",
-          "old": "LEMOIZ Armintza"
-        }
-      ],
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T15:29+02:00",
-      "direction": "",
-      "eventId": "route:312c71b09478b52a880d3f39",
-      "line": "A3451",
-      "queuedAt": "2026-10-18T15:29:04+02:00",
-      "type": "route_change",
-      "vehicleId": "1721"
-    },
-    "route:34e5c871f1d92640491ce319": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "ZEANURI"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T15:29+02:00",
-      "direction": "",
-      "eventId": "route:34e5c871f1d92640491ce319",
-      "line": "A3917",
-      "queuedAt": "2026-10-18T15:29:04+02:00",
-      "type": "route_change",
-      "vehicleId": "3377"
-    },
-    "route:c7461214ce97c338cacbcd9b": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "Metro BOLUETA",
-          "old": "GALDAKAO Ospital"
-        }
-      ],
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-18T15:29+02:00",
-      "direction": "",
-      "eventId": "route:c7461214ce97c338cacbcd9b",
-      "line": "A3932",
-      "queuedAt": "2026-10-18T15:29:04+02:00",
-      "type": "route_change",
-      "vehicleId": "3305"
-    },
-    "route_after_gap:7bc2e8b636f2b10383d51f02": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "LA ARBOLEDA",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "LA ARBOLEDA",
-      "detectedAt": "2026-10-18T15:29+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:7bc2e8b636f2b10383d51f02",
-      "line": "A3333",
-      "queuedAt": "2026-10-18T15:29:04+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7886"
-    },
-    "vehicle_returned:32b7ac73c12593580dc9c8da": {
-      "destination": "ARRIGORRIAGA",
-      "detectedAt": "2026-10-18T15:29+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:32b7ac73c12593580dc9c8da",
-      "lastKnown": {
-        "destination": "GALDAKAO Ospitalea",
-        "direction": "",
-        "id": "3296",
-        "line": "A3641"
-      },
-      "line": "A3641",
-      "queuedAt": "2026-10-18T15:29:04+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3296"
-    },
-    "vehicle_returned:fefca54ddb79ff3cacf06f82": {
-      "destination": "OROZKO Ibarra",
-      "detectedAt": "2026-10-18T15:29+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:fefca54ddb79ff3cacf06f82",
-      "lastKnown": {
-        "destination": "OROZKO Ibarra",
-        "direction": "",
-        "id": "3386",
-        "line": "A3613"
-      },
-      "line": "A3613",
-      "queuedAt": "2026-10-18T15:29:04+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3386"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1719": {
@@ -26152,7 +26034,7 @@
       "requiredMissing": 2
     },
     "2125": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:e66f8ca6d1026e014a3bc4ef",
       "firstMissingAt": "2026-10-18T15:25:02+02:00",
@@ -26163,7 +26045,7 @@
         "line": "A3518"
       },
       "lastSeenAt": "2026-10-18T15:21:52+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2129": {
