@@ -24789,100 +24789,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "missing:46f5e412cd84e62bab2372ab": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T12:09+02:00",
-      "direction": "",
-      "eventId": "missing:46f5e412cd84e62bab2372ab",
-      "firstMissingAt": "2026-10-18T12:04:19+02:00",
-      "lastSeenAt": "2026-10-18T12:01:32+02:00",
-      "line": "A3925",
-      "missingChecks": 4,
-      "queuedAt": "2026-10-18T12:09:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3352"
-    },
-    "missing:df38f7dc94036d48945e13ea": {
-      "destination": "AREETA (Artea)",
-      "detectedAt": "2026-10-18T12:09+02:00",
-      "direction": "",
-      "eventId": "missing:df38f7dc94036d48945e13ea",
-      "firstMissingAt": "2026-10-18T12:04:19+02:00",
-      "lastSeenAt": "2026-10-18T12:01:32+02:00",
-      "line": "A3422",
-      "missingChecks": 4,
-      "queuedAt": "2026-10-18T12:09:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1719"
-    },
-    "route_after_gap:8f9773205097c2b0b116a7d7": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CABIECES",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "CABIECES",
-      "detectedAt": "2026-10-18T12:09+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:8f9773205097c2b0b116a7d7",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T12:09:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7860"
-    },
-    "vehicle_returned:a64b1c7870484a2e5280117d": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T12:09+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:a64b1c7870484a2e5280117d",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "7833",
-        "line": "A3122"
-      },
-      "line": "A3122",
-      "queuedAt": "2026-10-18T12:09:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "7833"
-    },
-    "vehicle_returned:fa1df962a57fa86ca7049cd6": {
-      "destination": "ZARATAMO",
-      "detectedAt": "2026-10-18T12:09+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:fa1df962a57fa86ca7049cd6",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "3293",
-        "line": "A3632"
-      },
-      "line": "A3632",
-      "queuedAt": "2026-10-18T12:09:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3293"
-    },
-    "vehicle_returned:fa28db162ffdcfc6a92585af": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T12:09+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:fa28db162ffdcfc6a92585af",
-      "lastKnown": {
-        "destination": "GALDAKAO Ospitalea",
-        "direction": "",
-        "id": "3365",
-        "line": "A3641"
-      },
-      "line": "A3641",
-      "queuedAt": "2026-10-18T12:09:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3365"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2120": {
@@ -24959,7 +24866,7 @@
   },
   "pendingVehicles": {
     "1719": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 4,
       "eventId": "missing:df38f7dc94036d48945e13ea",
       "firstMissingAt": "2026-10-18T12:04:19+02:00",
@@ -24970,7 +24877,7 @@
         "line": "A3422"
       },
       "lastSeenAt": "2026-10-18T12:01:32+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2137": {
@@ -24989,7 +24896,7 @@
       "requiredMissing": 2
     },
     "3352": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 4,
       "eventId": "missing:46f5e412cd84e62bab2372ab",
       "firstMissingAt": "2026-10-18T12:04:19+02:00",
@@ -25000,7 +24907,7 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-18T12:01:32+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3353": {
@@ -25084,5 +24991,5 @@
       "vehicleId": ""
     }
   },
-  "telegramUpdateOffset": 30217591
+  "telegramUpdateOffset": 30217592
 }
