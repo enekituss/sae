@@ -2,11 +2,12 @@
   const BASE_URL = "https://www.aytoburgos.es/web/movilidad/rutas-en-directo";
   const PORTLET_ID = "as_asac_isaenext_IsaenextWebPortlet";
   const PORTLET_PREFIX = "_as_asac_isaenext_IsaenextWebPortlet_";
+  // El Worker propio es la conexión preferida. Los proxies públicos son solo respaldo.
   const PROXIES = [
-    "https://corsproxy.io/?",
     "https://api.allorigins.win/raw?url=",
     "https://api.codetabs.com/v1/proxy?quest="
   ];
+  const WORKER_STORAGE_KEY = "saeBurgosWorkerUrl";
   const ALL_LINES = [
     ...Array.from({length: 23}, (_, i) => String(i + 1).padStart(2, "0")),
     "73", "87", "88", "89", "C1", "C2"
@@ -22,6 +23,23 @@
   let lastSuccessfulUpdate = null;
   let updateRunning = false;
   let lastQueryHadSuccess = false;
+
+  function normalizeWorkerBase(value) {
+    let base = String(value || "").trim();
+    if (!base) return "";
+    if (!/^https?:\/\//i.test(base)) throw new Error("La URL debe comenzar por https://");
+    base = base.replace(/\/+$/, "");
+    base = base.replace(/\/api\/burgos\/vehicles$/i, "");
+    return base;
+  }
+
+  function getWorkerBaseUrl() {
+    try {
+      return normalizeWorkerBase(localStorage.getItem(WORKER_STORAGE_KEY) || "");
+    } catch {
+      return "";
+    }
+  }
 
   function escapeHTML(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -110,8 +128,41 @@
     };
   }
 
+  async function fetchWorkerVehicles(workerBase, line) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS * 2);
+    try {
+      const url = workerBase + "/api/burgos/vehicles?line=" + encodeURIComponent(line);
+      const response = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+        signal: controller.signal
+      });
+      const text = await response.text();
+      let payload;
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        throw new Error("El Worker no devolvió JSON.");
+      }
+      if (!response.ok) {
+        throw new Error(payload?.error || ("Worker HTTP " + response.status));
+      }
+      if (!Array.isArray(payload?.vehicles)) {
+        throw new Error("El Worker no devolvió la lista de autobuses.");
+      }
+      return payload.vehicles;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
   async function fetchLine(line) {
-    const payload = await fetchVehicleJson(buildVehicleUrl(line));
+    const workerBase = getWorkerBaseUrl();
+    const payload = workerBase
+      ? await fetchWorkerVehicles(workerBase, line)
+      : await fetchVehicleJson(buildVehicleUrl(line));
     const vehicles = payload.map(bus => normalizeVehicle(bus, line)).filter(Boolean);
     return {line, vehicles};
   }
@@ -163,9 +214,11 @@
       if (query) {
         message = "No hay líneas ni autobuses activos que coincidan con la búsqueda.";
       } else if (!lastQueryHadSuccess) {
-        message = "No se ha podido consultar ISAENEXT mediante los proxies disponibles.";
+        message = getWorkerBaseUrl()
+          ? "No se ha podido consultar ISAENEXT a través del Worker configurado."
+          : "Los proxies públicos no han respondido. Configura el Worker de Cloudflare para una conexión estable.";
         container.innerHTML = '<div class="message error"><strong>' + escapeHTML(message) + '</strong><br>' +
-          '<span>Comprueba la conexión o consulta los visores que usan esta misma fuente.</span><br><br>' +
+          '<span>En «Configurar conexión», pega la URL base del Worker de Cloudflare (la que termina en workers.dev) y guarda.</span><br><br>' +
           '<a href="https://enekituss.github.io/samyt/" target="_blank" rel="noopener noreferrer">Abrir SAMYT</a> · ' +
           '<a href="https://webburgos.com/bus/" target="_blank" rel="noopener noreferrer">Abrir WebBurgos</a></div>';
         return;
@@ -228,7 +281,9 @@
     updateRunning = true;
     $("refresh").disabled = true;
     $("refresh").innerHTML = '<span aria-hidden="true">↻</span> Consultando';
-    setStatus("Consultando coches por línea en ISAENEXT…", "");
+    setStatus(getWorkerBaseUrl()
+      ? "Consultando coches por línea a través del Worker…"
+      : "Sin Worker configurado · probando conexiones de respaldo…", "");
     try {
       const results = new Array(ALL_LINES.length);
       let cursor = 0;
@@ -286,6 +341,26 @@
 
   $("refresh").addEventListener("click", load);
   $("search").addEventListener("input", render);
+
+  $("workerUrlInput").value = getWorkerBaseUrl();
+  $("saveWorkerUrl").addEventListener("click", async () => {
+    try {
+      const base = normalizeWorkerBase($("workerUrlInput").value);
+      if (!base) throw new Error("Pega la URL base de tu Worker de Cloudflare.");
+      localStorage.setItem(WORKER_STORAGE_KEY, base);
+      setStatus("Conexión guardada · comprobando Worker…", "");
+      await load();
+    } catch (error) {
+      setStatus(error?.message || "No se ha podido guardar la conexión.", "error");
+    }
+  });
+  $("clearWorkerUrl").addEventListener("click", async () => {
+    try { localStorage.removeItem(WORKER_STORAGE_KEY); } catch {}
+    $("workerUrlInput").value = "";
+    setStatus("Conexión eliminada · se probarán los proxies de respaldo.", "");
+    await load();
+  });
+
   load();
   setInterval(load, REFRESH_MS);
 })();
