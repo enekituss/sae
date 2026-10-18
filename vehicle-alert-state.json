@@ -25526,55 +25526,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:065888799cbe0c75c3d1db02": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T11:25+02:00",
-      "direction": "",
-      "eventId": "missing:065888799cbe0c75c3d1db02",
-      "firstMissingAt": "2026-10-18T11:21:01+02:00",
-      "lastSeenAt": "2026-10-18T11:17:19+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T11:25:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3303"
-    },
-    "route_after_gap:af8c760f089a395954b67e3a": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TRAPAGARAN",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "TRAPAGARAN",
-      "detectedAt": "2026-10-18T11:25+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:af8c760f089a395954b67e3a",
-      "line": "A3332",
-      "queuedAt": "2026-10-18T11:25:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7861"
-    },
-    "vehicle_returned:9634d31e4dc2262fe8857e86": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T11:25+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:9634d31e4dc2262fe8857e86",
-      "lastKnown": {
-        "destination": "BASAURI S.Miguel",
-        "direction": "",
-        "id": "3293",
-        "line": "A3632"
-      },
-      "line": "A3632",
-      "queuedAt": "2026-10-18T11:25:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3293"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1512": {
@@ -25674,7 +25626,7 @@
       "requiredMissing": 2
     },
     "3303": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:065888799cbe0c75c3d1db02",
       "firstMissingAt": "2026-10-18T11:21:01+02:00",
@@ -25685,7 +25637,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T11:17:19+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3319": {
