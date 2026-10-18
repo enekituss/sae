@@ -25384,37 +25384,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:98e72d6610b0125c52b69927": {
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T17:37+02:00",
-      "direction": "",
-      "eventId": "missing:98e72d6610b0125c52b69927",
-      "firstMissingAt": "2026-10-18T17:33:02+02:00",
-      "lastSeenAt": "2026-10-18T17:29:51+02:00",
-      "line": "A3451",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T17:37:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1718"
-    },
-    "vehicle_returned:b1fbc4f53314a50f6dc42e44": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T17:37+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:b1fbc4f53314a50f6dc42e44",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "3293",
-        "line": "A3632"
-      },
-      "line": "A3632",
-      "queuedAt": "2026-10-18T17:37:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3293"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1761": {
@@ -25517,7 +25487,7 @@
   },
   "pendingVehicles": {
     "1718": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:98e72d6610b0125c52b69927",
       "firstMissingAt": "2026-10-18T17:33:02+02:00",
@@ -25528,7 +25498,7 @@
         "line": "A3451"
       },
       "lastSeenAt": "2026-10-18T17:29:51+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2078": {
