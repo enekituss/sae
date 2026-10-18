@@ -2751,37 +2751,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:ac6d368fbe62bf3cfeefe1dc": {
-      "destination": "BALMASEDA",
-      "detectedAt": "2026-10-18T23:27+02:00",
-      "direction": "",
-      "eventId": "missing:ac6d368fbe62bf3cfeefe1dc",
-      "firstMissingAt": "2026-10-18T23:23:05+02:00",
-      "lastSeenAt": "2026-10-18T23:20:06+02:00",
-      "line": "A0651",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T23:27:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "5027"
-    },
-    "vehicle_returned:5eef72e6b713f2e2657df07e": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T23:27+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:5eef72e6b713f2e2657df07e",
-      "lastKnown": {
-        "destination": "GALDAKAO Ospitalea",
-        "direction": "",
-        "id": "3372",
-        "line": "A3641"
-      },
-      "line": "A3641",
-      "queuedAt": "2026-10-18T23:27:04+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3372"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {},
   "pendingVehicles": {
@@ -3474,7 +3444,7 @@
       "requiredMissing": 2
     },
     "5027": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:ac6d368fbe62bf3cfeefe1dc",
       "firstMissingAt": "2026-10-18T23:23:05+02:00",
@@ -3485,7 +3455,7 @@
         "line": "A0651"
       },
       "lastSeenAt": "2026-10-18T23:20:06+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "5038": {
