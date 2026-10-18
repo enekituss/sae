@@ -25604,93 +25604,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:727dfc9e92f428148df3072b": {
-      "destination": "GALDAKAO Ospital",
-      "detectedAt": "2026-10-18T17:09+02:00",
-      "direction": "",
-      "eventId": "missing:727dfc9e92f428148df3072b",
-      "firstMissingAt": "2026-10-18T17:05:01+02:00",
-      "lastSeenAt": "2026-10-18T17:01:40+02:00",
-      "line": "A3932",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T17:09:09+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3305"
-    },
-    "route:588057f09aa8917777823bc9": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SESTAO",
-          "old": "CABIECES"
-        }
-      ],
-      "destination": "SESTAO",
-      "detectedAt": "2026-10-18T17:09+02:00",
-      "direction": "",
-      "eventId": "route:588057f09aa8917777823bc9",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T17:09:09+02:00",
-      "type": "route_change",
-      "vehicleId": "7866"
-    },
-    "route:6d1522d5ff966b57b842e592": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CABIECES",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "CABIECES",
-      "detectedAt": "2026-10-18T17:09+02:00",
-      "direction": "",
-      "eventId": "route:6d1522d5ff966b57b842e592",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T17:09:09+02:00",
-      "type": "route_change",
-      "vehicleId": "7867"
-    },
-    "route:f299abb825a8ef03633899f4": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T17:09+02:00",
-      "direction": "",
-      "eventId": "route:f299abb825a8ef03633899f4",
-      "line": "A3115",
-      "queuedAt": "2026-10-18T17:09:09+02:00",
-      "type": "route_change",
-      "vehicleId": "7854"
-    },
-    "route_after_gap:c8b21cb857302f06f6bc5fa7": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "AIREPORTUA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T17:09+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:c8b21cb857302f06f6bc5fa7",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T17:09:09+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2076"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {},
   "pendingVehicles": {
@@ -25738,7 +25652,7 @@
       "requiredMissing": 2
     },
     "3305": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:727dfc9e92f428148df3072b",
       "firstMissingAt": "2026-10-18T17:05:01+02:00",
@@ -25749,7 +25663,7 @@
         "line": "A3932"
       },
       "lastSeenAt": "2026-10-18T17:01:40+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3335": {
