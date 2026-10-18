@@ -17,7 +17,7 @@ El secreto `BURGOS_GITHUB_TOKEN` permite al cron lanzar el workflow de alertas c
 
 Abre la URL `workers.dev` asignada por Cloudflare:
 
-- `/health`: debe devolver JSON con `"ok": true` y `telegramScheduler.configured: true`.
+- `/health`: debe devolver JSON con `"ok": true`, `apiVersion: "sae-three-resources-per-line-v1"` y `telegramScheduler.configured: true`. Si falta `apiVersion`, Cloudflare no está ejecutando todavía la revisión más reciente: despliega la última versión del directorio `cloudflare-worker-burgos`.
 - `/api/burgos/vehicles?line=01&fresh=1`: consulta la línea 01 en los tres recursos del SAE.
 - `/api/burgos/live?line=01&fresh=1`: devuelve las observaciones de estimación de una línea.
 - Para consultar toda la red, pide cada línea por separado (`01`–`23`, `73`, `87`–`89`, `C1`, `C2`). No se agrega toda la red dentro de una única invocación del Worker para respetar sus límites de subpeticiones.
