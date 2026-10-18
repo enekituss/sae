@@ -1594,7 +1594,7 @@ jobs:
               if str(subscription.get("mode") or "all") == "off":
                   text += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro."
               text += "\n\n«Nueva entrada» avisa cuando un coche desaparecido vuelve a aparecer en el feed."
-              text += "\n\n⚡ Las preferencias se guardan al momento. Los avisos se ajustan en la siguiente comprobación de autobuses."
+              text += "\n\n⚡ Con el webhook de Cloudflare activo, las preferencias se guardan al momento. Los avisos se ajustan en la siguiente comprobación de autobuses."
               telegram_api("sendMessage", {
                   "chat_id": destination_chat_id,
                   "text": text,
