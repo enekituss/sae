@@ -75,6 +75,7 @@
   const BURGOS_LIVE_SOURCE = 'https://movilidad.aytoburgos.es/rutas-en-directo';
   const BURGOS_VEHICLES_SOURCE = 'https://www.aytoburgos.es/web/movilidad/rutas-en-directo';
   const BURGOS_PORTLET = 'as_asac_isaenext_IsaenextWebPortlet';
+  const BURGOS_LINES = [...Array.from({length:23}, (_, i) => String(i + 1).padStart(2, '0')), '73', '87', '88', '89', 'C1', 'C2'];
   const BURGOS_PROXY_STORAGE = 'saeBurgosRealtimeProxy';
   const LIVE_REFRESH_MS = 25000;
   let liveMap = null;
@@ -170,6 +171,73 @@
     if (!response.ok) throw new Error('HTTP ' + response.status);
     try { return JSON.parse(body); }
     catch (_) { throw new Error('La fuente no devolvió JSON reconocible.'); }
+  }
+
+  function isaenextVehicleUrl(line) {
+    const timestamp = Date.now();
+    const url = new URL(BURGOS_VEHICLES_SOURCE);
+    url.searchParams.set('p_p_id', BURGOS_PORTLET);
+    url.searchParams.set('p_p_lifecycle', '2');
+    url.searchParams.set('p_p_state', 'normal');
+    url.searchParams.set('p_p_mode', 'view');
+    url.searchParams.set('p_p_cacheability', 'cacheLevelPage');
+    url.searchParams.set('p_p_resource_id', 'resourceVehicles');
+    url.searchParams.set('_as_asac_isaenext_IsaenextWebPortlet_formDate', String(timestamp));
+    url.searchParams.set('_as_asac_isaenext_IsaenextWebPortlet_line', line);
+    url.searchParams.set('_as_asac_isaenext_IsaenextWebPortlet_label', line);
+    url.searchParams.set('_t', String(timestamp));
+    return url.toString();
+  }
+
+  async function directVehicleLine(line) {
+    const payload = await jsonGet(isaenextVehicleUrl(line));
+    if (!Array.isArray(payload)) throw new Error('resourceVehicles no devolvió una lista para la línea ' + line + '.');
+    return payload.map(bus => ({ ...bus, lineId: line }));
+  }
+
+  async function directVehicleSnapshot() {
+    // Primero comprobamos una sola línea: si el navegador bloquea CORS,
+    // abandonamos enseguida y el mapa conserva la fuente de estimaciones existente.
+    const firstLine = BURGOS_LINES[0];
+    const firstRows = await directVehicleLine(firstLine);
+    const results = new Array(BURGOS_LINES.length);
+    const errors = [];
+    results[0] = firstRows;
+    let cursor = 1;
+    const concurrency = Math.min(5, BURGOS_LINES.length - 1);
+    await Promise.all(Array.from({ length: concurrency }, async () => {
+      while (true) {
+        const index = cursor++;
+        if (index >= BURGOS_LINES.length) return;
+        const line = BURGOS_LINES[index];
+        try {
+          results[index] = await directVehicleLine(line);
+        } catch (error) {
+          errors.push('Línea ' + line + ': ' + String(error.message || error));
+          results[index] = null;
+        }
+      }
+    }));
+    const vehicles = [];
+    results.forEach(rows => {
+      if (Array.isArray(rows)) vehicles.push(...rows);
+    });
+    const uniqueVehicles = new Map();
+    for (const bus of vehicles) {
+      const id = String(bus.id ?? bus.vehicleId ?? bus.vehicle_id ?? '').trim();
+      if (id) uniqueVehicles.set(id, { ...bus, id, lineId: String(bus.lineId || '') });
+    }
+    return normalizePublishedVehiclesSnapshot({
+      fetchedAt: new Date().toISOString(),
+      source: BURGOS_VEHICLES_SOURCE,
+      sourceType: 'ISAENEXT · resourceVehicles por línea',
+      lineCount: results.filter(Array.isArray).length,
+      totalLines: BURGOS_LINES.length,
+      partial: errors.length > 0,
+      warnings: errors.slice(0, 5),
+      count: uniqueVehicles.size,
+      vehicles: [...uniqueVehicles.values()]
+    });
   }
 
   function readLiveNodeId(node) {
@@ -593,13 +661,23 @@
         try {
           snapshot = await proxyVehicleSnapshot(base);
         } catch (vehicleError) {
-          console.warn('No se pudo consultar resourceVehicles por línea; se usará la API de estimaciones como respaldo:', vehicleError);
-          try {
-            snapshot = await proxyLiveSnapshot(base);
-          } catch (error) {
-            directError = error;
-            console.warn('No se pudo consultar el Worker guardado; se prueba la fuente directa:', error);
-          }
+          console.warn('No se pudo consultar resourceVehicles a través del Worker; se prueba la consulta directa:', vehicleError);
+        }
+      }
+      if (!snapshot) {
+        try {
+          snapshot = await directVehicleSnapshot();
+        } catch (vehicleError) {
+          directError = vehicleError;
+          console.warn('resourceVehicles no se pudo consultar directamente; se probará la fuente de estimaciones:', vehicleError);
+        }
+      }
+      if (!snapshot && base) {
+        try {
+          snapshot = await proxyLiveSnapshot(base);
+        } catch (error) {
+          directError = error;
+          console.warn('No se pudo consultar tampoco el endpoint de estimaciones del Worker:', error);
         }
       }
       if (!snapshot) {
@@ -607,7 +685,7 @@
           snapshot = await directLiveSnapshot();
         } catch (error) {
           directError = error;
-          if (base) throw new Error('El Worker y la consulta directa han fallado. Worker: ' + String(directError.message || directError));
+          if (base) throw new Error('Han fallado resourceVehicles, el endpoint del Worker y la consulta directa. Último error: ' + String(directError.message || directError));
           throw error;
         }
       }
