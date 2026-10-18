@@ -1031,21 +1031,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:aced6860781c663a00f2071c": {
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T06:19+02:00",
-      "direction": "",
-      "eventId": "missing:aced6860781c663a00f2071c",
-      "firstMissingAt": "2026-10-18T06:14:59+02:00",
-      "lastSeenAt": "2026-10-18T06:12:06+02:00",
-      "line": "A3136",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T06:19:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7839"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {},
   "pendingVehicles": {
@@ -1079,7 +1065,7 @@
       "requiredMissing": 2
     },
     "7839": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:aced6860781c663a00f2071c",
       "firstMissingAt": "2026-10-18T06:14:59+02:00",
@@ -1090,7 +1076,7 @@
         "line": "A3136"
       },
       "lastSeenAt": "2026-10-18T06:12:06+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
