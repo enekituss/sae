@@ -26092,39 +26092,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:5ad3353066ae914bdf3efc87": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T13:54+02:00",
-      "direction": "",
-      "eventId": "missing:5ad3353066ae914bdf3efc87",
-      "firstMissingAt": "2026-10-18T13:51:00+02:00",
-      "lastSeenAt": "2026-10-18T13:47:26+02:00",
-      "line": "A3512",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T13:54:59+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8652"
-    },
-    "route_after_gap:12a6d9a9e0884a9af69120d9": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "AIREPORTUA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T13:54+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:12a6d9a9e0884a9af69120d9",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T13:54:59+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2089"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1761": {
@@ -26449,7 +26417,7 @@
       "requiredMissing": 2
     },
     "8652": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:5ad3353066ae914bdf3efc87",
       "firstMissingAt": "2026-10-18T13:51:00+02:00",
@@ -26460,7 +26428,7 @@
         "line": "A3512"
       },
       "lastSeenAt": "2026-10-18T13:47:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8681": {
