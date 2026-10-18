@@ -528,7 +528,12 @@
     }
     $('liveBusCount').textContent = String(vehicles.length);
     $('livePositionCount').textContent = String(positioned.length);
-    $('liveStopCount').textContent = String(snapshot.stopCount || '—');
+    const publishedVehicleFeed = Boolean(snapshot.sourceType && snapshot.sourceType.includes('resourceVehicles'));
+    $('liveStopCount').textContent = publishedVehicleFeed
+      ? String(snapshot.lineCount ?? snapshot.totalLines ?? '—')
+      : String(snapshot.stopCount || '—');
+    const liveStopLabel = $('liveStopCount').parentElement?.querySelector('span');
+    if (liveStopLabel) liveStopLabel.textContent = publishedVehicleFeed ? 'líneas consultadas' : 'paradas consultadas';
 
     if (!vehicles.length) {
       $('liveVehicleList').innerHTML = '<div class="live-empty">La consulta no ha devuelto estimaciones de autobuses para las paradas consultadas. Puede que no haya servicio activo en este momento o que ISAENEXT no esté publicando estimaciones ahora. <a href="https://webburgos.com/bus/" target="_blank" rel="noopener noreferrer">Abrir otro visor de seguimiento en directo ↗</a></div>';
@@ -544,7 +549,7 @@
           '<div class="live-vehicle-chip">' + esc(routeLabel) + '</div>' +
           '<div class="live-vehicle-info"><strong>' + esc(idLabel + ' · ' + vehicle.destination) + '</strong>' +
           '<span>' + esc(secondsLabel(vehicle.seconds) + distanceLabel) + '</span>' +
-          '<span>Próxima referencia: ' + esc(vehicle.stopName || ('Parada ' + vehicle.stopId)) + '</span>' +
+          '<span>Próxima referencia: ' + esc(vehicle.stopName || (vehicle.stopId ? 'Parada ' + vehicle.stopId : 'Sin parada publicada')) + '</span>' +
           positionLabel + '</div></article>';
       }).join('');
     }
@@ -553,6 +558,11 @@
       setLiveStatus('La fuente respondió, pero no devolvió estimaciones de vehículos para las paradas consultadas. Puede que no haya buses activos ahora o que ISAENEXT no esté publicando datos.', 'warning');
     } else if (!positioned.length) {
       setLiveStatus('La conexión de estimaciones funciona, pero no se han podido reconstruir coordenadas de los vehículos con suficiente fiabilidad. No se muestran marcadores falsos.', 'warning');
+    } else if (publishedVehicleFeed) {
+      const published = vehicles.filter(v => v.position && String(v.position.source).includes('resourceVehicles')).length;
+      const unlocated = vehicles.length - published;
+      setLiveStatus('ISAENEXT publica ' + vehicles.length + ' coches repartidos por línea; ' + published +
+        ' tienen coordenadas utilizables y ' + unlocated + ' no publican coordenadas válidas. La consulta se actualiza automáticamente.', published ? 'ok' : 'warning');
     } else {
       const located = vehicles.filter(v => v.position && String(v.position.source).includes('GPS publicado')).length;
       const estimated = positioned.length - located;
