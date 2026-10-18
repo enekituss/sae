@@ -1,0 +1,45 @@
+name: Actualizar autobuses urbanos de Burgos
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/update_burgos_vehicles.py"
+      - ".github/workflows/update-burgos-vehicles.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-vehiculos-burgos
+  cancel-in-progress: false
+
+jobs:
+  refresh-burgos-vehicles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Consultar coches urbanos por línea en ISAENEXT
+        run: python scripts/update_burgos_vehicles.py
+
+      - name: Publicar la copia de vehículos si ha cambiado
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add burgos-vehicles.json
+          if git diff --cached --quiet; then
+            echo "La copia de vehículos de Burgos no ha cambiado."
+          else
+            git commit -m "Actualizar autobuses urbanos de Burgos"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
