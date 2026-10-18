@@ -24495,39 +24495,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:cab04c05d33387e4af2986c9": {
-      "destination": "ARRAZOLA",
-      "detectedAt": "2026-10-18T11:43+02:00",
-      "direction": "",
-      "eventId": "missing:cab04c05d33387e4af2986c9",
-      "firstMissingAt": "2026-10-18T11:39:00+02:00",
-      "lastSeenAt": "2026-10-18T11:35:31+02:00",
-      "line": "A3913",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T11:43:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3389"
-    },
-    "route_after_gap:ecf2de95e740ab0a1deea370": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "LUTXANA"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T11:43+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:ecf2de95e740ab0a1deea370",
-      "line": "A3129",
-      "queuedAt": "2026-10-18T11:43:00+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7877"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1714": {
@@ -24765,7 +24733,7 @@
       "requiredMissing": 2
     },
     "3389": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:cab04c05d33387e4af2986c9",
       "firstMissingAt": "2026-10-18T11:39:00+02:00",
@@ -24776,7 +24744,7 @@
         "line": "A3913"
       },
       "lastSeenAt": "2026-10-18T11:35:31+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "5017": {
