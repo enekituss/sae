@@ -361,7 +361,7 @@ export default {
         ok: true,
         service: "SAE Spotter scheduler y proxy público",
         cadence: "*/2 * * * *",
-        endpoints: ["/api/burgos/nodes", "/api/burgos/estimates?stopId=200", "/api/burgos/live"],
+        endpoints: ["/api/burgos/nodes", "/api/burgos/estimates?stopId=200", "/api/burgos/vehicles", "/api/burgos/vehicles?line=01", "/api/burgos/live"],
         note: "La fuente pública entrega estimaciones por parada. Las coordenadas sólo se consideran GPS si el servicio las publica; si no, el mapa calcula una posición estimada sobre el trazado GTFS."
       });
     }
