@@ -46,6 +46,7 @@ jobs:
           import urllib.error
           import urllib.parse
           import urllib.request
+          from concurrent.futures import ThreadPoolExecutor, as_completed
           from datetime import datetime, timezone
           from zoneinfo import ZoneInfo
 
@@ -416,28 +417,118 @@ jobs:
               event["eventId"] = event_id
               event["queuedAt"] = event["detectedAt"]
               event["targetChats"] = []
-              event["deliveredTo"] = []
-              outbox[event_id] = event
-
-          snapshot_ok = False
+                snapshot_ok = False
           current = {}
           source_errors = []
 
-          # Primera fuente: estimaciones oficiales por parada. La segunda es el
-          # endpoint de vehículos por línea, como respaldo independiente.
-          snapshot_sources = [
-              ("/api/burgos/live", "observations"),
-              ("/api/burgos/vehicles", "vehicles")
-          ]
+          # Intenta consultar directamente el recurso oficial desde GitHub Actions,
+          # evitando el salto por Cloudflare que estaba devolviendo HTTP 522.
+          burgos_lines = [f"{number:02d}" for number in range(1, 24)] + ["73", "87", "88", "89", "C1", "C2"]
 
-          for endpoint, data_kind in snapshot_sources:
+          def fetch_direct_burgos_line(line):
+              timestamp = str(int(time.time() * 1000))
+              candidate_urls = [
+                  "https://movilidad.aytoburgos.es/rutas-en-directo/-/isaenext/filter/" + line,
+                  "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo/-/isaenext/filter/" + line,
+                  "https://www.aytoburgos.es/web/movilidad/rutas-en-directo/-/isaenext/filter/" + line,
+                  "https://movilidad.aytoburgos.es/rutas-en-directo"
+              ]
+              errors = []
+              for base_url in candidate_urls:
+                  params = {
+                      "p_p_id": "as_asac_isaenext_IsaenextWebPortlet",
+                      "p_p_lifecycle": "2",
+                      "p_p_state": "normal",
+                      "p_p_mode": "view",
+                      "p_p_cacheability": "cacheLevelPage",
+                      "p_p_resource_id": "resourceVehicles",
+                      "_as_asac_isaenext_IsaenextWebPortlet_formDate": timestamp,
+                      "_as_asac_isaenext_IsaenextWebPortlet_line": line,
+                      "_as_asac_isaenext_IsaenextWebPortlet_label": line,
+                      "_t": timestamp
+                  }
+                  separator = "&" if "?" in base_url else "?"
+                  url = base_url + separator + urllib.parse.urlencode(params)
+                  request = urllib.request.Request(
+                      url,
+                      headers={
+                          "Accept": "application/json, text/plain, */*",
+                          "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+                          "Cache-Control": "no-cache",
+                          "Pragma": "no-cache",
+                          "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo/-/isaenext/filter/" + line,
+                          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                      }
+                  )
+                  try:
+                      with urllib.request.urlopen(request, timeout=8) as response:
+                          payload = json.loads(response.read().decode("utf-8"))
+                      if not isinstance(payload, list):
+                          raise RuntimeError("respuesta JSON no es una lista")
+                      rows = []
+                      for raw in payload:
+                          if not isinstance(raw, dict):
+                              continue
+                          vehicle_id = clean(raw.get("id") or raw.get("vehicleId") or raw.get("vehicle_id") or raw.get("vehicle"))
+                          if vehicle_id:
+                              value = dict(raw)
+                              value["id"] = vehicle_id
+                              value["lineId"] = clean(raw.get("lineId") or raw.get("line") or line)
+                              rows.append(value)
+                      return rows
+                  except urllib.error.HTTPError as exc:
+                      try:
+                          body = exc.read().decode("utf-8", errors="replace").strip()
+                      except Exception:
+                          body = ""
+                      errors.append(str(exc.code) + "@" + urllib.parse.urlparse(base_url).netloc + (": " + body[:100] if body else ""))
+                  except Exception as exc:
+                      errors.append(urllib.parse.urlparse(base_url).netloc + ": " + str(exc)[:120])
+              raise RuntimeError("línea " + line + ": " + " || ".join(errors[:4]))
+
+          direct_rows = {}
+          direct_errors = []
+          try:
+              with ThreadPoolExecutor(max_workers=5) as executor:
+                  futures = {executor.submit(fetch_direct_burgos_line, line): line for line in burgos_lines}
+                  for future in as_completed(futures):
+                      line = futures[future]
+                      try:
+                          direct_rows[line] = future.result()
+                      except Exception as exc:
+                          direct_errors.append(str(exc))
+
+              if direct_errors:
+                  raise RuntimeError(
+                      str(len(direct_errors)) + "/" + str(len(burgos_lines)) + " líneas no respondieron. "
+                      + " | ".join(direct_errors[:5])
+                  )
+
+              direct_vehicles = []
+              for line in burgos_lines:
+                  direct_vehicles.extend(direct_rows.get(line, []))
+              for raw_vehicle in direct_vehicles:
+                  vehicle = normalise_vehicle(raw_vehicle)
+                  if vehicle:
+                      current[vehicle["id"]] = vehicle
+              snapshot_ok = True
+              print("Snapshot de Burgos válido mediante consulta directa oficial: " + str(len(current)) + " coches; " + str(len(burgos_lines)) + " líneas consultadas.")
+          except Exception as exc:
+              source_errors.append("consulta directa oficial: " + str(exc))
+              current = {}
+              snapshot_ok = False
+
+          # Si el Ayuntamiento no permite consultas directas desde Actions, prueba
+          # el endpoint de estimaciones del Worker como alternativa. No se usa el
+          # endpoint /vehicles aquí porque volvería a consultar resourceVehicles.
+          if not snapshot_ok:
               try:
                   request = urllib.request.Request(
-                      WORKER_URL + endpoint,
+                      WORKER_URL + "/api/burgos/live",
                       headers={"Accept": "application/json", "User-Agent": "SAE-Spotter-Burgos-Telegram/1.0"}
                   )
                   try:
-                      with urllib.request.urlopen(request, timeout=210) as response:
+                      with urllib.request.urlopen(request, timeout=150) as response:
                           payload = json.loads(response.read().decode("utf-8"))
                   except urllib.error.HTTPError as exc:
                       raw_error = exc.read().decode("utf-8", errors="replace").strip()
@@ -449,88 +540,54 @@ jobs:
                       except Exception:
                           pass
                       detail = detail or raw_error[:500]
-                      message = "HTTP " + str(exc.code) + " en " + endpoint
-                      if detail:
-                          message += ": " + detail
-                      raise RuntimeError(message) from exc
+                      raise RuntimeError("HTTP " + str(exc.code) + " en /api/burgos/live: " + detail) from exc
 
-                  if not isinstance(payload, dict):
-                      raise RuntimeError("la API no devolvió un objeto JSON.")
+                  observations = payload.get("observations") if isinstance(payload, dict) else None
+                  if not isinstance(observations, list):
+                      raise RuntimeError(clean(payload.get("error")) if isinstance(payload, dict) else "la API no devolvió una lista de estimaciones.")
+                  completed_groups = int(payload.get("completedGroups") or 0)
+                  total_groups = int(payload.get("totalGroups") or 0)
+                  if payload.get("partial") or (total_groups and completed_groups < total_groups):
+                      warnings = payload.get("warnings") or []
+                      raise RuntimeError("estimaciones incompletas (" + str(completed_groups) + "/" + str(total_groups) + " grupos): " + "; ".join(map(str, warnings[:3])))
 
-                  if data_kind == "observations":
-                      observations = payload.get("observations")
-                      if not isinstance(observations, list):
-                          raise RuntimeError(clean(payload.get("error")) or "la API no devolvió una lista de estimaciones.")
-
-                      completed_groups = int(payload.get("completedGroups") or 0)
-                      total_groups = int(payload.get("totalGroups") or 0)
-                      if payload.get("partial") or (total_groups and completed_groups < total_groups):
-                          warnings = payload.get("warnings") or []
-                          raise RuntimeError(
-                              "las estimaciones oficiales están incompletas ("
-                              + str(completed_groups) + "/" + str(total_groups) + " grupos). "
-                              + "; ".join(map(str, warnings[:3]))
-                          )
-
-                      candidate_current = {}
-                      candidate_eta = {}
-                      for observation in observations:
-                          if not isinstance(observation, dict):
-                              continue
-                          vehicle_id = clean(observation.get("vehicleId") or observation.get("vehicle") or observation.get("vehicle_id"))
-                          if not vehicle_id or vehicle_id == "0":
-                              continue
-                          vehicle = normalise_vehicle({
-                              "id": vehicle_id,
-                              "lineId": observation.get("line"),
-                              "destination": observation.get("destination"),
-                              "direction": observation.get("direction")
-                          })
-                          if not vehicle:
-                              continue
-                          try:
-                              eta_score = float(observation.get("seconds"))
-                          except (TypeError, ValueError):
-                              eta_score = float("inf")
-                          if vehicle_id not in candidate_current or eta_score < candidate_eta.get(vehicle_id, float("inf")):
-                              candidate_current[vehicle_id] = vehicle
-                              candidate_eta[vehicle_id] = eta_score
-
-                      # Si hay estimaciones pero ninguna identifica el autobús,
-                      # no tratamos eso como un feed vacío; se prueba el respaldo.
-                      if observations and not candidate_current:
-                          raise RuntimeError("hay estimaciones, pero ninguna incluye ID de vehículo; se evita una falsa captura vacía.")
-
-                      current = candidate_current
-                      snapshot_ok = True
-                      print("Snapshot de Burgos válido mediante estimaciones oficiales: " + str(len(current)) + " coches identificados (" + str(len(observations)) + " observaciones).")
-                      break
-
-                  vehicles_raw = payload.get("vehicles")
-                  if not isinstance(vehicles_raw, list):
-                      raise RuntimeError(clean(payload.get("error")) or "la API no devolvió una lista de autobuses.")
-                  failed_lines = payload.get("failedLines") or []
-                  line_count = int(payload.get("lineCount") or 0)
-                  total_lines = int(payload.get("totalLines") or 0)
-                  if payload.get("partial") or failed_lines or (total_lines and line_count and line_count < total_lines):
-                      raise RuntimeError("la consulta municipal por líneas es parcial; líneas fallidas: " + ", ".join(map(str, failed_lines)))
                   candidate_current = {}
-                  for raw_vehicle in vehicles_raw:
-                      vehicle = normalise_vehicle(raw_vehicle)
-                      if vehicle:
-                          candidate_current[vehicle["id"]] = vehicle
+                  candidate_eta = {}
+                  for observation in observations:
+                      if not isinstance(observation, dict):
+                          continue
+                      vehicle_id = clean(observation.get("vehicleId") or observation.get("vehicle") or observation.get("vehicle_id"))
+                      if not vehicle_id or vehicle_id == "0":
+                          continue
+                      vehicle = normalise_vehicle({
+                          "id": vehicle_id,
+                          "lineId": observation.get("line"),
+                          "destination": observation.get("destination"),
+                          "direction": observation.get("direction")
+                      })
+                      if not vehicle:
+                          continue
+                      try:
+                          eta_score = float(observation.get("seconds"))
+                      except (TypeError, ValueError):
+                          eta_score = float("inf")
+                      if vehicle_id not in candidate_current or eta_score < candidate_eta.get(vehicle_id, float("inf")):
+                          candidate_current[vehicle_id] = vehicle
+                          candidate_eta[vehicle_id] = eta_score
+
+                  if observations and not candidate_current:
+                      raise RuntimeError("hay estimaciones pero ninguna incluye ID de vehículo.")
                   current = candidate_current
                   snapshot_ok = True
-                  print("Snapshot de Burgos válido mediante vehículos por línea: " + str(len(current)) + " coches.")
-                  break
-
+                  print("Snapshot de Burgos válido mediante estimaciones oficiales: " + str(len(current)) + " coches identificados (" + str(len(observations)) + " observaciones).")
               except Exception as exc:
-                  source_errors.append(endpoint + ": " + str(exc))
+                  source_errors.append("estimaciones del Worker: " + str(exc))
                   current = {}
                   snapshot_ok = False
 
           if not snapshot_ok:
               print("AVISO: no se ha podido obtener un snapshot completo de Burgos; no se recalcularán las alertas: " + " || ".join(source_errors))
+e Burgos; no se recalcularán las alertas: " + " || ".join(source_errors))
 
           if snapshot_ok:
               now = iso_now()
