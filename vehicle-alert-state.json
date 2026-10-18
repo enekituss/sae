@@ -25598,37 +25598,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:a91d597c0793344c11d830ac": {
-      "destination": "OROZKO Uribiarte",
-      "detectedAt": "2026-10-18T15:01+02:00",
-      "direction": "",
-      "eventId": "missing:a91d597c0793344c11d830ac",
-      "firstMissingAt": "2026-10-18T14:57:03+02:00",
-      "lastSeenAt": "2026-10-18T14:53:26+02:00",
-      "line": "A3613",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T15:01:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3366"
-    },
-    "vehicle_returned:bc06118fc356d513af12f710": {
-      "destination": "BERANGO (Artea)",
-      "detectedAt": "2026-10-18T15:01+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:bc06118fc356d513af12f710",
-      "lastKnown": {
-        "destination": "AREETA/LAS ARENAS",
-        "direction": "",
-        "id": "1719",
-        "line": "A3451"
-      },
-      "line": "A3422",
-      "queuedAt": "2026-10-18T15:01:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "1719"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2103": {
@@ -25881,7 +25851,7 @@
       "requiredMissing": 2
     },
     "3366": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a91d597c0793344c11d830ac",
       "firstMissingAt": "2026-10-18T14:57:03+02:00",
@@ -25892,7 +25862,7 @@
         "line": "A3613"
       },
       "lastSeenAt": "2026-10-18T14:53:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3376": {
