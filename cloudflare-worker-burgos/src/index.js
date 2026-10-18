@@ -140,12 +140,18 @@ function extractRouteStopIds(payload) {
     }
     if (typeof value !== "object") return;
 
+    const hasCoordinates = (value.lat !== undefined || value.latitude !== undefined) &&
+      (value.lng !== undefined || value.lon !== undefined || value.longitude !== undefined);
+    const hasStopName = value.name !== undefined || value.stopName !== undefined ||
+      value.stop_name !== undefined || value.nombre !== undefined || value.parada !== undefined;
+    const looksLikeStop = context || (hasCoordinates && hasStopName);
+
     for (const [field, fieldValue] of Object.entries(value)) {
       if (stopIdKey.test(field) && typeof fieldValue !== "object") add(fieldValue);
-      if (field === "num" && context && typeof fieldValue !== "object") add(fieldValue);
-      if (field === "id" && context && typeof fieldValue !== "object") add(fieldValue);
+      if (field === "num" && looksLikeStop && typeof fieldValue !== "object") add(fieldValue);
+      if (field === "id" && looksLikeStop && typeof fieldValue !== "object") add(fieldValue);
     }
-    if (context) {
+    if (looksLikeStop) {
       const id = stopIdFrom(value, true);
       if (id) add(id);
     }
