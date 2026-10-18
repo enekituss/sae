@@ -1,6 +1,6 @@
 # Programador rápido de Bizkaibus SAE
 
-Este Worker no descarga ni modifica los datos por su cuenta: cada dos minutos dispara por separado los workflows de GitHub Actions `update-siri.yml` (Bizkaibus) y `telegram-burgos.yml` (bot de Burgos). Comprueba si cada workflow ya está en cola o en curso para no duplicar ejecuciones. Así se procesan también los mensajes del menú de Telegram con una demora habitual de hasta dos minutos, sin esperar solo al cron nativo de cinco minutos.
+Este Worker hace tres tareas independientes: dispara los workflows de detección de Bizkaibus y Burgos aproximadamente cada dos minutos, sirve el proxy público de Burgos y recibe mediante webhook los mensajes de los dos bots de Telegram. Los menús se responden en el momento; el detector de autobuses mantiene su frecuencia de consulta normal. Las preferencias de usuarios se guardan en una rama `telegram-data` separada para no competir con los archivos de estado ni provocar despliegues por cada selección.
 
 ## Configuración necesaria (una sola vez)
 
@@ -9,7 +9,7 @@ Este Worker no descarga ni modifica los datos por su cuenta: cada dos minutos di
 1. Abre https://github.com/settings/personal-access-tokens/new
 2. Crea un **Fine-grained personal access token**.
 3. Selecciona como propietario `enekituss` y limita el acceso al repositorio `sae`.
-4. En permisos del repositorio, concede **Actions: Read and write**. Conserva también el permiso Metadata de solo lectura que GitHub exige.
+4. En permisos del repositorio, concede **Actions: Read and write** y **Contents: Read and write**. Conserva también el permiso Metadata de solo lectura que GitHub exige.
 5. Crea el token y cópialo temporalmente en un lugar seguro. **No lo pegues en el código, en un issue ni en un chat.** Este token de GitHub es distinto del token del bot de Telegram.
 
 ### 2. Crear el Worker conectado a este repositorio
@@ -25,7 +25,13 @@ Este Worker no descarga ni modifica los datos por su cuenta: cada dos minutos di
 
 En el Worker recién creado, abre **Settings → Variables and Secrets** (la denominación puede variar ligeramente), añade una variable de tipo **Secret** con nombre `GITHUB_TOKEN` y pega el token de GitHub. Guarda el cambio.
 
-No configures aquí el token de Telegram: los mensajes continúan enviándose desde el flujo de GitHub Actions, usando sus secretos `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID`.
+Además de `GITHUB_TOKEN`, añade estos tres secretos a los ajustes del Worker:
+
+- `TELEGRAM_BIZKAIBUS_BOT_TOKEN`: copia localmente el valor de Actions `TELEGRAM_BOT_TOKEN`.
+- `TELEGRAM_BURGOS_BOT_TOKEN`: copia localmente el valor de Actions `BURGOS_TELEGRAM_BOT_TOKEN`.
+- `TELEGRAM_WEBHOOK_SECRET`: crea una cadena aleatoria de 32 o más caracteres, usando solo letras, números, guion o guion bajo. Se usa tanto para autenticar los webhooks que Telegram envía como para proteger la operación de registro.
+
+No publiques ni pegues estos valores en issues, código, ni chats. Los tokens de Actions siguen siendo los que usan los workflows para enviar los avisos de autobuses; el Worker usa copias guardadas como Secrets para responder el menú al instante.
 
 ### 4. Verificar el Worker
 
@@ -37,7 +43,21 @@ Después, en **Logs / Observability**, comprueba que en el siguiente ciclo apare
 
 Los dos workflows conservan su programación nativa de cinco minutos como respaldo; el Worker dispara ambos cada dos minutos cuando no hay una ejecución pendiente o en curso. No quites esos respaldos hasta verificar que ambos workflows aparecen de forma regular en GitHub Actions.
 
-El Worker comprueba de forma independiente si cada workflow está en cola o en curso; si lo está, omite ese workflow en ese ciclo y continúa con el otro. La respuesta del menú depende de cuándo se procese el siguiente mensaje y de cuánto tarde GitHub Actions; normalmente debería ser en un ciclo de dos minutos, no necesariamente instantáneo.
+El Worker comprueba de forma independiente si cada workflow está en cola o en curso; si lo está, omite ese workflow en ese ciclo y continúa con el otro.
+
+### 5. Registrar los webhooks de los dos bots
+
+Tras guardar los tres secretos y desplegar el Worker, abre PowerShell en tu PC y ejecuta:
+
+```powershell
+$secret = Read-Host "Pega TELEGRAM_WEBHOOK_SECRET"
+Invoke-RestMethod -Method Post -Uri "https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev/admin/telegram/setup" -Headers @{ Authorization = "Bearer $secret" }
+Remove-Variable secret
+```
+
+Debe responder con `ok: true` y enumerar `bizkaibus` y `burgos`. Esta operación llama a `setWebhook` para ambos bots, con una conexión simultánea para conservar el orden de los mensajes. Los workflows consultan `getWebhookInfo` y dejan de usar `getUpdates` cuando el webhook ya está activo; si no lo está, el polling continúa como respaldo.
+
+Las preferencias se guardan como un fichero por usuario en la rama `telegram-data`, y los workflows descargan esa rama antes de filtrar los avisos. Así el menú responde instantáneamente sin esperar al ciclo de GitHub Actions, pero los avisos de cambios reales siguen estando limitados por la siguiente consulta de los feeds públicos.
 
 
 ## Proxy de información en directo de Burgos
