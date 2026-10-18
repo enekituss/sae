@@ -61,13 +61,13 @@
         </div>
       </header>
       <div id="liveConfigPanel" class="live-config" hidden>
-        <label for="liveProxyUrl">URL de Cloudflare Worker <span>(opcional si funciona la conexión directa)</span></label>
+        <label for="liveProxyUrl">URL de Cloudflare Worker <span>(recomendado para los coches por línea)</span></label>
         <div class="live-config-row">
           <input id="liveProxyUrl" type="url" inputmode="url" placeholder="https://nombre.subdominio.workers.dev">
           <button id="liveProxySave" type="button">Guardar conexión</button>
           <button id="liveProxyClear" class="quiet-button" type="button">Quitar</button>
         </div>
-        <p>Se utiliza solo como intermediario para acceder al servicio municipal si Chrome bloquea la conexión directa. La URL se guarda únicamente en este navegador.</p>
+        <p>El Worker consulta resourceVehicles por línea y evita depender de CORS del navegador. Si la conexión directa está bloqueada, pega aquí solo el dominio workers.dev, sin rutas; se guarda únicamente en este navegador.</p>
       </div>
       <div class="live-summary">
         <div><strong id="liveBusCount">—</strong><span>autobuses detectados</span></div>
