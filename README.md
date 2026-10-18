@@ -72,6 +72,8 @@ El manifiesto `manifest.webmanifest`, el Service Worker y los iconos permiten qu
 
 ## Horarios urbanos de Burgos
 - `burgos.html` permite consultar líneas y viajes, y abrir la tabla completa de horas programadas para cada parada.
+- `burgos.html` muestra solo líneas y autobuses activos, agrupados como en Bizkaibus, sin mapa ni consulta directa desde el navegador.
+- `scripts/update_burgos_vehicles.py` consulta el recurso municipal `resourceVehicles` por línea y genera `burgos-vehicles.json`; `.github/workflows/update-burgos-vehicles.yml` intenta renovar esta copia cada cinco minutos.
 - El seguimiento de Burgos consulta `resourceVehicles` del servicio ISAENEXT por línea a través de `/api/burgos/vehicles`; si el recurso falla, conserva `/api/burgos/live` como respaldo de estimaciones por parada. Los coches y las posiciones se muestran solo según los campos que publique la fuente.
 - `scripts/update_burgos_gtfs.py` descarga `https://www.aytoburgos.es/GTFS/Google_transit.zip` y genera `burgos-data.json`.
 - `.github/workflows/update-burgos-gtfs.yml` actualiza el fichero diariamente y se puede lanzar manualmente desde GitHub Actions.
