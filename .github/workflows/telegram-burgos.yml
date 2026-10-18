@@ -660,7 +660,7 @@ jobs:
                   snapshot_ok = False
 
           if not snapshot_ok:
-              # Tercera opción: usar el recurso resourceVehicles del Worker como respaldo.
+              # Tercera opción: usar el Worker independiente de Burgos como respaldo.
               try:
                   worker_url = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev/api/burgos/vehicles"
                   worker_request = urllib.request.Request(
