@@ -433,7 +433,7 @@ jobs:
                       "User-Agent": "SAE-Spotter-Burgos-Telegram/1.0"
                   }
               )
-              with urllib.request.urlopen(worker_request, timeout=90) as response:
+              with urllib.request.urlopen(worker_request, timeout=180) as response:
                   worker_payload = json.loads(response.read().decode("utf-8"))
               if not isinstance(worker_payload, dict) or worker_payload.get("ok") is not True:
                   raise RuntimeError("el Worker de Burgos no devolvió una respuesta válida")
