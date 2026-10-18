@@ -25086,45 +25086,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "missing:8fb5ee5e4c6a7139fef6b170": {
-      "destination": "ERRIGOITI",
-      "detectedAt": "2026-10-18T16:15+02:00",
-      "direction": "",
-      "eventId": "missing:8fb5ee5e4c6a7139fef6b170",
-      "firstMissingAt": "2026-10-18T16:11:03+02:00",
-      "lastSeenAt": "2026-10-18T16:07:34+02:00",
-      "line": "A3534",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T16:15:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8680"
-    },
-    "route_after_gap:646931800b24bb37df7c4b07": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3913",
-          "old": "A3911"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ARRAZOLA",
-          "old": "DURANGO"
-        }
-      ],
-      "destination": "ARRAZOLA",
-      "detectedAt": "2026-10-18T16:15+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:646931800b24bb37df7c4b07",
-      "line": "A3913",
-      "queuedAt": "2026-10-18T16:15:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3372"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1714": {
@@ -25364,7 +25326,7 @@
       "requiredMissing": 2
     },
     "8680": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:8fb5ee5e4c6a7139fef6b170",
       "firstMissingAt": "2026-10-18T16:11:03+02:00",
@@ -25375,7 +25337,7 @@
         "line": "A3534"
       },
       "lastSeenAt": "2026-10-18T16:07:34+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
@@ -25383,9 +25345,9 @@
   "telegramSubscriptions": {
     "5333330154": {
       "awaitingVehicleId": false,
-      "mode": "all",
+      "mode": "line",
       "vehicleId": "7830"
     }
   },
-  "telegramUpdateOffset": 30217611
+  "telegramUpdateOffset": 30217612
 }
