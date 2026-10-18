@@ -24322,198 +24322,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:4c0f448b1424d016dc2fb695": {
-      "destination": "ELORRIO",
-      "detectedAt": "2026-10-18T14:51+02:00",
-      "direction": "",
-      "eventId": "entered:4c0f448b1424d016dc2fb695",
-      "firstObservedAt": "2026-10-18T14:47:03+02:00",
-      "line": "A3923",
-      "queuedAt": "2026-10-18T14:51:02+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "3374"
-    },
-    "missing:e3a15bbd3b1001737ff9dcd4": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T14:51+02:00",
-      "direction": "",
-      "eventId": "missing:e3a15bbd3b1001737ff9dcd4",
-      "firstMissingAt": "2026-10-18T14:47:03+02:00",
-      "lastSeenAt": "2026-10-18T14:43:19+02:00",
-      "line": "A3512",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T14:51:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8666"
-    },
-    "route:2a17d5e68307d8eb6c90617d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GERNIKA",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "GERNIKA",
-      "detectedAt": "2026-10-18T14:51+02:00",
-      "direction": "",
-      "eventId": "route:2a17d5e68307d8eb6c90617d",
-      "line": "A3514",
-      "queuedAt": "2026-10-18T14:51:02+02:00",
-      "type": "route_change",
-      "vehicleId": "8641"
-    },
-    "route:3c31e341186f1e91c37c4c4b": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CABIECES",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "CABIECES",
-      "detectedAt": "2026-10-18T14:51+02:00",
-      "direction": "",
-      "eventId": "route:3c31e341186f1e91c37c4c4b",
-      "line": "A3135",
-      "queuedAt": "2026-10-18T14:51:02+02:00",
-      "type": "route_change",
-      "vehicleId": "7815"
-    },
-    "route:47671d920afc02d7fe71da9e": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "DERIO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "DERIO",
-      "detectedAt": "2026-10-18T14:51+02:00",
-      "direction": "",
-      "eventId": "route:47671d920afc02d7fe71da9e",
-      "line": "A2153",
-      "queuedAt": "2026-10-18T14:51:02+02:00",
-      "type": "route_change",
-      "vehicleId": "2088"
-    },
-    "route:7d404fadcc3e5ec5a72f1edd": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "LARRABETZU",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "LARRABETZU",
-      "detectedAt": "2026-10-18T14:51+02:00",
-      "direction": "",
-      "eventId": "route:7d404fadcc3e5ec5a72f1edd",
-      "line": "A3631",
-      "queuedAt": "2026-10-18T14:51:02+02:00",
-      "type": "route_change",
-      "vehicleId": "3265"
-    },
-    "route:a73032450d575326770b0f75": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3916",
-          "old": "A3915"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ONDARROA",
-          "old": "BILBAO (Aut.)"
-        }
-      ],
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-18T14:51+02:00",
-      "direction": "",
-      "eventId": "route:a73032450d575326770b0f75",
-      "line": "A3916",
-      "queuedAt": "2026-10-18T14:51:02+02:00",
-      "type": "route_change",
-      "vehicleId": "8678"
-    },
-    "route:e996cc3db11dee7513971207": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "GALDAKAO Urreta"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T14:51+02:00",
-      "direction": "",
-      "eventId": "route:e996cc3db11dee7513971207",
-      "line": "A3631",
-      "queuedAt": "2026-10-18T14:51:02+02:00",
-      "type": "route_change",
-      "vehicleId": "3356"
-    },
-    "route:ebd96dd288020a891714def5": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GORLIZ",
-          "old": "PLENTZIA (Metro)"
-        }
-      ],
-      "destination": "GORLIZ",
-      "detectedAt": "2026-10-18T14:51+02:00",
-      "direction": "",
-      "eventId": "route:ebd96dd288020a891714def5",
-      "line": "A3499",
-      "queuedAt": "2026-10-18T14:51:02+02:00",
-      "type": "route_change",
-      "vehicleId": "1715"
-    },
-    "route_after_gap:b4e62518d0dc5bc02e1f42a2": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "DERIO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T14:51+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:b4e62518d0dc5bc02e1f42a2",
-      "line": "A2153",
-      "queuedAt": "2026-10-18T14:51:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2087"
-    },
-    "vehicle_returned:bee763cf7a016c7385a26d0e": {
-      "destination": "ARRIGORRIAGA",
-      "detectedAt": "2026-10-18T14:51+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:bee763cf7a016c7385a26d0e",
-      "lastKnown": {
-        "destination": "GALDAKAO Ospitalea",
-        "direction": "",
-        "id": "3364",
-        "line": "A3641"
-      },
-      "line": "A3641",
-      "queuedAt": "2026-10-18T14:51:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3364"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "7826": {
@@ -24706,7 +24515,7 @@
       "requiredMissing": 2
     },
     "8666": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:e3a15bbd3b1001737ff9dcd4",
       "firstMissingAt": "2026-10-18T14:47:03+02:00",
@@ -24717,7 +24526,7 @@
         "line": "A3512"
       },
       "lastSeenAt": "2026-10-18T14:43:19+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8681": {
