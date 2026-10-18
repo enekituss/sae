@@ -424,11 +424,27 @@ jobs:
                   WORKER_URL + "/api/burgos/vehicles",
                   headers={"Accept": "application/json", "User-Agent": "SAE-Spotter-Burgos-Telegram/1.0"}
               )
-              with urllib.request.urlopen(request, timeout=180) as response:
-                  payload = json.loads(response.read().decode("utf-8"))
-              vehicles_raw = payload.get("vehicles")
-              if payload.get("ok") is not True or not isinstance(vehicles_raw, list):
-                  raise RuntimeError(clean(payload.get("error")) or "La API no devolvió una lista de autobuses.")
+              try:
+                  with urllib.request.urlopen(request, timeout=180) as response:
+                      payload = json.loads(response.read().decode("utf-8"))
+              except urllib.error.HTTPError as exc:
+                  raw_error = exc.read().decode("utf-8", errors="replace").strip()
+                  detail = ""
+                  try:
+                      error_payload = json.loads(raw_error)
+                      if isinstance(error_payload, dict):
+                          detail = clean(error_payload.get("error"))
+                  except Exception:
+                      pass
+                  detail = detail or raw_error[:500]
+                  message = "HTTP " + str(exc.code) + " en /api/burgos/vehicles"
+                  if detail:
+                      message += ": " + detail
+                  raise RuntimeError(message) from exc
+              vehicles_raw = payload.get("vehicles") if isinstance(payload, dict) else None
+              if not isinstance(vehicles_raw, list):
+                  api_error = clean(payload.get("error")) if isinstance(payload, dict) else ""
+                  raise RuntimeError(api_error or "La API no devolvió una lista de autobuses.")
               failed_lines = payload.get("failedLines") or []
               line_count = int(payload.get("lineCount") or 0)
               total_lines = int(payload.get("totalLines") or 0)
