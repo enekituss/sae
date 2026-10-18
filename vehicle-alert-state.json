@@ -26918,121 +26918,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:968764debc8e372b910f325d": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T19:01+02:00",
-      "direction": "",
-      "eventId": "missing:968764debc8e372b910f325d",
-      "firstMissingAt": "2026-10-18T18:57:01+02:00",
-      "lastSeenAt": "2026-10-18T18:53:53+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T19:01:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2078"
-    },
-    "route:4645c6c4788276bb34bf206c": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3471",
-          "old": "A3472"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GETXO",
-          "old": "CRUCES/GURUTZETA"
-        }
-      ],
-      "destination": "GETXO",
-      "detectedAt": "2026-10-18T19:01+02:00",
-      "direction": "",
-      "eventId": "route:4645c6c4788276bb34bf206c",
-      "line": "A3471",
-      "queuedAt": "2026-10-18T19:01:03+02:00",
-      "type": "route_change",
-      "vehicleId": "1716"
-    },
-    "route:bb2dcae7cc4ad13fd302f0e1": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALDAKAO Ospitalea",
-          "old": "ARRIGORRIAGA"
-        }
-      ],
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T19:01+02:00",
-      "direction": "",
-      "eventId": "route:bb2dcae7cc4ad13fd302f0e1",
-      "line": "A3641",
-      "queuedAt": "2026-10-18T19:01:03+02:00",
-      "type": "route_change",
-      "vehicleId": "3365"
-    },
-    "route_after_gap:68bc5399f3250f88dc0fec81": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3422",
-          "old": "A3451"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BERANGO (Artea)",
-          "old": "AREETA/LAS ARENAS"
-        }
-      ],
-      "destination": "BERANGO (Artea)",
-      "detectedAt": "2026-10-18T19:01+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:68bc5399f3250f88dc0fec81",
-      "line": "A3422",
-      "queuedAt": "2026-10-18T19:01:03+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "1719"
-    },
-    "route_after_gap:d31520c13be1eb040041b451": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ELANTXOBE-EA",
-          "old": "GERNIKA LUMO"
-        }
-      ],
-      "destination": "ELANTXOBE-EA",
-      "detectedAt": "2026-10-18T19:01+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:d31520c13be1eb040041b451",
-      "line": "A3532",
-      "queuedAt": "2026-10-18T19:01:03+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "8681"
-    },
-    "vehicle_returned:4fbda81b7464a6a269739f96": {
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T19:01+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:4fbda81b7464a6a269739f96",
-      "lastKnown": {
-        "destination": "GALLARTA",
-        "direction": "",
-        "id": "7856",
-        "line": "A3333"
-      },
-      "line": "A3333",
-      "queuedAt": "2026-10-18T19:01:03+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "7856"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3388": {
@@ -27079,7 +26965,7 @@
       "requiredMissing": 2
     },
     "2078": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:968764debc8e372b910f325d",
       "firstMissingAt": "2026-10-18T18:57:01+02:00",
@@ -27090,7 +26976,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T18:53:53+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2119": {
