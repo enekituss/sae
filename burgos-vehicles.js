@@ -7,7 +7,7 @@
     "https://api.allorigins.win/raw?url=",
     "https://api.codetabs.com/v1/proxy?quest="
   ];
-  const WORKER_STORAGE_KEY = "saeBurgosWorkerUrl";
+  const WORKER_STORAGE_KEY = "saeBurgosRealtimeProxy";
   const ALL_LINES = [
     ...Array.from({length: 23}, (_, i) => String(i + 1).padStart(2, "0")),
     "73", "87", "88", "89", "C1", "C2"
