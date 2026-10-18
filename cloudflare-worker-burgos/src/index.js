@@ -513,7 +513,7 @@ export default {
           ok: true,
           fetchedAt: new Date().toISOString(),
           source: BURGOS_SOURCE,
-          sourceType: "ISAENEXT · resourceVehicles por línea",
+          sourceType: "ISAENEXT · resourceEstimations filtrado por línea",
           line: requestedLine,
           lineCount: 1,
           totalLines: 1,
