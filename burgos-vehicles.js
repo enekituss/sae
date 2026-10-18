@@ -29,6 +29,12 @@
   let nextStopQueryRunning = false;
   let gtfsData = null;
   let gtfsLoading = false;
+  let gtfsPromise = null;
+  let nextStopPromise = null;
+  let nextStopCachedAt = 0;
+  const NEXTSTOP_CACHE_KEY = "saeBurgosNextStopCacheV1";
+  const NEXTSTOP_CACHE_TTL_MS = 5 * 60 * 1000;
+  const GEO_CELL_DEGREES = 0.005;
   const itineraryByVehicle = new Map();
 
   function normalizeLineKey(value) {
@@ -98,51 +104,78 @@
   }
 
   async function loadGtfsForItinerary() {
-    if (gtfsLoading || gtfsData) return;
+    if (gtfsData) return gtfsData;
+    if (gtfsPromise) return gtfsPromise;
     gtfsLoading = true;
-    try {
-      const response = await fetch("./burgos-data.json", {
-        method: "GET",
-        cache: "force-cache",
-        headers: { "Accept": "application/json" }
-      });
-      if (!response.ok) throw new Error("burgos-data.json respondió HTTP " + response.status);
-      const data = await response.json();
-      data.stops = Array.isArray(data.stops) ? data.stops : [];
-      data.routes = Array.isArray(data.routes) ? data.routes : [];
-      data.trips = Array.isArray(data.trips) ? data.trips : [];
-      data.stopById = new Map(data.stops.map(stop => [String(stop.id), stop]));
-      data.routeById = new Map(data.routes.map(route => [String(route.id), route]));
-      data.tripsByLineStop = new Map();
 
-      for (const trip of data.trips) {
-        const route = data.routeById.get(String(trip.routeId));
-        const lineKeys = [...new Set([route?.shortName, route?.id]
-          .map(normalizeLineKey).filter(Boolean))];
-        const stops = Array.isArray(trip.stops) ? trip.stops : [];
-        stops.forEach((stopTime, stopIndex) => {
-          const stopId = String(stopTime?.[0] ?? "").trim();
-          if (!stopId) return;
-          for (const line of lineKeys) {
-            const key = line + "|" + stopId;
-            if (!data.tripsByLineStop.has(key)) data.tripsByLineStop.set(key, []);
-            data.tripsByLineStop.get(key).push({ trip, route, stopIndex });
-          }
+    const promise = (async () => {
+      try {
+        const response = await fetch("./burgos-data.json", {
+          method: "GET",
+          cache: "force-cache",
+          headers: { "Accept": "application/json" }
         });
-      }
+        if (!response.ok) throw new Error("burgos-data.json respondió HTTP " + response.status);
+        const data = await response.json();
+        data.stops = Array.isArray(data.stops) ? data.stops : [];
+        data.routes = Array.isArray(data.routes) ? data.routes : [];
+        data.trips = Array.isArray(data.trips) ? data.trips : [];
+        data.stopById = new Map(data.stops.map(stop => [String(stop.id), stop]));
+        data.routeById = new Map(data.routes.map(route => [String(route.id), route]));
+        data.tripsByLineStop = new Map();
+        data.stopsByGeoCell = new Map();
 
-      gtfsData = data;
-      itineraryByVehicle.clear();
-      console.info("SAE Burgos: GTFS cargado para itinerarios.",
-        "Líneas:", data.routes.length, "paradas:", data.stops.length, "viajes:", data.trips.length);
-      render();
-    } catch (error) {
-      console.warn("No se pudieron cargar los itinerarios GTFS de Burgos:", error?.message || String(error));
+        // Spatial index: itinerary matching now checks nearby stops only,
+        // rather than calculating distances to every stop for every bus.
+        for (const stop of data.stops) {
+          const lat = Number(stop.lat);
+          const lon = Number(stop.lon);
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+          const cellKey = Math.floor(lat / GEO_CELL_DEGREES) + "|" +
+            Math.floor(lon / GEO_CELL_DEGREES);
+          if (!data.stopsByGeoCell.has(cellKey)) data.stopsByGeoCell.set(cellKey, []);
+          data.stopsByGeoCell.get(cellKey).push(stop);
+        }
+
+        for (const trip of data.trips) {
+          const route = data.routeById.get(String(trip.routeId));
+          const lineKeys = [...new Set([route?.shortName, route?.id]
+            .map(normalizeLineKey).filter(Boolean))];
+          const stops = Array.isArray(trip.stops) ? trip.stops : [];
+          stops.forEach((stopTime, stopIndex) => {
+            const stopId = String(stopTime?.[0] ?? "").trim();
+            if (!stopId) return;
+            for (const line of lineKeys) {
+              const key = line + "|" + stopId;
+              if (!data.tripsByLineStop.has(key)) data.tripsByLineStop.set(key, []);
+              data.tripsByLineStop.get(key).push({ trip, route, stopIndex });
+            }
+          });
+        }
+
+        gtfsData = data;
+        itineraryByVehicle.clear();
+        console.info("SAE Burgos: GTFS cargado para itinerarios.",
+          "Líneas:", data.routes.length,
+          "paradas:", data.stops.length,
+          "viajes:", data.trips.length,
+          "celdas geográficas:", data.stopsByGeoCell.size);
+        return data;
+      } catch (error) {
+        console.warn("No se pudieron cargar los itinerarios GTFS de Burgos:", error?.message || String(error));
+        return null;
+      } finally {
+        gtfsLoading = false;
+      }
+    })();
+
+    gtfsPromise = promise;
+    try {
+      return await promise;
     } finally {
-      gtfsLoading = false;
+      if (gtfsPromise === promise) gtfsPromise = null;
     }
   }
-
   function matchTripForNextStop(observation) {
     if (!gtfsData || !Array.isArray(gtfsData.stops)) return null;
     const lat = Number(observation.stopLat);
@@ -152,12 +185,19 @@
     if (!line) return null;
 
     const nearby = [];
-    for (const stop of gtfsData.stops) {
-      const stopLat = Number(stop.lat);
-      const stopLon = Number(stop.lon);
-      if (!Number.isFinite(stopLat) || !Number.isFinite(stopLon)) continue;
-      const distance = distanceMeters({ lat, lon }, { lat: stopLat, lon: stopLon });
-      if (distance <= 280) nearby.push({ stop, distance });
+    const latCell = Math.floor(lat / GEO_CELL_DEGREES);
+    const lonCell = Math.floor(lon / GEO_CELL_DEGREES);
+    for (let dLat = -1; dLat <= 1; dLat++) {
+      for (let dLon = -1; dLon <= 1; dLon++) {
+        const cellKey = (latCell + dLat) + "|" + (lonCell + dLon);
+        const cellStops = gtfsData.stopsByGeoCell?.get(cellKey) || [];
+        for (const stop of cellStops) {
+          const stopLat = Number(stop.lat);
+          const stopLon = Number(stop.lon);
+          const distance = distanceMeters({ lat, lon }, { lat: stopLat, lon: stopLon });
+          if (distance <= 280) nearby.push({ stop, distance });
+        }
+      }
     }
     nearby.sort((a, b) => a.distance - b.distance);
 
@@ -165,12 +205,11 @@
     for (const item of nearby.slice(0, 8)) {
       const rows = gtfsData.tripsByLineStop.get(line + "|" + String(item.stop.id)) || [];
       for (const row of rows) {
-        const trip = row.trip;
         candidates.push({
           ...row,
           matchedStop: item.stop,
           stopDistance: item.distance,
-          score: destinationScore(observation.destination, trip.headsign)
+          score: destinationScore(observation.destination, row.trip.headsign)
         });
       }
     }
@@ -185,7 +224,6 @@
     }
     return candidates[0];
   }
-
   function getVehicleItinerary(vehicle) {
     const key = vehicleStopKey(vehicle.id, vehicle.line);
     if (!key) return null;
@@ -223,67 +261,177 @@
     return itinerary;
   }
 
-  async function refreshNextStopData(workerBase) {
-    if (!workerBase || nextStopQueryRunning) return;
-    nextStopQueryRunning = true;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 55000);
+  function setItineraryDialogMessage(message, isError = false) {
+    const content = $("itineraryContent");
+    content.innerHTML = '<div class="itinerary-message' + (isError ? ' error' : '') + '">' +
+      (isError ? '' : '<span class="spinner" aria-hidden="true"></span>') +
+      escapeHTML(message) + '</div>';
+  }
+
+  async function openVehicleItinerary(vehicle) {
+    const dialog = $("itineraryDialog");
+    if (!dialog || !vehicle) return;
+    $("itineraryTitle").textContent = "Itinerario · " + displayLine(vehicle.line) + " · Coche " + vehicle.id;
+    $("itinerarySubtitle").textContent = vehicle.destination
+      ? "Destino publicado: " + vehicle.destination
+      : "Recorrido de referencia del horario municipal";
+    setItineraryDialogMessage("Preparando el itinerario…");
+    if (!dialog.open) dialog.showModal();
+
+    const key = vehicleStopKey(vehicle.id, vehicle.line);
+    let observation = nextStopByVehicle.get(key);
+
+    // If the live request is already in flight, wait for that same request.
+    // On later visits the cached stop data lets us skip the long wait entirely.
+    if (!observation) {
+      await refreshNextStopData(getWorkerBaseUrl());
+      observation = nextStopByVehicle.get(key);
+    }
+    if (!observation) {
+      setItineraryDialogMessage(
+        "El servicio municipal todavía no ha publicado una próxima parada suficiente para identificar este viaje. Comprueba la conexión y vuelve a intentarlo.",
+        true
+      );
+      return;
+    }
+
+    setItineraryDialogMessage("Buscando el viaje coincidente en los horarios de Burgos…");
+    const data = await loadGtfsForItinerary();
+    if (!data) {
+      setItineraryDialogMessage("No se ha podido cargar la base de horarios de Burgos. Prueba de nuevo cuando la conexión esté disponible.", true);
+      return;
+    }
+
+    const itinerary = getVehicleItinerary(vehicle);
+    if (!itinerary) {
+      setItineraryDialogMessage(
+        "No se ha encontrado un viaje GTFS inequívoco para este coche. Puede que el destino publicado no coincida con el horario o que la próxima parada estimada no corresponda a una parada del itinerario.",
+        true
+      );
+      return;
+    }
+
+    $("itinerarySubtitle").textContent =
+      (itinerary.destination ? "Destino: " + itinerary.destination + " · " : "") +
+      " " + itinerary.stops.length + " paradas restantes · primera parada estimada: " +
+      (observation.stopName || "no disponible");
+
+    const content = $("itineraryContent");
+    content.innerHTML =
+      '<ol class="itinerary-list">' +
+      itinerary.stops.map((stop, index) =>
+        '<li' + (index === 0 ? ' class="itinerary-next"' : '') + '>' +
+          '<span class="itinerary-sequence">' + (index + 1) + '</span>' +
+          '<span class="itinerary-stop-name">' + escapeHTML(stop.name) + '</span>' +
+          (index === 0 ? '<span class="itinerary-next-badge">Próxima estimada</span>' : '') +
+        '</li>'
+      ).join("") +
+      '</ol><p class="itinerary-note">Recorrido de referencia del GTFS municipal. Solo la próxima parada se basa en la estimación en directo; las siguientes indican la secuencia programada.</p>';
+  }
+
+  function restoreNextStopCache() {
     try {
-      const response = await fetch(workerBase + "/api/burgos/live", {
-        method: "GET",
-        cache: "no-store",
-        headers: { "Accept": "application/json" },
-        signal: controller.signal
-      });
-      const text = await response.text();
-      let payload;
-      try { payload = JSON.parse(text); }
-      catch { throw new Error("La API de estimaciones no devolvió JSON."); }
-      if (!response.ok) throw new Error(payload?.error || ("API de próximas paradas HTTP " + response.status));
-      if (!Array.isArray(payload?.observations)) {
-        throw new Error(payload?.error || "La API no devuelve estimaciones por parada.");
+      const raw = localStorage.getItem(NEXTSTOP_CACHE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (!Array.isArray(saved?.entries) || !Number.isFinite(Number(saved.savedAt))) return;
+      const age = Date.now() - Number(saved.savedAt);
+      if (age < 0 || age > NEXTSTOP_CACHE_TTL_MS) return;
+      nextStopByVehicle = new Map(saved.entries);
+      nextStopCachedAt = Number(saved.savedAt);
+      if (nextStopByVehicle.size) {
+        console.info("SAE Burgos: restauradas", nextStopByVehicle.size,
+          "próximas paradas de la caché local (", Math.round(age / 1000), "s ).");
       }
-
-      const next = new Map();
-      for (const observation of payload.observations) {
-        const key = vehicleStopKey(observation.vehicleId, observation.line);
-        if (!key) continue;
-        const stopId = String(observation.stopId ?? "").trim();
-        const stopName = String(observation.stopName ?? "").trim();
-        if (!stopName && !stopId) continue;
-        const candidate = {
-          stopId,
-          stopName: stopName || ("Parada " + stopId),
-          seconds: nonNegativeNumber(observation.seconds),
-          meters: nonNegativeNumber(observation.meters),
-          destination: String(observation.destination ?? "").trim(),
-          line: String(observation.line ?? "").trim(),
-          vehicleId: String(observation.vehicleId ?? "").trim(),
-          stopLat: observation.stopLat === null || observation.stopLat === undefined ? null : Number(observation.stopLat),
-          stopLon: observation.stopLon === null || observation.stopLon === undefined ? null : Number(observation.stopLon)
-        };
-        const current = next.get(key);
-        if (isBetterStop(candidate, current)) next.set(key, candidate);
-      }
-
-      nextStopByVehicle = next;
-      itineraryByVehicle.clear();
-      // Carga de la secuencia GTFS en paralelo con la consulta en directo.
-      loadGtfsForItinerary();
-      console.info("SAE Burgos: próxima parada localizada para", next.size, "combinaciones vehículo/línea;",
-        "estimaciones recibidas:", payload.observations.length,
-        "paradas consultadas:", payload.stopCount,
-        "consulta parcial:", Boolean(payload.partial));
-      render();
-    } catch (error) {
-      console.warn("No se pudieron actualizar las próximas paradas de Burgos:", error?.message || String(error));
-      // Si la fuente de estimaciones falla, conservamos las próximas paradas de la última consulta válida.
-    } finally {
-      clearTimeout(timeoutId);
-      nextStopQueryRunning = false;
+    } catch {
+      // La caché del navegador es opcional.
     }
   }
 
+  function saveNextStopCache() {
+    try {
+      nextStopCachedAt = Date.now();
+      localStorage.setItem(NEXTSTOP_CACHE_KEY, JSON.stringify({
+        savedAt: nextStopCachedAt,
+        entries: [...nextStopByVehicle.entries()]
+      }));
+    } catch {
+      // No bloquear la interfaz si el navegador no permite almacenamiento.
+    }
+  }
+
+  async function refreshNextStopData(workerBase) {
+    if (!workerBase) return null;
+    if (nextStopPromise) return nextStopPromise;
+
+    nextStopQueryRunning = true;
+    const promise = (async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 55000);
+      try {
+        const response = await fetch(workerBase + "/api/burgos/live", {
+          method: "GET",
+          cache: "no-store",
+          headers: { "Accept": "application/json" },
+          signal: controller.signal
+        });
+        const text = await response.text();
+        let payload;
+        try { payload = JSON.parse(text); }
+        catch { throw new Error("La API de estimaciones no devolvió JSON."); }
+        if (!response.ok) throw new Error(payload?.error || ("API de próximas paradas HTTP " + response.status));
+        if (!Array.isArray(payload?.observations)) {
+          throw new Error(payload?.error || "La API no devuelve estimaciones por parada.");
+        }
+
+        const next = new Map();
+        for (const observation of payload.observations) {
+          const key = vehicleStopKey(observation.vehicleId, observation.line);
+          if (!key) continue;
+          const stopId = String(observation.stopId ?? "").trim();
+          const stopName = String(observation.stopName ?? "").trim();
+          if (!stopName && !stopId) continue;
+          const candidate = {
+            stopId,
+            stopName: stopName || ("Parada " + stopId),
+            seconds: nonNegativeNumber(observation.seconds),
+            meters: nonNegativeNumber(observation.meters),
+            destination: String(observation.destination ?? "").trim(),
+            line: String(observation.line ?? "").trim(),
+            vehicleId: String(observation.vehicleId ?? "").trim(),
+            stopLat: observation.stopLat === null || observation.stopLat === undefined ? null : Number(observation.stopLat),
+            stopLon: observation.stopLon === null || observation.stopLon === undefined ? null : Number(observation.stopLon)
+          };
+          const current = next.get(key);
+          if (isBetterStop(candidate, current)) next.set(key, candidate);
+        }
+
+        nextStopByVehicle = next;
+        saveNextStopCache();
+        itineraryByVehicle.clear();
+        console.info("SAE Burgos: próxima parada localizada para", next.size,
+          "combinaciones vehículo/línea;",
+          "estimaciones recibidas:", payload.observations.length,
+          "paradas consultadas:", payload.stopCount,
+          "consulta parcial:", Boolean(payload.partial));
+        render();
+        return next;
+      } catch (error) {
+        console.warn("No se pudieron actualizar las próximas paradas de Burgos:", error?.message || String(error));
+        return nextStopByVehicle;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    })();
+
+    nextStopPromise = promise;
+    try {
+      return await promise;
+    } finally {
+      if (nextStopPromise === promise) nextStopPromise = null;
+      nextStopQueryRunning = false;
+    }
+  }
   function normalizeWorkerBase(value) {
     let base = String(value || "").trim();
     if (!base) return "";
@@ -433,7 +581,7 @@
       vehicle.id, vehicle.line, vehicle.destination, vehicle.direction,
       vehicle.model, vehicle.registration, vehicle.nextStop, vehicle.nextStopName, vehicle.ruta, vehicle.route,
       nextStopByVehicle.get(vehicleStopKey(vehicle.id, vehicle.line))?.stopName,
-      ...(getVehicleItinerary(vehicle)?.stops || []).map(stop => stop.name)
+      ...((itineraryByVehicle.get(vehicleStopKey(vehicle.id, vehicle.line))?.stops) || []).map(stop => stop.name)
     ];
   }
 
@@ -512,17 +660,10 @@
         const arrivalText = nextStop ? formatEstimatedArrival(nextStop.seconds) : "";
         const distanceText = nextStop && nextStop.meters !== null && nextStop.meters > 0
           ? Math.round(nextStop.meters) + " m" : "";
-        const itinerary = nextStop ? getVehicleItinerary(vehicle) : null;
-        const itineraryDetail = itinerary
-          ? '<details class="upcoming-stops"><summary>Ver itinerario (' + itinerary.stops.length + ' paradas)</summary><ol>' +
-            itinerary.stops.map((stop, index) => '<li' + (index === 0 ? ' class="upcoming-stop-next"' : '') + '>' +
-              escapeHTML(stop.name) + '</li>').join("") + '</ol><small>Recorrido de referencia del GTFS. La estimación en directo se muestra solo para la próxima parada.</small></details>'
-          : "";
         const nextStopDetail = nextStopTitle
           ? "<strong>Próxima parada:</strong><br>" + escapeHTML(nextStopTitle) +
             (arrivalText ? "<br><span>Llegada estimada: " + escapeHTML(arrivalText) + "</span>" : "") +
-            (distanceText ? "<br><span>Distancia estimada: " + escapeHTML(distanceText) + "</span>" : "") +
-            itineraryDetail
+            (distanceText ? "<br><span>Distancia estimada: " + escapeHTML(distanceText) + "</span>" : "")
           : "";
         const details = [
           vehicle.registration ? "<strong>Matrícula:</strong><br>" + escapeHTML(vehicle.registration) : "",
@@ -533,6 +674,8 @@
           '<div class="vehicle-id"><span class="bus-icon" aria-hidden="true">🚌</span><span>' +
           escapeHTML(vehicle.id) + "</span></div>" + destination + direction + "</div>" +
           '<div class="vehicle-meta">' + (details || "<strong>Estado</strong><br>Publicado en resourceVehicles") +
+          '<button class="itinerary-open" type="button" data-vehicle-id="' + escapeHTML(vehicle.id) +
+          '" data-line="' + escapeHTML(line) + '">Ver itinerario</button>' +
           "</div></article>";
       }
       section.innerHTML =
@@ -552,6 +695,12 @@
         const open = expandedLines.has(line) || Boolean($("search").value.trim());
         section.classList.toggle("open", open);
         section.querySelector(".line-head").setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      section.querySelectorAll(".itinerary-open").forEach(button => {
+        button.addEventListener("click", () => {
+          const vehicle = lineVehicles.find(item => item.id === button.dataset.vehicleId);
+          if (vehicle) openVehicleItinerary(vehicle);
+        });
       });
       container.appendChild(section);
     }
@@ -610,6 +759,8 @@
             allVehiclesByLine().size + " líneas (" + successfulCount + "/" + ALL_LINES.length + " consultadas)", "ok");
         }
         render();
+        // Preload the timetable in parallel; itinerary matching itself is deferred until a popup opens.
+        loadGtfsForItinerary();
         refreshNextStopData(workerBase);
       } else {
         const results = new Array(ALL_LINES.length);
@@ -668,6 +819,11 @@
 
   $("refresh").addEventListener("click", load);
   $("search").addEventListener("input", render);
+  $("closeItinerary").addEventListener("click", () => $("itineraryDialog").close());
+  $("itineraryDialog").addEventListener("click", event => {
+    if (event.target === $("itineraryDialog")) $("itineraryDialog").close();
+  });
+  restoreNextStopCache();
 
   $("workerUrlInput").value = getWorkerBaseUrl();
   $("saveWorkerUrl").addEventListener("click", async () => {
