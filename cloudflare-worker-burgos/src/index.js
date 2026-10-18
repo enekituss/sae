@@ -465,6 +465,7 @@ export default {
       return jsonResponse(request, {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
+        apiVersion: "sae-three-resources-per-line-v1",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(env?.BURGOS_GITHUB_TOKEN), cadence: "*/2 * * * *" },
