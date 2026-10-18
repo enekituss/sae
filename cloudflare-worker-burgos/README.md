@@ -18,13 +18,13 @@ El secreto `BURGOS_GITHUB_TOKEN` permite al cron lanzar el workflow de alertas c
 Abre la URL `workers.dev` asignada por Cloudflare:
 
 - `/health`: debe devolver JSON con `"ok": true` y `telegramScheduler.configured: true`.
-- `/api/burgos/vehicles?line=01`: devuelve la lista publicada para la línea 01.
-- `/api/burgos/vehicles`: intenta consultar todas las líneas conocidas.
-- `/api/burgos/live`: consulta las estimaciones por parada de ISAENEXT e incluye `observations` con ID de vehículo, línea, parada, segundos y metros estimados cuando el origen los publica.
+- `/api/burgos/vehicles?line=01&fresh=1`: consulta la línea 01 en los tres recursos del SAE.
+- `/api/burgos/live?line=01&fresh=1`: devuelve las observaciones de estimación de una línea.
+- Para consultar toda la red, pide cada línea por separado (`01`–`23`, `73`, `87`–`89`, `C1`, `C2`). No se agrega toda la red dentro de una única invocación del Worker para respetar sus límites de subpeticiones.
 
 La URL del Worker se introduce en SAE Spotter → Burgos → **Configurar conexión**. Pega la URL base, sin añadir rutas.
 
-El monitor utiliza el endpoint oficial `https://movilidad.aytoburgos.es/es/rutas-en-directo` con `p_p_resource_id=resourceEstimations`, consultando cada línea mediante `_as_asac_isaenext_IsaenextWebPortlet_line` y los IDs publicados por `resourceNodes`. Compara los IDs, la línea, el destino y el sentido entre snapshots completos. Si una consulta falla o la respuesta es parcial, conserva el estado anterior y no genera alertas falsas. Las estimaciones pueden no estar disponibles para todos los coches. Solo se permite CORS para `https://enekituss.github.io`.
+El monitor utiliza el endpoint oficial `https://movilidad.aytoburgos.es/es/rutas-en-directo` y consulta por cada línea los tres recursos: `resourceRoutes` (recorrido/IDs de parada), `resourceVehicles` (coches publicados) y `resourceEstimations` (destino y próxima parada). Para `resourceRoutes` y `resourceVehicles` incluye tanto `_as_asac_isaenext_IsaenextWebPortlet_line` como `_as_asac_isaenext_IsaenextWebPortlet_label`; para `resourceEstimations` añade `line`, `tipo=1` y los IDs de parada del recorrido. Compara los IDs, la línea, el destino y el sentido entre snapshots completos. Si falla una línea, conserva el estado anterior y no genera alertas falsas. Solo se permite CORS para `https://enekituss.github.io`.
 
 ## Requisitos del bot de Telegram
 
