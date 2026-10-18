@@ -278,7 +278,7 @@ async function fetchLiveSnapshot() {
 }
 
 const LIVE_CACHE_TTL_SECONDS = 300;
-const LIVE_REFRESH_AFTER_MS = 45 * 1000;
+const LIVE_REFRESH_AFTER_MS = 30 * 1000;
 let liveSnapshotRefreshPromise = null;
 
 async function refreshLiveSnapshotCache(cache, cacheRequest) {
