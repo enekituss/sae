@@ -27225,39 +27225,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:eb8d1f59c64e0ce5c11527d5": {
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-18T19:03+02:00",
-      "direction": "",
-      "eventId": "missing:eb8d1f59c64e0ce5c11527d5",
-      "firstMissingAt": "2026-10-18T18:59:01+02:00",
-      "lastSeenAt": "2026-10-18T18:55:33+02:00",
-      "line": "A3916",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T19:03:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8678"
-    },
-    "route_after_gap:4ea6e87831fdd2191aa0c2b2": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALLARTA",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "GALLARTA",
-      "detectedAt": "2026-10-18T19:03+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:4ea6e87831fdd2191aa0c2b2",
-      "line": "A3333",
-      "queuedAt": "2026-10-18T19:03:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7885"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2096": {
@@ -27436,7 +27404,7 @@
       "requiredMissing": 2
     },
     "8678": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:eb8d1f59c64e0ce5c11527d5",
       "firstMissingAt": "2026-10-18T18:59:01+02:00",
@@ -27447,7 +27415,7 @@
         "line": "A3916"
       },
       "lastSeenAt": "2026-10-18T18:55:33+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
