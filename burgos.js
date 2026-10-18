@@ -165,6 +165,7 @@
       credentials: 'omit',
       cache: 'no-store',
       headers: { 'Accept': 'application/json, text/plain, */*' },
+      referrerPolicy: 'no-referrer',
       signal: AbortSignal.timeout(12000)
     });
     const body = await response.text();
@@ -604,7 +605,10 @@
     if (liveStopLabel) liveStopLabel.textContent = publishedVehicleFeed ? 'líneas consultadas' : 'paradas consultadas';
 
     if (!vehicles.length) {
-      $('liveVehicleList').innerHTML = '<div class="live-empty">La consulta no ha devuelto estimaciones de autobuses para las paradas consultadas. Puede que no haya servicio activo en este momento o que ISAENEXT no esté publicando estimaciones ahora. <a href="https://webburgos.com/bus/" target="_blank" rel="noopener noreferrer">Abrir otro visor de seguimiento en directo ↗</a></div>';
+      const emptyMessage = publishedVehicleFeed
+        ? 'resourceVehicles no devuelve coches publicados para las líneas consultadas. Puede que no haya servicio activo en este momento o que el Ayuntamiento no esté publicando vehículos ahora.'
+        : 'La consulta no ha devuelto estimaciones de autobuses para las paradas consultadas. Puede que no haya servicio activo en este momento o que ISAENEXT no esté publicando estimaciones ahora.';
+      $('liveVehicleList').innerHTML = '<div class="live-empty">' + esc(emptyMessage) + ' <a href="https://webburgos.com/bus/" target="_blank" rel="noopener noreferrer">Abrir otro visor de seguimiento en directo ↗</a></div>';
     } else {
       $('liveVehicleList').innerHTML = vehicles.slice(0, 150).map(vehicle => {
         const routeLabel = vehicle.route ? (vehicle.route.shortName || vehicle.line) : vehicle.line;
@@ -623,7 +627,9 @@
     }
 
     if (!vehicles.length) {
-      setLiveStatus('La fuente respondió, pero no devolvió estimaciones de vehículos para las paradas consultadas. Puede que no haya buses activos ahora o que ISAENEXT no esté publicando datos.', 'warning');
+      setLiveStatus(publishedVehicleFeed
+        ? 'resourceVehicles respondió, pero no publica coches activos para las líneas consultadas.'
+        : 'La fuente respondió, pero no devolvió estimaciones de vehículos para las paradas consultadas.', 'warning');
     } else if (!positioned.length) {
       setLiveStatus('La conexión de estimaciones funciona, pero no se han podido reconstruir coordenadas de los vehículos con suficiente fiabilidad. No se muestran marcadores falsos.', 'warning');
     } else if (publishedVehicleFeed) {
