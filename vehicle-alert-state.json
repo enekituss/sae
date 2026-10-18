@@ -15332,57 +15332,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:d47717950d46932bc1f78d01": {
-      "destination": "DURANGO",
-      "detectedAt": "2026-10-18T07:41+02:00",
-      "direction": "",
-      "eventId": "missing:d47717950d46932bc1f78d01",
-      "firstMissingAt": "2026-10-18T07:37:03+02:00",
-      "lastSeenAt": "2026-10-18T07:34:08+02:00",
-      "line": "A3923",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T07:41:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3375"
-    },
-    "route_after_gap:93a3bb33fa96af9ca4af0395": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "PLENTZIA (Metro)",
-          "old": "GORLIZ"
-        }
-      ],
-      "destination": "PLENTZIA (Metro)",
-      "detectedAt": "2026-10-18T07:41+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:93a3bb33fa96af9ca4af0395",
-      "line": "A3499",
-      "queuedAt": "2026-10-18T07:41:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "1715"
-    },
-    "route_after_gap:faaa5a21dc101c6d699f0b65": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "AIREPORTUA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T07:41+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:faaa5a21dc101c6d699f0b65",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T07:41:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2078"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1514": {
       "consecutiveChecks": 1,
@@ -15551,7 +15501,7 @@
       "requiredMissing": 2
     },
     "3375": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:d47717950d46932bc1f78d01",
       "firstMissingAt": "2026-10-18T07:37:03+02:00",
@@ -15562,7 +15512,7 @@
         "line": "A3923"
       },
       "lastSeenAt": "2026-10-18T07:34:08+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
