@@ -23,6 +23,103 @@
   let lastSuccessfulUpdate = null;
   let updateRunning = false;
   let lastQueryHadSuccess = false;
+  let nextStopByVehicle = new Map();
+  let nextStopQueryRunning = false;
+
+  function normalizeLineKey(value) {
+    return String(value ?? "").trim().toUpperCase()
+      .replace(/^L[IÍ]NEA\s*/u, "")
+      .replace(/^L(?=\d)/, "")
+      .replace(/^0+(?=\d)/, "")
+      .replace(/[^A-Z0-9]/g, "");
+  }
+
+  function vehicleStopKey(vehicleId, line) {
+    const id = String(vehicleId ?? "").trim();
+    const lineKey = normalizeLineKey(line);
+    return id && lineKey ? id + "|" + lineKey : "";
+  }
+
+  function nonNegativeNumber(value) {
+    if (value === null || value === undefined || value === "") return null;
+    const number = Number(value);
+    return Number.isFinite(number) && number >= 0 ? number : null;
+  }
+
+  function isBetterStop(candidate, current) {
+    if (!current) return true;
+    if (candidate.seconds !== null && current.seconds !== null) {
+      return candidate.seconds < current.seconds ||
+        (candidate.seconds === current.seconds &&
+          candidate.meters !== null && (current.meters === null || candidate.meters < current.meters));
+    }
+    if (candidate.seconds !== null) return true;
+    if (current.seconds !== null) return false;
+    if (candidate.meters !== null && current.meters !== null) return candidate.meters < current.meters;
+    return candidate.meters !== null && current.meters === null;
+  }
+
+  function formatEstimatedArrival(seconds) {
+    const value = nonNegativeNumber(seconds);
+    if (value === null) return "";
+    if (value <= 15) return "Llegada inminente";
+    if (value < 60) return "menos de 1 min";
+    return "≈ " + Math.round(value / 60) + " min";
+  }
+
+  async function refreshNextStopData(workerBase) {
+    if (!workerBase || nextStopQueryRunning) return;
+    nextStopQueryRunning = true;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000);
+    try {
+      const response = await fetch(workerBase + "/api/burgos/live", {
+        method: "GET",
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+        signal: controller.signal
+      });
+      const text = await response.text();
+      let payload;
+      try { payload = JSON.parse(text); }
+      catch { throw new Error("La API de estimaciones no devolvió JSON."); }
+      if (!response.ok) throw new Error(payload?.error || ("API de próximas paradas HTTP " + response.status));
+      if (!Array.isArray(payload?.observations)) {
+        throw new Error(payload?.error || "La API no devuelve estimaciones por parada.");
+      }
+
+      const next = new Map();
+      for (const observation of payload.observations) {
+        const key = vehicleStopKey(observation.vehicleId, observation.line);
+        if (!key) continue;
+        const stopId = String(observation.stopId ?? "").trim();
+        const stopName = String(observation.stopName ?? "").trim();
+        if (!stopName && !stopId) continue;
+        const candidate = {
+          stopId,
+          stopName: stopName || ("Parada " + stopId),
+          seconds: nonNegativeNumber(observation.seconds),
+          meters: nonNegativeNumber(observation.meters),
+          destination: String(observation.destination ?? "").trim()
+        };
+        const current = next.get(key);
+        if (isBetterStop(candidate, current)) next.set(key, candidate);
+      }
+
+      nextStopByVehicle = next;
+      console.info("SAE Burgos: próxima parada localizada para", next.size, "combinaciones vehículo/línea;",
+        "estimaciones recibidas:", payload.observations.length,
+        "paradas consultadas:", payload.stopCount,
+        "consulta parcial:", Boolean(payload.partial));
+      render();
+    } catch (error) {
+      console.warn("No se pudieron actualizar las próximas paradas de Burgos:", error?.message || String(error));
+      // Si la fuente de estimaciones falla, conservamos las próximas paradas de la última consulta válida.
+    } finally {
+      clearTimeout(timeoutId);
+      nextStopQueryRunning = false;
+    }
+  }
 
   function normalizeWorkerBase(value) {
     let base = String(value || "").trim();
@@ -124,7 +221,8 @@
       direction: String(bus.direction ?? bus.sentido ?? bus.direccion ?? "").trim(),
       model: String(bus.model ?? bus.modelo ?? bus.vehicleModel ?? "").trim(),
       registration: String(bus.matricula ?? bus.registration ?? bus.plate ?? bus.licensePlate ?? "").trim(),
-      nextStop: String(bus.paradaProxima ?? bus.nextNodeId ?? bus.nextStop ?? bus.stopId ?? bus.stop_id ?? "").trim()
+      nextStop: String(bus.paradaProxima ?? bus.nextNodeId ?? bus.nextStop ?? bus.stopId ?? bus.stop_id ?? "").trim(),
+      nextStopName: String(bus.nextStopName ?? bus.paradaProximaName ?? bus.stopName ?? "").trim()
     };
   }
 
@@ -168,7 +266,8 @@
   function vehicleSearchFields(vehicle) {
     return [
       vehicle.id, vehicle.line, vehicle.destination, vehicle.direction,
-      vehicle.model, vehicle.registration, vehicle.nextStop, vehicle.ruta, vehicle.route
+      vehicle.model, vehicle.registration, vehicle.nextStop, vehicle.nextStopName, vehicle.ruta, vehicle.route,
+      nextStopByVehicle.get(vehicleStopKey(vehicle.id, vehicle.line))?.stopName
     ];
   }
 
@@ -241,10 +340,21 @@
         const direction = vehicle.direction
           ? '<div class="vehicle-direction"><strong>Sentido:</strong> ' + escapeHTML(vehicle.direction) + "</div>"
           : "";
+        const nextStop = nextStopByVehicle.get(vehicleStopKey(vehicle.id, vehicle.line));
+        const nextStopTitle = nextStop?.stopName || vehicle.nextStopName ||
+          (vehicle.nextStop ? "Parada " + vehicle.nextStop : "");
+        const arrivalText = nextStop ? formatEstimatedArrival(nextStop.seconds) : "";
+        const distanceText = nextStop && nextStop.meters !== null && nextStop.meters > 0
+          ? Math.round(nextStop.meters) + " m" : "";
+        const nextStopDetail = nextStopTitle
+          ? "<strong>Próxima parada:</strong><br>" + escapeHTML(nextStopTitle) +
+            (arrivalText ? "<br><span>Llegada estimada: " + escapeHTML(arrivalText) + "</span>" : "") +
+            (distanceText ? "<br><span>Distancia estimada: " + escapeHTML(distanceText) + "</span>" : "")
+          : "";
         const details = [
           vehicle.registration ? "<strong>Matrícula:</strong><br>" + escapeHTML(vehicle.registration) : "",
           vehicle.model ? "<strong>Modelo:</strong><br>" + escapeHTML(vehicle.model) : "",
-          vehicle.nextStop ? "<strong>Próxima parada:</strong><br>" + escapeHTML(vehicle.nextStop) : ""
+          nextStopDetail
         ].filter(Boolean).join("<br>");
         cards += '<article class="vehicle"><div class="vehicle-main">' +
           '<div class="vehicle-id"><span class="bus-icon" aria-hidden="true">🚌</span><span>' +
@@ -327,6 +437,7 @@
             allVehiclesByLine().size + " líneas (" + successfulCount + "/" + ALL_LINES.length + " consultadas)", "ok");
         }
         render();
+        refreshNextStopData(workerBase);
       } else {
         const results = new Array(ALL_LINES.length);
         let cursor = 0;
