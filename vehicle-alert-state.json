@@ -27529,117 +27529,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:53e894e33e178bb193c5f669": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T18:37+02:00",
-      "direction": "",
-      "eventId": "missing:53e894e33e178bb193c5f669",
-      "firstMissingAt": "2026-10-18T18:33:02+02:00",
-      "lastSeenAt": "2026-10-18T18:29:47+02:00",
-      "line": "A3632",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T18:37:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3292"
-    },
-    "route:15ba8468be0795e64a5f24ce": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AREETA/LAS ARENAS",
-          "old": "EHU/UPV"
-        }
-      ],
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T18:37+02:00",
-      "direction": "",
-      "eventId": "route:15ba8468be0795e64a5f24ce",
-      "line": "A2161",
-      "queuedAt": "2026-10-18T18:37:04+02:00",
-      "type": "route_change",
-      "vehicleId": "2102"
-    },
-    "route:1f70a5af3f374ffa9bd685bf": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CRUCES/GURUTZETA",
-          "old": "GETXO"
-        }
-      ],
-      "destination": "CRUCES/GURUTZETA",
-      "detectedAt": "2026-10-18T18:37+02:00",
-      "direction": "",
-      "eventId": "route:1f70a5af3f374ffa9bd685bf",
-      "line": "A3471",
-      "queuedAt": "2026-10-18T18:37:04+02:00",
-      "type": "route_change",
-      "vehicleId": "1731"
-    },
-    "route:a1670063a40704515579ad8d": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3923",
-          "old": "A3926"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ELORRIO",
-          "old": "BILBAO (Aut.)"
-        }
-      ],
-      "destination": "ELORRIO",
-      "detectedAt": "2026-10-18T18:37+02:00",
-      "direction": "",
-      "eventId": "route:a1670063a40704515579ad8d",
-      "line": "A3923",
-      "queuedAt": "2026-10-18T18:37:04+02:00",
-      "type": "route_change",
-      "vehicleId": "3381"
-    },
-    "route_after_gap:74487b2d9a3468b1b4277693": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "LA ARBOLEDA",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "LA ARBOLEDA",
-      "detectedAt": "2026-10-18T18:37+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:74487b2d9a3468b1b4277693",
-      "line": "A3333",
-      "queuedAt": "2026-10-18T18:37:04+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7886"
-    },
-    "route_after_gap:b2e0dd6dc15f23998bc0041e": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AREETA/LAS ARENAS",
-          "old": "LARRABETZU"
-        }
-      ],
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T18:37+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:b2e0dd6dc15f23998bc0041e",
-      "line": "A2151",
-      "queuedAt": "2026-10-18T18:37:04+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2135"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "5039": {
       "consecutiveChecks": 1,
@@ -27778,7 +27668,7 @@
       "requiredMissing": 2
     },
     "3292": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:53e894e33e178bb193c5f669",
       "firstMissingAt": "2026-10-18T18:33:02+02:00",
@@ -27789,7 +27679,7 @@
         "line": "A3632"
       },
       "lastSeenAt": "2026-10-18T18:29:47+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7856": {
