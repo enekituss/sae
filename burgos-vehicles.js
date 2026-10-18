@@ -128,12 +128,13 @@
     };
   }
 
-  async function fetchWorkerVehicles(workerBase, line) {
+  async function fetchWorkerSnapshot(workerBase) {
+    // Una sola petición al Worker evita saturarlo con 29 llamadas paralelas.
+    // El Worker consulta las líneas de forma limitada y comunica cuáles fallan.
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS * 2);
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
     try {
-      const url = workerBase + "/api/burgos/vehicles?line=" + encodeURIComponent(line);
-      const response = await fetch(url, {
+      const response = await fetch(workerBase + "/api/burgos/vehicles", {
         method: "GET",
         cache: "no-store",
         headers: { "Accept": "application/json" },
@@ -152,17 +153,14 @@
       if (!Array.isArray(payload?.vehicles)) {
         throw new Error("El Worker no devolvió la lista de autobuses.");
       }
-      return payload.vehicles;
+      return payload;
     } finally {
       clearTimeout(timeoutId);
     }
   }
 
   async function fetchLine(line) {
-    const workerBase = getWorkerBaseUrl();
-    const payload = workerBase
-      ? await fetchWorkerVehicles(workerBase, line)
-      : await fetchVehicleJson(buildVehicleUrl(line));
+    const payload = await fetchVehicleJson(buildVehicleUrl(line));
     const vehicles = payload.map(bus => normalizeVehicle(bus, line)).filter(Boolean);
     return {line, vehicles};
   }
@@ -285,49 +283,94 @@
       ? "Consultando coches por línea a través del Worker…"
       : "Sin Worker configurado · probando conexiones de respaldo…", "");
     try {
-      const results = new Array(ALL_LINES.length);
-      let cursor = 0;
-      const errors = [];
-      await Promise.all(Array.from({length: MAX_CONCURRENT_LINES}, async () => {
-        while (true) {
-          const index = cursor++;
-          if (index >= ALL_LINES.length) return;
-          const line = ALL_LINES[index];
-          try {
-            results[index] = await fetchLine(line);
-          } catch (error) {
-            errors.push({line, message: String(error && error.message ? error.message : error)});
-            results[index] = null;
+      const workerBase = getWorkerBaseUrl();
+      let nextStaleLines = new Set();
+      let successfulCount = 0;
+
+      if (workerBase) {
+        const snapshot = await fetchWorkerSnapshot(workerBase);
+        const failedLines = new Set((Array.isArray(snapshot.failedLines) ? snapshot.failedLines : [])
+          .map(line => String(line).trim().toUpperCase()));
+        const rows = Array.isArray(snapshot.vehicles) ? snapshot.vehicles : [];
+
+        for (const line of ALL_LINES) {
+          if (failedLines.has(line)) {
+            if (lineSnapshots.has(line)) nextStaleLines.add(line);
+            continue;
           }
+          const lineRows = rows.filter(bus =>
+            String(bus.lineId ?? bus.line ?? "").trim().toUpperCase() === line
+          );
+          lineSnapshots.set(line, lineRows.map(bus => normalizeVehicle(bus, line)).filter(Boolean));
+          successfulCount++;
         }
-      }));
 
-      const successful = results.filter(Boolean);
-      if (!successful.length) {
-        lastQueryHadSuccess = false;
-        setStatus("No se ha podido acceder a la API municipal ni a sus proxies.", "error");
-        if (!lineSnapshots.size) render();
-        return;
-      }
+        if (successfulCount === 0) {
+          throw new Error("El Worker no ha podido consultar ninguna línea de autobús.");
+        }
+        if (failedLines.size) {
+          console.warn("SAE Spotter · líneas de Burgos que no respondieron:", [...failedLines], snapshot.warnings || []);
+        }
+        staleLines = nextStaleLines;
+        lastQueryHadSuccess = true;
+        lastSuccessfulUpdate = new Date();
+        $("lastUpdated").textContent = "Consulta: " + formatTime(snapshot.fetchedAt || lastSuccessfulUpdate.toISOString());
 
-      const nextStaleLines = new Set();
-      for (const result of successful) lineSnapshots.set(result.line, result.vehicles);
-      for (const error of errors) {
-        if (lineSnapshots.has(error.line)) nextStaleLines.add(error.line);
-      }
-      staleLines = nextStaleLines;
-      lastQueryHadSuccess = true;
-      lastSuccessfulUpdate = new Date();
-      $("lastUpdated").textContent = "Consulta: " + formatTime(lastSuccessfulUpdate.toISOString());
-
-      const vehicleCount = [...lineSnapshots.values()].reduce((total, list) => total + list.length, 0);
-      if (successful.length === ALL_LINES.length) {
-        setStatus("Datos en directo · " + vehicleCount + " autobuses en " + allVehiclesByLine().size + " líneas", "ok");
+        const vehicleCount = [...lineSnapshots.values()].reduce((total, list) => total + list.length, 0);
+        if (failedLines.size || snapshot.partial) {
+          setStatus("Datos parciales · " + (snapshot.lineCount ?? successfulCount) + "/" +
+            (snapshot.totalLines ?? ALL_LINES.length) + " líneas consultadas. " +
+            "Fallos: " + [...failedLines].join(", ") +
+            (failedLines.size ? "; se conserva la última respuesta de esas líneas." : ""), "error");
+        } else {
+          setStatus("Datos en directo · " + vehicleCount + " autobuses en " +
+            allVehiclesByLine().size + " líneas (" + successfulCount + "/" + ALL_LINES.length + " consultadas)", "ok");
+        }
+        render();
       } else {
-        setStatus("Datos parciales · " + successful.length + "/" + ALL_LINES.length +
-          " líneas consultadas; se conserva la última respuesta de líneas con errores.", "error");
+        const results = new Array(ALL_LINES.length);
+        let cursor = 0;
+        const errors = [];
+        await Promise.all(Array.from({length: MAX_CONCURRENT_LINES}, async () => {
+          while (true) {
+            const index = cursor++;
+            if (index >= ALL_LINES.length) return;
+            const line = ALL_LINES[index];
+            try {
+              results[index] = await fetchLine(line);
+            } catch (error) {
+              errors.push({line, message: String(error && error.message ? error.message : error)});
+              results[index] = null;
+            }
+          }
+        }));
+
+        const successful = results.filter(Boolean);
+        if (!successful.length) {
+          lastQueryHadSuccess = false;
+          setStatus("No se ha podido acceder a la API municipal ni a sus proxies.", "error");
+          if (!lineSnapshots.size) render();
+          return;
+        }
+
+        for (const result of successful) lineSnapshots.set(result.line, result.vehicles);
+        for (const error of errors) {
+          if (lineSnapshots.has(error.line)) nextStaleLines.add(error.line);
+        }
+        staleLines = nextStaleLines;
+        lastQueryHadSuccess = true;
+        lastSuccessfulUpdate = new Date();
+        $("lastUpdated").textContent = "Consulta: " + formatTime(lastSuccessfulUpdate.toISOString());
+
+        const vehicleCount = [...lineSnapshots.values()].reduce((total, list) => total + list.length, 0);
+        if (successful.length === ALL_LINES.length) {
+          setStatus("Datos en directo · " + vehicleCount + " autobuses en " + allVehiclesByLine().size + " líneas", "ok");
+        } else {
+          setStatus("Datos parciales · " + successful.length + "/" + ALL_LINES.length +
+            " líneas consultadas; se conserva la última respuesta de líneas con errores.", "error");
+        }
+        render();
       }
-      render();
     } catch (error) {
       console.error("No se pudieron consultar los autobuses de Burgos:", error);
       setStatus("Error al consultar la fuente de autobuses de Burgos.", "error");
