@@ -1,14 +1,26 @@
 (() => {
-  const DATA_FILE = "./burgos-vehicles.json";
+  const BASE_URL = "https://www.aytoburgos.es/web/movilidad/rutas-en-directo";
+  const PORTLET_ID = "as_asac_isaenext_IsaenextWebPortlet";
+  const PORTLET_PREFIX = "_as_asac_isaenext_IsaenextWebPortlet_";
+  const PROXIES = [
+    "https://corsproxy.io/?",
+    "https://api.allorigins.win/raw?url=",
+    "https://api.codetabs.com/v1/proxy?quest="
+  ];
+  const ALL_LINES = [
+    ...Array.from({length: 23}, (_, i) => String(i + 1).padStart(2, "0")),
+    "73", "87", "88", "89", "C1", "C2"
+  ];
   const REFRESH_MS = 60000;
-  const STALE_AFTER_MS = 15 * 60 * 1000;
+  const REQUEST_TIMEOUT_MS = 8000;
+  const MAX_CONCURRENT_LINES = 8;
   const $ = id => document.getElementById(id);
 
-  let vehicles = [];
-  let snapshot = null;
+  let lineSnapshots = new Map();
+  let staleLines = new Set();
   let lastSuccessfulUpdate = null;
   let updateRunning = false;
-  const expandedLines = new Set();
+  let lastQueryHadSuccess = false;
 
   function escapeHTML(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -21,14 +33,11 @@
     $("dot").className = "status-dot" + (state ? " " + state : "");
   }
 
-  function formatDate(value) {
+  function formatTime(value) {
     if (!value) return "Hora no disponible";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return String(value);
-    return date.toLocaleString("es-ES", {
-      day: "2-digit", month: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit"
-    });
+    return date.toLocaleTimeString("es-ES", {hour: "2-digit", minute: "2-digit", second: "2-digit"});
   }
 
   function displayLine(value) {
@@ -36,62 +45,115 @@
     return /^\d{1,2}$/.test(line) ? "Línea " + line.padStart(2, "0") : "Línea " + line;
   }
 
+  function buildVehicleUrl(line) {
+    const timestamp = String(Date.now());
+    const url = new URL(BASE_URL);
+    url.searchParams.set("p_p_id", PORTLET_ID);
+    url.searchParams.set("p_p_lifecycle", "2");
+    url.searchParams.set("p_p_state", "normal");
+    url.searchParams.set("p_p_mode", "view");
+    url.searchParams.set("p_p_cacheability", "cacheLevelPage");
+    url.searchParams.set("p_p_resource_id", "resourceVehicles");
+    url.searchParams.set(PORTLET_PREFIX + "formDate", timestamp);
+    url.searchParams.set(PORTLET_PREFIX + "line", line);
+    url.searchParams.set(PORTLET_PREFIX + "label", line);
+    url.searchParams.set("_t", timestamp);
+    return url.toString();
+  }
+
+  async function fetchVehicleJson(targetUrl) {
+    const failures = [];
+    for (const proxy of PROXIES) {
+      const finalUrl = proxy + encodeURIComponent(targetUrl);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      try {
+        const response = await fetch(finalUrl, {
+          method: "GET",
+          cache: "no-store",
+          referrerPolicy: "no-referrer",
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        let text = await response.text();
+        if (!text || text.trim() === "null" || text.trim() === "[]") return [];
+        if (text.startsWith("URL_DECODED:")) {
+          text = decodeURIComponent(text.slice("URL_DECODED:".length));
+        }
+        const payload = JSON.parse(text);
+        if (!Array.isArray(payload)) throw new Error("La fuente no devolvió una lista.");
+        return payload;
+      } catch (error) {
+        failures.push(error && error.message ? error.message : String(error));
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+    throw new Error(failures.join(" · ") || "No hay respuesta de los proxies.");
+  }
+
+  function normalizeVehicle(bus, line) {
+    const rawId = bus.id ?? bus.vehicleId ?? bus.vehicle_id ?? bus.vehicle ??
+      bus.vehiculo ?? bus.vehicleNumber ?? bus.number ?? bus.fleetNumber ?? bus.calca;
+    const id = String(rawId ?? "").trim();
+    if (!id) return null;
+    return {
+      ...bus,
+      id,
+      line: line,
+      destination: String(bus.destination ?? bus.destino ?? bus.headsign ?? bus.destinationName ?? bus.destiny ?? "").trim(),
+      direction: String(bus.direction ?? bus.sentido ?? bus.direccion ?? "").trim(),
+      model: String(bus.model ?? bus.modelo ?? bus.vehicleModel ?? "").trim(),
+      registration: String(bus.matricula ?? bus.registration ?? bus.plate ?? bus.licensePlate ?? "").trim(),
+      nextStop: String(bus.paradaProxima ?? bus.nextNodeId ?? bus.nextStop ?? bus.stopId ?? bus.stop_id ?? "").trim()
+    };
+  }
+
+  async function fetchLine(line) {
+    const payload = await fetchVehicleJson(buildVehicleUrl(line));
+    const vehicles = payload.map(bus => normalizeVehicle(bus, line)).filter(Boolean);
+    return {line, vehicles};
+  }
+
   function vehicleSearchFields(vehicle) {
     return [
       vehicle.id, vehicle.line, vehicle.destination, vehicle.direction,
-      vehicle.model, vehicle.registration, vehicle.nextStop, vehicle.route
+      vehicle.model, vehicle.registration, vehicle.nextStop, vehicle.ruta, vehicle.route
     ];
   }
 
-  function groupByLine(list) {
+  function allVehiclesByLine() {
     const groups = new Map();
-    for (const vehicle of list) {
-      const line = String(vehicle.line || vehicle.lineId || "").trim() || "Sin línea identificada";
-      if (!groups.has(line)) groups.set(line, []);
-      groups.get(line).push(vehicle);
+    for (const [line, vehicles] of lineSnapshots.entries()) {
+      if (vehicles.length) groups.set(line, vehicles);
     }
-    for (const group of groups.values()) {
-      group.sort((a, b) => String(a.id).localeCompare(String(b.id), "es", {
+    for (const vehicles of groups.values()) {
+      vehicles.sort((a, b) => String(a.id).localeCompare(String(b.id), "es", {
         numeric: true, sensitivity: "base"
       }));
     }
     return groups;
   }
 
-  function applySnapshot(data) {
-    if (!data || !Array.isArray(data.vehicles)) {
-      throw new Error("burgos-vehicles.json no contiene una lista válida de autobuses.");
-    }
-    snapshot = data;
-    vehicles = data.vehicles.filter(item => item && String(item.id ?? "").trim());
-    lastSuccessfulUpdate = data.fetchedAt ? new Date(data.fetchedAt) : null;
-    if (lastSuccessfulUpdate && Number.isNaN(lastSuccessfulUpdate.getTime())) {
-      lastSuccessfulUpdate = null;
-    }
-    $("lastUpdated").textContent = lastSuccessfulUpdate
-      ? "Datos: " + formatDate(data.fetchedAt)
-      : "Pendiente de primera actualización";
-    render();
-  }
-
   function render() {
-    const groups = groupByLine(vehicles);
+    const groups = allVehiclesByLine();
     const allLines = [...groups.keys()].sort((a, b) =>
-      a.localeCompare(b, "es", { numeric: true, sensitivity: "base" })
+      a.localeCompare(b, "es", {numeric: true, sensitivity: "base"})
     );
-    $("vehicleCount").textContent = String(vehicles.length);
+    const allVehicles = allLines.flatMap(line => groups.get(line));
+    $("vehicleCount").textContent = String(allVehicles.length);
     $("lineCount").textContent = String(allLines.length);
 
     const query = $("search").value.trim().toLocaleLowerCase("es");
-    const matchingLines = allLines.filter(line => {
-      const lineMatches = line.toLocaleLowerCase("es").includes(query) ||
-        displayLine(line).toLocaleLowerCase("es").includes(query);
-      return !query || lineMatches || groups.get(line).some(vehicle =>
+    const matchingLines = allLines.filter(line =>
+      displayLine(line).toLocaleLowerCase("es").includes(query) ||
+      line.toLocaleLowerCase("es").includes(query) ||
+      groups.get(line).some(vehicle =>
         vehicleSearchFields(vehicle).some(value =>
           String(value || "").toLocaleLowerCase("es").includes(query)
         )
-      );
-    });
+      )
+    );
 
     const container = $("lines");
     container.innerHTML = "";
@@ -99,23 +161,25 @@
       let message;
       if (query) {
         message = "No hay líneas ni autobuses activos que coincidan con la búsqueda.";
-      } else if (!lastSuccessfulUpdate) {
-        message = "Esperando a que termine la primera actualización automática de autobuses de Burgos.";
+      } else if (!lastQueryHadSuccess) {
+        message = "No se ha podido consultar ISAENEXT mediante los proxies disponibles.";
+        container.innerHTML = '<div class="message error"><strong>' + escapeHTML(message) + '</strong><br>' +
+          '<span>Comprueba la conexión o consulta los visores que usan esta misma fuente.</span><br><br>' +
+          '<a href="https://enekituss.github.io/samyt/" target="_blank" rel="noopener noreferrer">Abrir SAMYT</a> · ' +
+          '<a href="https://webburgos.com/bus/" target="_blank" rel="noopener noreferrer">Abrir WebBurgos</a></div>';
+        return;
       } else {
-        message = "La última consulta completa no ha encontrado autobuses activos publicados por ISAENEXT.";
+        message = "No hay autobuses activos en las respuestas consultadas.";
       }
-      container.innerHTML = '<div class="message">' + escapeHTML(message) +
-        (!lastSuccessfulUpdate && !query
-          ? '<br><br><a href="https://github.com/enekituss/sae/actions/workflows/update-burgos-vehicles.yml" target="_blank" rel="noopener noreferrer">Ver o ejecutar la actualización de Burgos</a>'
-          : "") + "</div>";
+      container.innerHTML = '<div class="message">' + escapeHTML(message) + "</div>";
       return;
     }
 
     for (const line of matchingLines) {
       const lineVehicles = groups.get(line);
-      const isOpen = expandedLines.has(line) || Boolean(query);
+      const isStale = staleLines.has(line);
       const section = document.createElement("section");
-      section.className = "line" + (isOpen ? " open" : "");
+      section.className = "line" + (query ? " open" : "");
       let cards = "";
       for (const vehicle of lineVehicles) {
         const destination = vehicle.destination
@@ -132,21 +196,23 @@
         cards += '<article class="vehicle"><div class="vehicle-main">' +
           '<div class="vehicle-id"><span class="bus-icon" aria-hidden="true">🚌</span><span>' +
           escapeHTML(vehicle.id) + "</span></div>" + destination + direction + "</div>" +
-          '<div class="vehicle-meta">' + (details || "<strong>Estado</strong><br>Publicado en la lista activa municipal") +
+          '<div class="vehicle-meta">' + (details || "<strong>Estado</strong><br>Publicado en resourceVehicles") +
           "</div></article>";
       }
       section.innerHTML =
-        '<button class="line-head" type="button" aria-expanded="' + isOpen +
+        '<button class="line-head" type="button" aria-expanded="' + Boolean(query) +
         '" aria-label="Mostrar autobuses de ' + escapeHTML(displayLine(line)) + '">' +
         '<span class="line-leading"><span class="line-chevron" aria-hidden="true">›</span><span>' +
         '<span class="line-name">' + escapeHTML(displayLine(line)) + "</span>" +
-        '<span class="line-subtitle">' + lineVehicles.length + (lineVehicles.length === 1 ? " autobús activo" : " autobuses activos") + "</span>" +
-        "</span></span><span class=\"badge\">" + lineVehicles.length + (lineVehicles.length === 1 ? " activo" : " activos") +
-        "</span></button><div class=\"vehicles\">" + cards + "</div>";
+        '<span class="line-subtitle">' + lineVehicles.length +
+        (lineVehicles.length === 1 ? " autobús activo" : " autobuses activos") +
+        (isStale ? " · última respuesta conservada" : "") + "</span>" +
+        "</span></span><span class=\"badge\">" + lineVehicles.length +
+        (lineVehicles.length === 1 ? " activo" : " activos") + "</span></button>" +
+        '<div class="vehicles">' + cards + "</div>";
       section.querySelector(".line-head").addEventListener("click", () => {
-        if (expandedLines.has(line)) expandedLines.delete(line);
-        else expandedLines.add(line);
-        render();
+        section.classList.toggle("open");
+        section.querySelector(".line-head").setAttribute("aria-expanded", section.classList.contains("open") ? "true" : "false");
       });
       container.appendChild(section);
     }
@@ -156,45 +222,56 @@
     if (updateRunning) return;
     updateRunning = true;
     $("refresh").disabled = true;
-    $("refresh").innerHTML = '<span aria-hidden="true">↻</span> Cargando';
-    setStatus("Leyendo la copia publicada de autobuses de Burgos…", "");
+    $("refresh").innerHTML = '<span aria-hidden="true">↻</span> Consultando';
+    setStatus("Consultando coches por línea en ISAENEXT…", "");
     try {
-      const url = new URL(DATA_FILE, window.location.href);
-      url.searchParams.set("_", String(Date.now()));
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
-      let response;
-      try {
-        response = await fetch(url.toString(), {
-          cache: "no-store",
-          headers: { "Accept": "application/json" },
-          signal: controller.signal
-        });
-      } finally {
-        clearTimeout(timeoutId);
-      }
-      if (!response.ok) throw new Error("burgos-vehicles.json respondió HTTP " + response.status);
-      applySnapshot(await response.json());
-      if (!lastSuccessfulUpdate) {
-        setStatus("Esperando la primera actualización automática", "");
-      } else {
-        const age = Date.now() - lastSuccessfulUpdate.getTime();
-        if (age > STALE_AFTER_MS) {
-          setStatus("Copia antigua · " + Math.floor(age / 60000) + " min desde la última actualización", "error");
-        } else {
-          setStatus("Datos publicados · " + vehicles.length + " autobuses activos", "ok");
+      const results = new Array(ALL_LINES.length);
+      let cursor = 0;
+      const errors = [];
+      await Promise.all(Array.from({length: MAX_CONCURRENT_LINES}, async () => {
+        while (true) {
+          const index = cursor++;
+          if (index >= ALL_LINES.length) return;
+          const line = ALL_LINES[index];
+          try {
+            results[index] = await fetchLine(line);
+          } catch (error) {
+            errors.push({line, message: String(error && error.message ? error.message : error)});
+            results[index] = null;
+          }
         }
+      }));
+
+      const successful = results.filter(Boolean);
+      if (!successful.length) {
+        lastQueryHadSuccess = false;
+        setStatus("No se ha podido acceder a la API municipal ni a sus proxies.", "error");
+        if (!lineSnapshots.size) render();
+        return;
       }
-    } catch (error) {
-      console.error("No se pudo leer la copia de autobuses de Burgos:", error);
-      setStatus("No se ha podido leer la copia publicada", "error");
-      if (!snapshot) {
-        $("lines").innerHTML = '<div class="message error"><strong>No se han podido cargar los autobuses urbanos de Burgos.</strong><br>' +
-          '<span>' + escapeHTML(error.message || error) + '</span><br><br>' +
-          '<a href="https://github.com/enekituss/sae/actions/workflows/update-burgos-vehicles.yml" target="_blank" rel="noopener noreferrer">Abrir la actualización automática de Burgos</a></div>';
+
+      const nextStaleLines = new Set();
+      for (const result of successful) lineSnapshots.set(result.line, result.vehicles);
+      for (const error of errors) {
+        if (lineSnapshots.has(error.line)) nextStaleLines.add(error.line);
+      }
+      staleLines = nextStaleLines;
+      lastQueryHadSuccess = true;
+      lastSuccessfulUpdate = new Date();
+      $("lastUpdated").textContent = "Consulta: " + formatTime(lastSuccessfulUpdate.toISOString());
+
+      const vehicleCount = [...lineSnapshots.values()].reduce((total, list) => total + list.length, 0);
+      if (successful.length === ALL_LINES.length) {
+        setStatus("Datos en directo · " + vehicleCount + " autobuses en " + allVehiclesByLine().size + " líneas", "ok");
       } else {
-        $("lastUpdated").textContent = "No se pudo actualizar; se conserva la última copia cargada";
+        setStatus("Datos parciales · " + successful.length + "/" + ALL_LINES.length +
+          " líneas consultadas; se conserva la última respuesta de líneas con errores.", "error");
       }
+      render();
+    } catch (error) {
+      console.error("No se pudieron consultar los autobuses de Burgos:", error);
+      setStatus("Error al consultar la fuente de autobuses de Burgos.", "error");
+      if (!lineSnapshots.size) render();
     } finally {
       updateRunning = false;
       $("refresh").disabled = false;
