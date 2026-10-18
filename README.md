@@ -37,15 +37,7 @@ En Cloudflare, dentro del Worker `bizkaibus-sae-dispatcher`, añade estos **Secr
 - `TELEGRAM_WEBHOOK_SECRET`: una cadena aleatoria de al menos 32 caracteres con letras, números, guion y guion bajo.
 - `GITHUB_TOKEN`: necesita `Actions: Read and write` y `Contents: Read and write` para el repositorio `sae`.
 
-Despliega el Worker actualizado y, en PowerShell, ejecuta lo siguiente. Cuando te lo pida, pega el valor de `TELEGRAM_WEBHOOK_SECRET` que guardaste en Cloudflare; no incluyas el secreto en GitHub ni en el chat:
-
-```powershell
-$secret = Read-Host "Pega TELEGRAM_WEBHOOK_SECRET"
-Invoke-RestMethod -Method Post -Uri "https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev/admin/telegram/setup" -Headers @{ Authorization = "Bearer $secret" }
-Remove-Variable secret
-```
-
-La respuesta debe indicar `"ok": true` y que ambos webhooks se han registrado. A partir de ese momento, Cloudflare recibe los mensajes y guarda las preferencias en la rama separada `telegram-data`; GitHub Actions sigue comprobando los autobuses con su frecuencia normal. Mientras los webhooks no estén activos, los flujos mantienen el polling antiguo como respaldo.
+Despliega el Worker actualizado. No hace falta usar PowerShell: el programador de Cloudflare comprobará los secretos y registrará automáticamente los webhooks en el siguiente ciclo (normalmente dentro de dos minutos). La comprobación aparecerá en **Workers & Pages → bizkaibus-sae-dispatcher → Logs** como "Webhooks de Telegram configurados automáticamente". Si falta algún secreto, el error de los logs indicará qué nombre falta.
 
 Las preferencias principales se guardan por chat privado en la rama `telegram-data` (un fichero independiente por usuario), mientras que `vehicle-alert-state.json` conserva el estado del detector y la cola de eventos. El bot revisa la modalidad al enviar para evitar entregar mensajes pendientes que ya no corresponden a la configuración actual.
 La actualización automática compara snapshots consecutivos de SIRI y mantiene una cola persistente de avisos de Telegram:
