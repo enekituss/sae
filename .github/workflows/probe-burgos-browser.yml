@@ -20,7 +20,7 @@ jobs:
           python -m pip install --quiet playwright
           google-chrome --version || chromium --version || true
 
-      - name: Abrir Bus Burgos en modo móvil normal
+      - name: Inspeccionar interfaz móvil y feed público
         shell: bash
         run: |
           python - <<'PY'
@@ -34,127 +34,80 @@ jobs:
           captured = []
           failures = []
           ws_counts = Counter()
+          script_urls = []
+          console_errors = []
+          page_errors = []
 
           async def main():
               async with async_playwright() as p:
-                  browser = await p.chromium.launch(
-                      channel="chrome",
-                      headless=True,
-                      args=["--no-sandbox"]
-                  )
+                  browser = await p.chromium.launch(channel="chrome", headless=True, args=["--no-sandbox"])
                   context = await browser.new_context(
-                      viewport={"width": 390, "height": 844},
-                      device_scale_factor=3,
-                      is_mobile=True,
-                      has_touch=True,
-                      locale="es-ES",
+                      viewport={"width":390,"height":844}, device_scale_factor=3,
+                      is_mobile=True, has_touch=True, locale="es-ES",
                       timezone_id="Europe/Madrid",
                       user_agent="Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
                   )
                   page = await context.new_page()
+                  page.on("console", lambda msg: console_errors.append(msg.text[:220]) if msg.type == "error" else None)
+                  page.on("pageerror", lambda exc: page_errors.append(str(exc)[:220]))
+                  page.on("request", lambda request: script_urls.append(request.url) if ".js" in urlparse(request.url).path else None)
 
                   async def response_handler(response):
-                      url = response.url
-                      parsed = urlparse(url)
-                      query = parse_qs(parsed.query)
-                      action = (query.get("action") or [""])[0]
-                      if action not in ("vehiculos", "estimaciones"):
+                      parsed=urlparse(response.url)
+                      query=parse_qs(parsed.query)
+                      action=(query.get("action") or [""])[0]
+                      if action not in ("vehiculos","estimaciones"):
                           return
-                      line = (query.get("line") or [""])[0]
-                      stop_id = (query.get("nodoId") or [""])[0]
                       try:
-                          raw = await response.body()
-                          text_body = raw.decode("utf-8", errors="replace")
-                          try:
-                              payload = json.loads(text_body)
-                          except Exception:
-                              payload = None
-                          result = {
-                              "action": action,
-                              "line": line,
-                              "stopId": stop_id,
-                              "status": response.status,
-                              "bytes": len(raw),
-                              "json": isinstance(payload, (list, dict))
-                          }
-                          if isinstance(payload, list):
-                              result["count"] = len(payload)
-                              result["sampleKeys"] = sorted(payload[0].keys())[:24] if payload and isinstance(payload[0], dict) else []
-                              if action == "vehiculos":
-                                  result["identified"] = sum(
-                                      1 for item in payload
-                                      if isinstance(item, dict) and any(item.get(k) not in (None, "", 0, "0") for k in ("id", "vehicleId", "vehicle_id", "vehicle"))
-                                  )
-                          elif isinstance(payload, dict):
-                              result["keys"] = sorted(payload.keys())[:24]
+                          raw=await response.body()
+                          payload=json.loads(raw.decode("utf-8",errors="replace"))
+                          result={"action":action,"line":(query.get("line") or [""])[0],"stopId":(query.get("nodoId") or [""])[0],"status":response.status,"bytes":len(raw)}
+                          if isinstance(payload,list):
+                              result["count"]=len(payload)
+                              result["sampleKeys"]=sorted(payload[0].keys())[:24] if payload and isinstance(payload[0],dict) else []
+                          elif isinstance(payload,dict):
+                              result["keys"]=sorted(payload.keys())[:24]
                           captured.append(result)
-                          print("LIVE_RESPONSE:", json.dumps(result, ensure_ascii=False))
+                          print("LIVE_RESPONSE:",json.dumps(result,ensure_ascii=False))
                       except Exception as exc:
-                          failure = {"action": action, "line": line, "error": str(exc)[:160]}
-                          failures.append(failure)
-                          print("LIVE_RESPONSE_ERROR:", json.dumps(failure, ensure_ascii=False))
+                          failures.append({"action":action,"error":str(exc)[:160]})
 
                   def ws_handler(ws):
-                      try:
-                          host = urlparse(ws.url).netloc
-                      except Exception:
-                          host = "unknown"
-                      ws_counts["opened"] += 1
-                      print("WS_OPEN:", host)
-
+                      ws_counts["opened"]+=1
                       def frame_received(payload):
                           try:
-                              message = json.loads(payload) if isinstance(payload, str) else {}
+                              data=json.loads(payload) if isinstance(payload,str) else {}
                           except Exception:
                               return
-                          event = message.get("event", "")
-                          if event == "pusher_internal:subscription_succeeded":
-                              ws_counts["subscribed"] += 1
-                          if event == "actualizacion-buses":
-                              try:
-                                  data = message.get("data", {})
-                                  if isinstance(data, str):
-                                      data = json.loads(data)
-                                  data = data.get("data", data) if isinstance(data, dict) else data
-                                  buses = data.get("vehiculos", []) if isinstance(data, dict) else []
-                                  ws_counts["bus_events"] += 1
-                                  ws_counts["buses_in_events"] += len(buses) if isinstance(buses, list) else 0
-                                  keys = sorted(buses[0].keys())[:24] if isinstance(buses, list) and buses and isinstance(buses[0], dict) else []
-                                  print("PUSHER_BUS_EVENT:", json.dumps({
-                                      "count": len(buses) if isinstance(buses, list) else 0,
-                                      "sampleKeys": keys
-                                  }, ensure_ascii=False))
-                              except Exception as exc:
-                                  print("PUSHER_EVENT_PARSE_ERROR:", str(exc)[:160])
-                      ws.on("framereceived", frame_received)
-                      ws.on("close", lambda: print("WS_CLOSED:", host))
-
-                  page.on("response", response_handler)
-                  page.on("websocket", ws_handler)
+                          event=data.get("event","")
+                          if event in ("pusher_internal:subscription_succeeded","actualizacion-buses"):
+                              ws_counts[event]+=1
+                              if event=="actualizacion-buses":
+                                  try:
+                                      payload_data=data.get("data",{})
+                                      if isinstance(payload_data,str): payload_data=json.loads(payload_data)
+                                      payload_data=payload_data.get("data",payload_data) if isinstance(payload_data,dict) else payload_data
+                                      buses=payload_data.get("vehiculos",[]) if isinstance(payload_data,dict) else []
+                                      print("PUSHER_BUS_EVENT:",json.dumps({"count":len(buses) if isinstance(buses,list) else 0,"keys":sorted(buses[0].keys())[:24] if isinstance(buses,list) and buses and isinstance(buses[0],dict) else []},ensure_ascii=False))
+                                  except Exception:
+                                      pass
+                      ws.on("framereceived",frame_received)
+                  page.on("websocket",ws_handler)
 
                   try:
-                      response = await page.goto(ROOT, wait_until="domcontentloaded", timeout=35000)
-                      print("PAGE:", json.dumps({
-                          "status": response.status if response else None,
-                          "url": page.url,
-                          "title": await page.title(),
-                          "mobile": await page.evaluate("matchMedia('(pointer: coarse)').matches")
-                      }, ensure_ascii=False))
-                      await page.wait_for_timeout(30000)
+                      response=await page.goto(ROOT,wait_until="domcontentloaded",timeout=35000)
+                      print("PAGE:",json.dumps({"status":response.status if response else None,"url":page.url,"title":await page.title(),"mobile":await page.evaluate("matchMedia('(pointer: coarse)').matches")},ensure_ascii=False))
+                      print("BODY_TEXT:",(await page.locator("body").inner_text())[:2600].replace("\n"," | "))
+                      print("BUTTONS:",json.dumps((await page.locator("button:visible").all_text_contents())[:40],ensure_ascii=False))
+                      print("LINKS:",json.dumps((await page.locator("a:visible").all_text_contents())[:50],ensure_ascii=False))
+                      print("SCRIPT_URLS:",json.dumps(list(dict.fromkeys(script_urls))[:30],ensure_ascii=False))
+                      print("CONSOLE_ERRORS:",json.dumps(console_errors[:10],ensure_ascii=False))
+                      print("PAGE_ERRORS:",json.dumps(page_errors[:10],ensure_ascii=False))
+                      await page.wait_for_timeout(18000)
                   except Exception as exc:
-                      print("PAGE_ERROR:", repr(exc)[:250])
+                      print("PAGE_ERROR:",repr(exc)[:250])
 
-                  vehicles = [x for x in captured if x["action"] == "vehiculos" and x["status"] == 200]
-                  estimates = [x for x in captured if x["action"] == "estimaciones" and x["status"] == 200]
-                  print("SUMMARY:", json.dumps({
-                      "vehicleResponses": len(captured) and sum(1 for x in captured if x["action"] == "vehiculos"),
-                      "successfulVehicleResponses": len(vehicles),
-                      "identifiedVehicles": sum(x.get("identified", 0) for x in vehicles),
-                      "estimationResponses": sum(1 for x in captured if x["action"] == "estimaciones"),
-                      "successfulEstimationResponses": len(estimates),
-                      "websocket": dict(ws_counts),
-                      "requestFailures": len(failures)
-                  }, ensure_ascii=False))
+                  print("SUMMARY:",json.dumps({"liveResponses":len(captured),"liveResponseStatuses":dict(Counter(x["status"] for x in captured)),"websocket":dict(ws_counts),"requestFailures":failures[:10],"consoleErrors":console_errors[:10],"pageErrors":page_errors[:10]},ensure_ascii=False))
                   await context.close()
                   await browser.close()
 
