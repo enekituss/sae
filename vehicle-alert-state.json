@@ -25252,55 +25252,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:c583bc7a257bdcd14e22a5d0": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T13:59+02:00",
-      "direction": "",
-      "eventId": "missing:c583bc7a257bdcd14e22a5d0",
-      "firstMissingAt": "2026-10-18T13:54:59+02:00",
-      "lastSeenAt": "2026-10-18T13:51:43+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T13:59:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2120"
-    },
-    "route_after_gap:fa9d2e5ffbc4b8fbe4f4aa6d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ La Arena",
-          "old": "GETXO"
-        }
-      ],
-      "destination": "MUSKIZ La Arena",
-      "detectedAt": "2026-10-18T13:59+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:fa9d2e5ffbc4b8fbe4f4aa6d",
-      "line": "A3338",
-      "queuedAt": "2026-10-18T13:59:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7874"
-    },
-    "vehicle_returned:57bcf6b80a5197c9983cf30b": {
-      "destination": "OTXANDIO-UBIDE",
-      "detectedAt": "2026-10-18T13:59+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:57bcf6b80a5197c9983cf30b",
-      "lastKnown": {
-        "destination": "OTXANDIO-UBIDE",
-        "direction": "",
-        "id": "3311",
-        "line": "A3925"
-      },
-      "line": "A3925",
-      "queuedAt": "2026-10-18T13:59:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3311"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2061": {
@@ -25373,7 +25325,7 @@
       "requiredMissing": 2
     },
     "2120": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:c583bc7a257bdcd14e22a5d0",
       "firstMissingAt": "2026-10-18T13:54:59+02:00",
@@ -25384,7 +25336,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T13:51:43+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2135": {
