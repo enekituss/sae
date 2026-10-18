@@ -72,6 +72,7 @@ El manifiesto `manifest.webmanifest`, el Service Worker y los iconos permiten qu
 
 ## Horarios urbanos de Burgos
 - `burgos.html` permite consultar líneas y viajes, y abrir la tabla completa de horas programadas para cada parada.
+- El seguimiento de Burgos consulta `resourceVehicles` del servicio ISAENEXT por línea a través de `/api/burgos/vehicles`; si el recurso falla, conserva `/api/burgos/live` como respaldo de estimaciones por parada. Los coches y las posiciones se muestran solo según los campos que publique la fuente.
 - `scripts/update_burgos_gtfs.py` descarga `https://www.aytoburgos.es/GTFS/Google_transit.zip` y genera `burgos-data.json`.
 - `.github/workflows/update-burgos-gtfs.yml` actualiza el fichero diariamente y se puede lanzar manualmente desde GitHub Actions.
 - Los identificadores `trip_id`, `service_id` y `block_id` son los campos del GTFS; no equivalen necesariamente al número físico de flota ni al turno operativo que conoce el conductor.
