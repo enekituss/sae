@@ -103,6 +103,22 @@ jobs:
                       print("SCRIPT_URLS:",json.dumps(list(dict.fromkeys(script_urls))[:30],ensure_ascii=False))
                       print("CONSOLE_ERRORS:",json.dumps(console_errors[:10],ensure_ascii=False))
                       print("PAGE_ERRORS:",json.dumps(page_errors[:10],ensure_ascii=False))
+                      controls = await page.evaluate("""() => ({
+                        buttons: Array.from(document.querySelectorAll('button')).slice(0,30).map(e => ({
+                          text: (e.innerText || '').trim().slice(0,100),
+                          title: e.title || '',
+                          aria: e.getAttribute('aria-label') || '',
+                          id: e.id || '',
+                          cls: (typeof e.className === 'string' ? e.className : '').slice(0,100),
+                          html: e.outerHTML.slice(0,260)
+                        })),
+                        selects: Array.from(document.querySelectorAll('select')).map(e => ({
+                          id:e.id, name:e.name, options:Array.from(e.options).slice(0,20).map(o=>({text:o.text,value:o.value}))
+                        })),
+                        inputs: Array.from(document.querySelectorAll('input')).slice(0,20).map(e=>({id:e.id,type:e.type,placeholder:e.placeholder,aria:e.getAttribute('aria-label')})),
+                        map: (() => { const e=document.querySelector('.leaflet-container'); return e ? {class:e.className, markers:e.querySelectorAll('.leaflet-marker-icon').length, layers:e.querySelectorAll('.leaflet-overlay-pane path').length, html:e.outerHTML.slice(0,600)} : null })()
+                      })""")
+                      print("CONTROLS:",json.dumps(controls,ensure_ascii=False)[:8000])
                       await page.wait_for_timeout(18000)
                   except Exception as exc:
                       print("PAGE_ERROR:",repr(exc)[:250])
