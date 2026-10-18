@@ -25593,75 +25593,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:f7dfbe1884301699390f2b63": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T15:37+02:00",
-      "direction": "",
-      "eventId": "missing:f7dfbe1884301699390f2b63",
-      "firstMissingAt": "2026-10-18T15:33:03+02:00",
-      "lastSeenAt": "2026-10-18T15:29:29+02:00",
-      "line": "A3632",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T15:37:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3293"
-    },
-    "route:9242607f851fd4bc0162e508": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "LARRABETZU"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T15:37+02:00",
-      "direction": "",
-      "eventId": "route:9242607f851fd4bc0162e508",
-      "line": "A3631",
-      "queuedAt": "2026-10-18T15:37:04+02:00",
-      "type": "route_change",
-      "vehicleId": "3265"
-    },
-    "route:d3e1efaa1fa46d5f9d62092d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "LEKEITIO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "LEKEITIO",
-      "detectedAt": "2026-10-18T15:37+02:00",
-      "direction": "",
-      "eventId": "route:d3e1efaa1fa46d5f9d62092d",
-      "line": "A3523",
-      "queuedAt": "2026-10-18T15:37:04+02:00",
-      "type": "route_change",
-      "vehicleId": "8670"
-    },
-    "route_after_gap:9acce2414222c3c56a9d7c32": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO (Aut.)",
-          "old": "EIBAR (Aut.)"
-        }
-      ],
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T15:37+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:9acce2414222c3c56a9d7c32",
-      "line": "A3926",
-      "queuedAt": "2026-10-18T15:37:04+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3379"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "8673": {
       "consecutiveChecks": 1,
@@ -25732,7 +25664,7 @@
       "requiredMissing": 2
     },
     "3293": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:f7dfbe1884301699390f2b63",
       "firstMissingAt": "2026-10-18T15:33:03+02:00",
@@ -25743,7 +25675,7 @@
         "line": "A3632"
       },
       "lastSeenAt": "2026-10-18T15:29:29+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3303": {
