@@ -25106,53 +25106,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:a6311f86c4ba71cadf58a93a": {
-      "destination": "ERRIGOITI",
-      "detectedAt": "2026-10-18T11:51+02:00",
-      "direction": "",
-      "eventId": "missing:a6311f86c4ba71cadf58a93a",
-      "firstMissingAt": "2026-10-18T11:47:01+02:00",
-      "lastSeenAt": "2026-10-18T11:43:52+02:00",
-      "line": "A3534",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T11:51:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8680"
-    },
-    "vehicle_returned:4783357a1da2159bc6c6d863": {
-      "destination": "LUTXANA",
-      "detectedAt": "2026-10-18T11:51+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:4783357a1da2159bc6c6d863",
-      "lastKnown": {
-        "destination": "LUTXANA",
-        "direction": "",
-        "id": "7876",
-        "line": "A3129"
-      },
-      "line": "A3129",
-      "queuedAt": "2026-10-18T11:51:00+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "7876"
-    },
-    "vehicle_returned:b8bb5475d3402eb53d1082d2": {
-      "destination": "SESTAO",
-      "detectedAt": "2026-10-18T11:51+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:b8bb5475d3402eb53d1082d2",
-      "lastKnown": {
-        "destination": "SESTAO",
-        "direction": "",
-        "id": "7866",
-        "line": "A3135"
-      },
-      "line": "A3135",
-      "queuedAt": "2026-10-18T11:51:00+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "7866"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1715": {
@@ -25503,7 +25457,7 @@
       "requiredMissing": 2
     },
     "8680": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a6311f86c4ba71cadf58a93a",
       "firstMissingAt": "2026-10-18T11:47:01+02:00",
@@ -25514,7 +25468,7 @@
         "line": "A3534"
       },
       "lastSeenAt": "2026-10-18T11:43:52+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8681": {
