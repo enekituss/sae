@@ -72,8 +72,8 @@
   }
 
   // ---- Seguimiento en directo de Burgos ----
-  const BURGOS_LIVE_SOURCE = 'https://movilidad.aytoburgos.es/rutas-en-directo';
-  const BURGOS_VEHICLES_SOURCE = 'https://www.aytoburgos.es/web/movilidad/rutas-en-directo';
+  const BURGOS_LIVE_SOURCE = 'https://movilidad.aytoburgos.es/es/rutas-en-directo';
+  const BURGOS_VEHICLES_SOURCE = 'https://movilidad.aytoburgos.es/es/rutas-en-directo';
   const BURGOS_PORTLET = 'as_asac_isaenext_IsaenextWebPortlet';
   const BURGOS_LINES = [...Array.from({length:23}, (_, i) => String(i + 1).padStart(2, '0')), '73', '87', '88', '89', 'C1', 'C2'];
   const BURGOS_PROXY_STORAGE = 'saeBurgosRealtimeProxy';
@@ -355,8 +355,8 @@
       const vehicleId = String(bus.id ?? bus.vehicleId ?? bus.vehicle_id ?? '').trim();
       const line = String(bus.lineId ?? bus.line ?? bus.lineName ?? response.line ?? '').trim();
       const destination = String(bus.destination ?? bus.destino ?? bus.destinationName ?? bus.headsign ?? 'Destino no publicado').trim();
-      const latValue = Number(bus.lat ?? bus.latitude);
-      const lonValue = Number(bus.lng ?? bus.lon ?? bus.longitude);
+      const latValue = Number(bus.lat ?? bus.latitude ?? bus.position?.lat);
+      const lonValue = Number(bus.lng ?? bus.lon ?? bus.longitude ?? bus.position?.lon);
       const secondsValue = Number(bus.seconds ?? bus.segundos ?? bus.nextStopSeconds);
       const metersValue = Number(bus.meters ?? bus.distanceToNextStop);
       const stopId = String(bus.paradaProxima ?? bus.nextNodeId ?? bus.nextStop ?? bus.stopId ?? bus.stop_id ?? '').trim();
@@ -370,7 +370,7 @@
         meters: Number.isFinite(metersValue) && metersValue >= 0 ? metersValue : null,
         vehicleLat: Number.isFinite(latValue) && latValue >= 42 && latValue <= 43 ? latValue : null,
         vehicleLon: Number.isFinite(lonValue) && lonValue >= -4 && lonValue <= -3 ? lonValue : null,
-        vehiclePositionSource: 'Coordenadas publicadas por resourceVehicles',
+        vehiclePositionSource: String(bus.position?.source || 'Coordenadas publicadas por resourceVehicles'),
         stopId,
         stopName
       };
