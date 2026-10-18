@@ -22622,34 +22622,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:53e15d196dc2bbaee5628e0f": {
-      "destination": "SESTAO",
-      "detectedAt": "2026-10-18T08:47+02:00",
-      "direction": "",
-      "eventId": "missing:53e15d196dc2bbaee5628e0f",
-      "firstMissingAt": "2026-10-18T08:43:03+02:00",
-      "lastSeenAt": "2026-10-18T08:39:50+02:00",
-      "line": "A3135",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T08:47:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7815"
-    },
-    "missing:557aaf271772e0ede3fdf871": {
-      "destination": "TRAPAGARAN",
-      "detectedAt": "2026-10-18T08:47+02:00",
-      "direction": "",
-      "eventId": "missing:557aaf271772e0ede3fdf871",
-      "firstMissingAt": "2026-10-18T08:43:03+02:00",
-      "lastSeenAt": "2026-10-18T08:39:50+02:00",
-      "line": "A3332",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T08:47:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7861"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "3339": {
       "consecutiveChecks": 2,
@@ -22864,7 +22837,7 @@
       "requiredMissing": 2
     },
     "7815": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:53e15d196dc2bbaee5628e0f",
       "firstMissingAt": "2026-10-18T08:43:03+02:00",
@@ -22875,11 +22848,11 @@
         "line": "A3135"
       },
       "lastSeenAt": "2026-10-18T08:39:50+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7861": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:557aaf271772e0ede3fdf871",
       "firstMissingAt": "2026-10-18T08:43:03+02:00",
@@ -22890,7 +22863,7 @@
         "line": "A3332"
       },
       "lastSeenAt": "2026-10-18T08:39:50+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8681": {
