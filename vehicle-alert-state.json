@@ -8479,53 +8479,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:5efd5ef9951a60b91ef760eb": {
-      "destination": "GERNIKA",
-      "detectedAt": "2026-10-18T22:53+02:00",
-      "direction": "",
-      "eventId": "missing:5efd5ef9951a60b91ef760eb",
-      "firstMissingAt": "2026-10-18T22:49:03+02:00",
-      "lastSeenAt": "2026-10-18T22:46:05+02:00",
-      "line": "A3514",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T22:53:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8650"
-    },
-    "vehicle_returned:29ec78c9022e2e974e16baeb": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T22:53+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:29ec78c9022e2e974e16baeb",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "2076",
-        "line": "A3247"
-      },
-      "line": "A3247",
-      "queuedAt": "2026-10-18T22:53:03+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2076"
-    },
-    "vehicle_returned:b411081d4471f99ed3fa14b0": {
-      "destination": "LEIOA",
-      "detectedAt": "2026-10-18T22:53+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:b411081d4471f99ed3fa14b0",
-      "lastKnown": {
-        "destination": "LEIOA",
-        "direction": "",
-        "id": "1514",
-        "line": "A3414"
-      },
-      "line": "A3414",
-      "queuedAt": "2026-10-18T22:53:03+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "1514"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {},
   "pendingVehicles": {
@@ -9558,7 +9512,7 @@
       "requiredMissing": 2
     },
     "8650": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:5efd5ef9951a60b91ef760eb",
       "firstMissingAt": "2026-10-18T22:49:03+02:00",
@@ -9569,7 +9523,7 @@
         "line": "A3514"
       },
       "lastSeenAt": "2026-10-18T22:46:05+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8652": {
