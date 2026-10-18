@@ -21951,81 +21951,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:93472e572c42cdf3bf9a9ce9": {
-      "destination": "GETXO",
-      "detectedAt": "2026-10-18T21:57+02:00",
-      "direction": "",
-      "eventId": "missing:93472e572c42cdf3bf9a9ce9",
-      "firstMissingAt": "2026-10-18T21:53:05+02:00",
-      "lastSeenAt": "2026-10-18T21:49:57+02:00",
-      "line": "A3414",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T21:57:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1512"
-    },
-    "missing:e2d82290cffe5fa67461f104": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T21:57+02:00",
-      "direction": "",
-      "eventId": "missing:e2d82290cffe5fa67461f104",
-      "firstMissingAt": "2026-10-18T21:53:05+02:00",
-      "lastSeenAt": "2026-10-18T21:49:57+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T21:57:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2076"
-    },
-    "missing:f43a54c555a935591149e5e4": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T21:57+02:00",
-      "direction": "",
-      "eventId": "missing:f43a54c555a935591149e5e4",
-      "firstMissingAt": "2026-10-18T21:53:05+02:00",
-      "lastSeenAt": "2026-10-18T21:49:57+02:00",
-      "line": "A3925",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T21:57:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3335"
-    },
-    "route_after_gap:ffbc0b5453ba21cbf0f496e6": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GORLIZ",
-          "old": "PLENTZIA (Metro)"
-        }
-      ],
-      "destination": "GORLIZ",
-      "detectedAt": "2026-10-18T21:57+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:ffbc0b5453ba21cbf0f496e6",
-      "line": "A3499",
-      "queuedAt": "2026-10-18T21:57:04+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "1715"
-    },
-    "vehicle_returned:dcf95c1bda0051562ff6432f": {
-      "destination": "ARRIGORRIAGA",
-      "detectedAt": "2026-10-18T21:57+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:dcf95c1bda0051562ff6432f",
-      "lastKnown": {
-        "destination": "GALDAKAO Ospitalea",
-        "direction": "",
-        "id": "3303",
-        "line": "A3641"
-      },
-      "line": "A3641",
-      "queuedAt": "2026-10-18T21:57:04+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3303"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2061": {
@@ -22059,7 +21985,7 @@
       "requiredMissing": 2
     },
     "1512": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:93472e572c42cdf3bf9a9ce9",
       "firstMissingAt": "2026-10-18T21:53:05+02:00",
@@ -22070,7 +21996,7 @@
         "line": "A3414"
       },
       "lastSeenAt": "2026-10-18T21:49:57+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "1718": {
@@ -22089,7 +22015,7 @@
       "requiredMissing": 2
     },
     "2076": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:e2d82290cffe5fa67461f104",
       "firstMissingAt": "2026-10-18T21:53:05+02:00",
@@ -22100,7 +22026,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T21:49:57+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2089": {
@@ -22179,7 +22105,7 @@
       "requiredMissing": 2
     },
     "3335": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:f43a54c555a935591149e5e4",
       "firstMissingAt": "2026-10-18T21:53:05+02:00",
@@ -22190,7 +22116,7 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-18T21:49:57+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3336": {
