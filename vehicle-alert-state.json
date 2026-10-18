@@ -23246,81 +23246,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:736b13d561bac18467e6c906": {
-      "destination": "OROZKO Ibarra",
-      "detectedAt": "2026-10-18T08:57+02:00",
-      "direction": "",
-      "eventId": "missing:736b13d561bac18467e6c906",
-      "firstMissingAt": "2026-10-18T08:53:00+02:00",
-      "lastSeenAt": "2026-10-18T08:49:26+02:00",
-      "line": "A3613",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T08:57:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3368"
-    },
-    "route:07f889f4480bb141dee394a8": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3527",
-          "old": "A3517"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BERMEO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "BERMEO",
-      "detectedAt": "2026-10-18T08:57+02:00",
-      "direction": "",
-      "eventId": "route:07f889f4480bb141dee394a8",
-      "line": "A3527",
-      "queuedAt": "2026-10-18T08:57:04+02:00",
-      "type": "route_change",
-      "vehicleId": "2125"
-    },
-    "route:dd62cd030420595f3e07e652": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CRUCES/GURUTZETA",
-          "old": "MUNGIA"
-        }
-      ],
-      "destination": "CRUCES/GURUTZETA",
-      "detectedAt": "2026-10-18T08:57+02:00",
-      "direction": "",
-      "eventId": "route:dd62cd030420595f3e07e652",
-      "line": "A3522",
-      "queuedAt": "2026-10-18T08:57:04+02:00",
-      "type": "route_change",
-      "vehicleId": "2133"
-    },
-    "route_after_gap:fcbe76f57ee595dead395dda": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "OTXANDIO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T08:57+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:fcbe76f57ee595dead395dda",
-      "line": "A3925",
-      "queuedAt": "2026-10-18T08:57:04+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3319"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2103": {
@@ -23471,7 +23397,7 @@
       "requiredMissing": 2
     },
     "3368": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:736b13d561bac18467e6c906",
       "firstMissingAt": "2026-10-18T08:53:00+02:00",
@@ -23482,7 +23408,7 @@
         "line": "A3613"
       },
       "lastSeenAt": "2026-10-18T08:49:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3373": {
