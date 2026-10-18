@@ -45,20 +45,18 @@ Los dos workflows conservan su programación nativa de cinco minutos como respal
 
 El Worker comprueba de forma independiente si cada workflow está en cola o en curso; si lo está, omite ese workflow en ese ciclo y continúa con el otro.
 
-### 5. Registrar los webhooks de los dos bots
+### 5. Registro automático de webhooks
 
-Tras guardar los tres secretos y desplegar el Worker, abre PowerShell en tu PC y ejecuta:
+No hace falta abrir PowerShell ni ejecutar un comando manual. En cada ciclo del programador, el Worker comprueba `getWebhookInfo` para ambos bots y, si falta el webhook o apunta a una URL distinta, registra automáticamente:
 
-```powershell
-$secret = Read-Host "Pega TELEGRAM_WEBHOOK_SECRET"
-Invoke-RestMethod -Method Post -Uri "https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev/admin/telegram/setup" -Headers @{ Authorization = "Bearer $secret" }
-Remove-Variable secret
-```
+- `https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev/telegram/bizkaibus`
+- `https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev/telegram/burgos`
 
-Debe responder con `ok: true` y enumerar `bizkaibus` y `burgos`. Esta operación llama a `setWebhook` para ambos bots, con una conexión simultánea para conservar el orden de los mensajes. Los workflows consultan `getWebhookInfo` y dejan de usar `getUpdates` cuando el webhook ya está activo; si no lo está, el polling continúa como respaldo.
+El registro utiliza los tokens y `TELEGRAM_WEBHOOK_SECRET` guardados como Secrets en Production. Para revisar el resultado, entra en **Workers & Pages → bizkaibus-sae-dispatcher → Logs**; cuando sea necesario registrar un webhook aparecerá `Webhooks de Telegram configurados automáticamente`. Si falta un secreto o Telegram devuelve un error, aparecerá el motivo en los logs.
 
-Las preferencias se guardan como un fichero por usuario en la rama `telegram-data`, y los workflows descargan esa rama antes de filtrar los avisos. Así el menú responde instantáneamente sin esperar al ciclo de GitHub Actions, pero los avisos de cambios reales siguen estando limitados por la siguiente consulta de los feeds públicos.
+Una vez registrado el webhook, los workflows consultan `getWebhookInfo` y dejan de utilizar `getUpdates`, evitando el conflicto entre ambos métodos. Las preferencias de cada usuario se guardan como fichero independiente en la rama `telegram-data`; los workflows leen esas preferencias antes de enviar alertas.
 
+Así, la configuración de Telegram no necesita depender de PowerShell. El menú responde desde Cloudflare en segundos, mientras que la detección de cambios reales continúa dependiendo de la siguiente consulta de los feeds públicos.
 
 ## Proxy de información en directo de Burgos
 
