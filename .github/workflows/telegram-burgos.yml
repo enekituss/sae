@@ -623,6 +623,10 @@ jobs:
                                       candidate_current[vehicle_id] = vehicle
                                       candidate_eta[vehicle_id] = eta_score
 
+                  if not candidate_current:
+                      raise RuntimeError(
+                          "resourceEstimations respondió, pero no identificó autobuses por ID; no se considera una flota vacía"
+                      )
                   current = candidate_current
                   snapshot_ok = True
                   snapshot_source = "isaenext_estimations"
