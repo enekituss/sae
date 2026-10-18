@@ -5375,39 +5375,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:1f8b0fad6478033d39d17b60": {
-      "destination": "DURANGO",
-      "detectedAt": "2026-10-18T23:07+02:00",
-      "direction": "",
-      "eventId": "missing:1f8b0fad6478033d39d17b60",
-      "firstMissingAt": "2026-10-18T23:03:05+02:00",
-      "lastSeenAt": "2026-10-18T22:59:57+02:00",
-      "line": "A3911",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T23:07:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3389"
-    },
-    "route:fe9d6eb2e2af21d0b3447f56": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CRUCES/GURUTZETA",
-          "old": "VALLE DE TRAPAGA"
-        }
-      ],
-      "destination": "CRUCES/GURUTZETA",
-      "detectedAt": "2026-10-18T23:07+02:00",
-      "direction": "",
-      "eventId": "route:fe9d6eb2e2af21d0b3447f56",
-      "line": "A3141",
-      "queuedAt": "2026-10-18T23:07:03+02:00",
-      "type": "route_change",
-      "vehicleId": "7878"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {},
   "pendingVehicles": {
@@ -6187,7 +6155,7 @@
       "requiredMissing": 2
     },
     "3389": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:1f8b0fad6478033d39d17b60",
       "firstMissingAt": "2026-10-18T23:03:05+02:00",
@@ -6198,7 +6166,7 @@
         "line": "A3911"
       },
       "lastSeenAt": "2026-10-18T22:59:57+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "5017": {
