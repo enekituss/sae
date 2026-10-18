@@ -7805,34 +7805,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:c44cd682f59a0be7f3c06dca": {
-      "destination": "LANESTOSA",
-      "detectedAt": "2026-10-18T22:57+02:00",
-      "direction": "",
-      "eventId": "missing:c44cd682f59a0be7f3c06dca",
-      "firstMissingAt": "2026-10-18T22:53:03+02:00",
-      "lastSeenAt": "2026-10-18T22:50:04+02:00",
-      "line": "A0652",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T22:57:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "5017"
-    },
-    "missing:ddf2848dae6246371c026dc6": {
-      "destination": "ARRIGORRIAGA",
-      "detectedAt": "2026-10-18T22:57+02:00",
-      "direction": "",
-      "eventId": "missing:ddf2848dae6246371c026dc6",
-      "firstMissingAt": "2026-10-18T22:53:03+02:00",
-      "lastSeenAt": "2026-10-18T22:50:04+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T22:57:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3365"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3305": {
@@ -8432,7 +8405,7 @@
       "requiredMissing": 2
     },
     "3365": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:ddf2848dae6246371c026dc6",
       "firstMissingAt": "2026-10-18T22:53:03+02:00",
@@ -8443,7 +8416,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T22:50:04+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3367": {
@@ -8596,7 +8569,7 @@
       "requiredMissing": 2
     },
     "5017": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:c44cd682f59a0be7f3c06dca",
       "firstMissingAt": "2026-10-18T22:53:03+02:00",
@@ -8607,7 +8580,7 @@
         "line": "A0652"
       },
       "lastSeenAt": "2026-10-18T22:50:04+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "5024": {
