@@ -24306,122 +24306,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:62a04c140b7169d27ad697cb": {
-      "destination": "EREÑO",
-      "detectedAt": "2026-10-18T20:59+02:00",
-      "direction": "",
-      "eventId": "missing:62a04c140b7169d27ad697cb",
-      "firstMissingAt": "2026-10-18T20:55:04+02:00",
-      "lastSeenAt": "2026-10-18T20:51:42+02:00",
-      "line": "A3534",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:59:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8680"
-    },
-    "missing:792c057b15187bd720e613ee": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T20:59+02:00",
-      "direction": "",
-      "eventId": "missing:792c057b15187bd720e613ee",
-      "firstMissingAt": "2026-10-18T20:55:04+02:00",
-      "lastSeenAt": "2026-10-18T20:51:42+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:59:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2120"
-    },
-    "route:a0ffd96100957f9245ae98cf": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ZEANURI",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "ZEANURI",
-      "detectedAt": "2026-10-18T20:59+02:00",
-      "direction": "",
-      "eventId": "route:a0ffd96100957f9245ae98cf",
-      "line": "A3917",
-      "queuedAt": "2026-10-18T20:59:07+02:00",
-      "type": "route_change",
-      "vehicleId": "3382"
-    },
-    "route:b60f363126bf591dcd24f7ca": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AREETA/LAS ARENAS",
-          "old": "LARRABETZU"
-        }
-      ],
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T20:59+02:00",
-      "direction": "",
-      "eventId": "route:b60f363126bf591dcd24f7ca",
-      "line": "A2151",
-      "queuedAt": "2026-10-18T20:59:07+02:00",
-      "type": "route_change",
-      "vehicleId": "2135"
-    },
-    "route:e60b3012ad9be7f3536afa99": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "GERNIKA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T20:59+02:00",
-      "direction": "",
-      "eventId": "route:e60b3012ad9be7f3536afa99",
-      "line": "A3514",
-      "queuedAt": "2026-10-18T20:59:07+02:00",
-      "type": "route_change",
-      "vehicleId": "8650"
-    },
-    "route_after_gap:87cb45081e5643409c81807a": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TEKNO. PARKEA",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "TEKNO. PARKEA",
-      "detectedAt": "2026-10-18T20:59+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:87cb45081e5643409c81807a",
-      "line": "A3224",
-      "queuedAt": "2026-10-18T20:59:07+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2137"
-    },
-    "vehicle_returned:fb31e526def4e1196a848675": {
-      "destination": "BAKIO (Aut.)",
-      "detectedAt": "2026-10-18T20:59+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:fb31e526def4e1196a848675",
-      "lastKnown": {
-        "destination": "BAKIO (Aut.)",
-        "direction": "",
-        "id": "2099",
-        "line": "A3518"
-      },
-      "line": "A3518",
-      "queuedAt": "2026-10-18T20:59:07+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2099"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2061": {
@@ -24510,7 +24395,7 @@
       "requiredMissing": 2
     },
     "2120": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:792c057b15187bd720e613ee",
       "firstMissingAt": "2026-10-18T20:55:04+02:00",
@@ -24521,7 +24406,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T20:51:42+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2130": {
@@ -24656,7 +24541,7 @@
       "requiredMissing": 2
     },
     "8680": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:62a04c140b7169d27ad697cb",
       "firstMissingAt": "2026-10-18T20:55:04+02:00",
@@ -24667,7 +24552,7 @@
         "line": "A3534"
       },
       "lastSeenAt": "2026-10-18T20:51:42+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8681": {
