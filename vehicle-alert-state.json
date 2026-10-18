@@ -23860,39 +23860,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:7d88d2e9f560463e55ae2cd2": {
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T09:37+02:00",
-      "direction": "",
-      "eventId": "missing:7d88d2e9f560463e55ae2cd2",
-      "firstMissingAt": "2026-10-18T09:33:01+02:00",
-      "lastSeenAt": "2026-10-18T09:29:43+02:00",
-      "line": "A3136",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T09:37:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7863"
-    },
-    "route_after_gap:4bc84d73d30117f505d0f00a": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALDAKAO",
-          "old": "Metro BOLUETA"
-        }
-      ],
-      "destination": "GALDAKAO",
-      "detectedAt": "2026-10-18T09:37+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:4bc84d73d30117f505d0f00a",
-      "line": "A3932",
-      "queuedAt": "2026-10-18T09:37:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3295"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "8653": {
       "consecutiveChecks": 1,
@@ -24068,7 +24036,7 @@
       "requiredMissing": 2
     },
     "7863": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:7d88d2e9f560463e55ae2cd2",
       "firstMissingAt": "2026-10-18T09:33:01+02:00",
@@ -24079,7 +24047,7 @@
         "line": "A3136"
       },
       "lastSeenAt": "2026-10-18T09:29:43+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8670": {
