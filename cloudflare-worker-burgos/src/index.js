@@ -1,6 +1,7 @@
-const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
+const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/es/rutas-en-directo";
 const BURGOS_SOURCE_FALLBACKS = [
   BURGOS_SOURCE,
+  "https://movilidad.aytoburgos.es/rutas-en-directo",
   "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
 ];
 const PORTLET_ID = "as_asac_isaenext_IsaenextWebPortlet";
@@ -34,85 +35,188 @@ function jsonResponse(request, data, status = 200, extra = {}) {
   });
 }
 
-function vehicleUrl(line, base = BURGOS_SOURCE, filteredPath = false) {
-  const timestamp = String(Date.now());
+function resourceUrl(resource, extra = {}, base = BURGOS_SOURCE) {
   const url = new URL(base);
-  if (filteredPath) {
-    url.pathname = url.pathname + "/-/isaenext/filter/" + encodeURIComponent(line);
-  }
   url.searchParams.set("p_p_id", PORTLET_ID);
   url.searchParams.set("p_p_lifecycle", "2");
   url.searchParams.set("p_p_state", "normal");
   url.searchParams.set("p_p_mode", "view");
+  url.searchParams.set("p_p_resource_id", resource);
   url.searchParams.set("p_p_cacheability", "cacheLevelPage");
-  url.searchParams.set("p_p_resource_id", "resourceVehicles");
-  url.searchParams.set(PORTLET_PREFIX + "formDate", timestamp);
-  url.searchParams.set(PORTLET_PREFIX + "line", line);
-  url.searchParams.set(PORTLET_PREFIX + "label", line);
-  url.searchParams.set("_t", timestamp);
+  for (const [key, value] of Object.entries(extra)) {
+    url.searchParams.set(key, String(value));
+  }
   return url;
 }
 
-async function fetchVehiclesForLine(line) {
-  const filteredUrl = vehicleUrl(line, BURGOS_SOURCE, true).toString();
-  const attempts = [
-    { label: "ISAENEXT canonical", url: vehicleUrl(line, BURGOS_SOURCE).toString(), timeoutMs: 4000 },
-    { label: "ISAENEXT ruta de línea", url: filteredUrl, timeoutMs: 4000 },
-    {
-      label: "AllOrigins",
-      url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(filteredUrl),
-      timeoutMs: 8000
-    },
-    {
-      label: "CodeTabs",
-      url: "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(filteredUrl),
-      timeoutMs: 8000
-    }
-  ];
-  const errors = [];
+function stopIdFrom(value) {
+  return String(value?.num ?? value?.id ?? value?.stopId ?? value?.nodeId ??
+    value?.nodoId ?? value?.idNodo ?? value?.numNodo ?? "").trim();
+}
 
-  for (const attempt of attempts) {
+function normalizeLineCode(value) {
+  let line = String(value ?? "").trim().toUpperCase();
+  line = line.replace(/^L[IÍ]NEA\s*/, "").replace(/^L(?=\d)/, "");
+  const match = line.match(/(?:^|[^A-Z0-9])(C[12]|\d{1,2})(?=$|[^A-Z0-9])/);
+  const token = match ? match[1] : line;
+  if (/^\d+$/.test(token)) return String(Number(token));
+  return token;
+}
+
+async function requestIsaenext(resource, extra = {}) {
+  const errors = [];
+  for (const base of BURGOS_SOURCE_FALLBACKS) {
     try {
-      const response = await fetch(attempt.url, {
+      const url = resourceUrl(resource, extra, base);
+      const response = await fetch(url.toString(), {
         method: "GET",
         headers: {
           "Accept": "application/json, text/plain, */*",
           "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
-          "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo/-/isaenext/filter/" + encodeURIComponent(line)
+          "Referer": BURGOS_SOURCE
         },
-        signal: AbortSignal.timeout(attempt.timeoutMs)
+        signal: AbortSignal.timeout(15000)
       });
       const body = await response.text();
       if (!response.ok) {
-        errors.push(attempt.label + " HTTP " + response.status);
+        errors.push(new URL(base).host + " HTTP " + response.status);
         continue;
       }
-
-      let rows;
+      let data;
       try {
-        rows = JSON.parse(body);
+        data = JSON.parse(body);
       } catch {
-        errors.push(attempt.label + " no devolvió JSON");
+        errors.push(new URL(base).host + " no devolvió JSON");
         continue;
       }
-      if (!Array.isArray(rows)) {
-        errors.push(attempt.label + " no devolvió una lista");
-        continue;
-      }
-
-      return rows.map(vehicle => ({
-        ...vehicle,
-        id: String(vehicle?.id ?? vehicle?.vehicleId ?? vehicle?.vehicle_id ?? "").trim(),
-        lineId: String(vehicle?.lineId ?? vehicle?.line ?? vehicle?.route ?? line).trim()
-      })).filter(vehicle => vehicle.id);
+      return { data, source: base };
     } catch (error) {
-      errors.push(attempt.label + ": " + (error?.message || String(error)));
+      errors.push(new URL(base).host + ": " + (error?.message || String(error)));
     }
   }
-  throw new Error("No se pudo consultar la línea " + line + " en ISAENEXT/proxies: " + errors.join(" | "));
+  throw new Error(resource + " no respondió en el SAE municipal: " + errors.join(" | "));
+}
+
+async function fetchStopNodes() {
+  const result = await requestIsaenext("resourceNodes");
+  if (!Array.isArray(result.data) || !result.data.length) {
+    throw new Error("resourceNodes no devolvió una lista de paradas.");
+  }
+  const seen = new Set();
+  const nodes = [];
+  for (const node of result.data) {
+    const id = stopIdFrom(node);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    nodes.push({ ...node, __stopId: id });
+  }
+  if (!nodes.length) throw new Error("resourceNodes no devolvió IDs de parada reconocibles.");
+  return { nodes, source: result.source };
+}
+
+function extractLineEstimations(line, nodes, payload) {
+  if (!Array.isArray(payload)) {
+    throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
+  }
+
+  const nodeById = new Map(nodes.map(node => [node.__stopId || stopIdFrom(node), node]));
+  const requestedLine = normalizeLineCode(line);
+  const observations = [];
+
+  payload.forEach((result, resultIndex) => {
+    if (!result || typeof result !== "object") return;
+    const explicitId = stopIdFrom(result);
+    let stopId = explicitId;
+    let stop = nodeById.get(explicitId) || null;
+
+    // El SAE suele devolver los resultados en el mismo orden solicitado.
+    if (!stop && payload.length === nodes.length && nodes[resultIndex]) {
+      stop = nodes[resultIndex];
+      stopId = stop.__stopId || stopIdFrom(stop);
+    }
+
+    const routeGroups = result.routeEstimationByNode || result.routes || [];
+    if (!Array.isArray(routeGroups)) return;
+    for (const routeGroup of routeGroups) {
+      if (!routeGroup || typeof routeGroup !== "object") continue;
+      const reportedLine = String(routeGroup.line ?? routeGroup.route ?? routeGroup.lineName ?? "").trim();
+      if (reportedLine && normalizeLineCode(reportedLine) !== requestedLine) continue;
+      const estimates = routeGroup.publicEstimationVHExts || routeGroup.estimations || routeGroup.buses || [];
+      if (!Array.isArray(estimates)) continue;
+      for (const item of estimates) {
+        if (!item || typeof item !== "object") continue;
+        const vehicleId = String(item.vehicle ?? item.vehicleId ?? item.vehicle_id ?? "").trim();
+        if (!vehicleId || vehicleId === "0") continue;
+        const seconds = item.seconds === null || item.seconds === undefined || item.seconds === "" ? null : Number(item.seconds);
+        const meters = item.meters === null || item.meters === undefined || item.meters === "" ? null : Number(item.meters);
+        const lat = Number(item.lat ?? item.latitude);
+        const lon = Number(item.lon ?? item.lng ?? item.longitude);
+        observations.push({
+          vehicleId,
+          line: reportedLine || line,
+          destination: String(item.destination ?? routeGroup.destination ?? "").trim(),
+          direction: String(item.direction ?? routeGroup.direction ?? "").trim(),
+          seconds: Number.isFinite(seconds) ? seconds : null,
+          meters: Number.isFinite(meters) ? meters : null,
+          stopId: stopId || "",
+          stopName: String(stop?.name ?? stop?.stop_name ?? stop?.nombre ?? "").trim(),
+          stopLat: Number(stop?.lat ?? stop?.latitude),
+          stopLon: Number(stop?.lng ?? stop?.lon ?? stop?.longitude),
+          vehicleLat: Number.isFinite(lat) && lat >= 42 && lat <= 43 ? lat : null,
+          vehicleLon: Number.isFinite(lon) && lon >= -4 && lon <= -3 ? lon : null
+        });
+      }
+    }
+  });
+
+  return observations;
+}
+
+async function fetchLineObservations(line, nodes) {
+  const nodeIds = nodes.map(node => node.__stopId || stopIdFrom(node)).filter(Boolean);
+  if (!nodeIds.length) throw new Error("No hay IDs de paradas para consultar la línea " + line + ".");
+  const response = await requestIsaenext("resourceEstimations", {
+    [PORTLET_PREFIX + "line"]: line,
+    [PORTLET_PREFIX + "tipo"]: "1",
+    [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
+  });
+  return {
+    observations: extractLineEstimations(line, nodes, response.data),
+    source: response.source
+  };
+}
+
+function vehiclesFromObservations(observations, line) {
+  const byId = new Map();
+  for (const observation of observations) {
+    const current = byId.get(observation.vehicleId);
+    const seconds = Number.isFinite(observation.seconds) && observation.seconds >= 0 ? observation.seconds : Infinity;
+    const previousSeconds = current && Number.isFinite(current.seconds) && current.seconds >= 0 ? current.seconds : Infinity;
+    if (!current || seconds < previousSeconds) {
+      byId.set(observation.vehicleId, {
+        id: observation.vehicleId,
+        lineId: line,
+        line,
+        destination: observation.destination,
+        direction: observation.direction,
+        seconds: observation.seconds,
+        meters: observation.meters,
+        stopId: observation.stopId,
+        stopName: observation.stopName
+      });
+    }
+  }
+  return [...byId.values()];
+}
+
+async function fetchVehiclesForLine(line, cachedNodes = null) {
+  const stopData = cachedNodes || await fetchStopNodes();
+  const result = await fetchLineObservations(line, stopData.nodes);
+  return vehiclesFromObservations(result.observations, line);
 }
 
 async function fetchSnapshot() {
+  const stopData = await fetchStopNodes();
   const results = new Array(BURGOS_LINES.length);
   const errors = [];
   let cursor = 0;
@@ -124,7 +228,8 @@ async function fetchSnapshot() {
       if (index >= BURGOS_LINES.length) return;
       const line = BURGOS_LINES[index];
       try {
-        results[index] = await fetchVehiclesForLine(line);
+        const result = await fetchLineObservations(line, stopData.nodes);
+        results[index] = vehiclesFromObservations(result.observations, line);
       } catch (error) {
         results[index] = null;
         errors.push({ line, error: error?.message || String(error) });
@@ -141,14 +246,22 @@ async function fetchSnapshot() {
   const byId = new Map();
   results.forEach(rows => {
     if (!Array.isArray(rows)) return;
-    rows.forEach(vehicle => byId.set(vehicle.id, vehicle));
+    rows.forEach(vehicle => {
+      const old = byId.get(vehicle.id);
+      // Si el mismo coche aparece en más de una observación, prefiere el
+      // registro con menor estimación de llegada, pero conserva la línea reportada.
+      if (!old || (Number.isFinite(vehicle.seconds) &&
+          (!Number.isFinite(old.seconds) || vehicle.seconds < old.seconds))) {
+        byId.set(vehicle.id, vehicle);
+      }
+    });
   });
 
   return {
     ok: true,
     fetchedAt: new Date().toISOString(),
-    source: BURGOS_SOURCE,
-    sourceType: "ISAENEXT · resourceVehicles por línea",
+    source: stopData.source,
+    sourceType: "ISAENEXT · resourceEstimations filtrado por línea",
     lineCount: completed.length,
     totalLines: BURGOS_LINES.length,
     partial: errors.length > 0,
@@ -159,154 +272,49 @@ async function fetchSnapshot() {
   };
 }
 
-
-// ISAENEXT devuelve estimaciones por parada, no siempre una parada siguiente
-// explícita dentro de resourceVehicles. Estas observaciones permiten asociar
-// cada coche con su próxima parada y el tiempo/distancia estimados.
-const BURGOS_LIVE_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
-
-function liveUrl(resource, extra = {}) {
-  const url = new URL(BURGOS_LIVE_SOURCE);
-  url.searchParams.set("p_p_id", PORTLET_ID);
-  url.searchParams.set("p_p_lifecycle", "2");
-  url.searchParams.set("p_p_state", "normal");
-  url.searchParams.set("p_p_mode", "view");
-  url.searchParams.set("p_p_cacheability", "cacheLevelPage");
-  url.searchParams.set("p_p_resource_id", resource);
-  for (const [key, value] of Object.entries(extra)) url.searchParams.set(key, value);
-  return url;
-}
-
-async function fetchLiveJson(url) {
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "Accept": "application/json, text/plain, */*",
-      "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter-Burgos/1.0)",
-      "Referer": BURGOS_LIVE_SOURCE
-    },
-    signal: AbortSignal.timeout(25000)
-  });
-  const body = await response.text();
-  if (!response.ok) throw new Error("ISAENEXT respondió HTTP " + response.status + ".");
-  try { return JSON.parse(body); }
-  catch { throw new Error("ISAENEXT no devolvió JSON reconocible."); }
-}
-
-function readLiveNodeId(node) {
-  return String(node?.num ?? node?.id ?? node?.stopId ?? node?.nodeId ??
-    node?.nodoId ?? node?.idNodo ?? node?.numNodo ?? "").trim();
-}
-
-function normalizeLiveObservations(nodes, results) {
-  const nodeById = new Map(nodes.map(node => [readLiveNodeId(node), node]));
-  const observations = [];
-  const rows = Array.isArray(results) ? results : [];
-
-  rows.forEach((result, resultIndex) => {
-    const explicitId = readLiveNodeId(result);
-    let stopId = explicitId;
-    let node = nodeById.get(explicitId) || null;
-
-    // Algunas versiones no devuelven el ID de la parada en cada objeto,
-    // pero devuelven un resultado por nodo y mantienen el mismo orden.
-    if (!node && rows.length === nodes.length && nodes[resultIndex]) {
-      node = nodes[resultIndex];
-      stopId = readLiveNodeId(node);
-    }
-    if (!node) node = result;
-
-    const routeGroups = result?.routeEstimationByNode || result?.routes || [];
-    for (const routeGroup of routeGroups) {
-      const line = String(routeGroup?.line ?? routeGroup?.route ?? routeGroup?.lineName ?? "").trim();
-      const estimates = routeGroup?.publicEstimationVHExts ||
-        routeGroup?.estimations || routeGroup?.buses || [];
-      for (const item of estimates) {
-        const id = String(item?.vehicle ?? item?.vehicleId ?? item?.vehicle_id ?? "").trim();
-        const secondsRaw = item?.seconds;
-        const metersRaw = item?.meters;
-        const secondsNum = secondsRaw === null || secondsRaw === undefined || secondsRaw === "" ? NaN : Number(secondsRaw);
-        const metersNum = metersRaw === null || metersRaw === undefined || metersRaw === "" ? NaN : Number(metersRaw);
-        const lat = Number(item?.lat ?? item?.latitude);
-        const lon = Number(item?.lon ?? item?.lng ?? item?.longitude);
-        observations.push({
-          vehicleId: id && id !== "0" ? id : "",
-          line,
-          destination: String(item?.destination ?? "").trim(),
-          seconds: Number.isFinite(secondsNum) ? secondsNum : null,
-          meters: Number.isFinite(metersNum) ? metersNum : null,
-          stopId,
-          stopName: String(node?.name ?? node?.stop_name ?? node?.nombre ?? "").trim(),
-          stopLat: Number(node?.lat ?? node?.latitude),
-          stopLon: Number(node?.lng ?? node?.lon ?? node?.longitude),
-          vehicleLat: Number.isFinite(lat) && lat >= 42 && lat <= 43 ? lat : null,
-          vehicleLon: Number.isFinite(lon) && lon >= -4 && lon <= -3 ? lon : null
-        });
-      }
-    }
-  });
-  return observations;
-}
-
+// Live ISAENEXT feed: query each line using the municipal resourceEstimations endpoint.
 async function fetchLiveSnapshot() {
-  const nodesPayload = await fetchLiveJson(liveUrl("resourceNodes"));
-  if (!Array.isArray(nodesPayload) || !nodesPayload.length) {
-    throw new Error("ISAENEXT no devolvió la lista de paradas.");
-  }
-  const nodes = nodesPayload.filter(node => readLiveNodeId(node));
-  const chunks = [];
-  // Keep the query URL size conservative while allowing more batches to run in parallel.
-  for (let i = 0; i < nodes.length; i += 50) chunks.push(nodes.slice(i, i + 50));
-
-  const results = new Array(chunks.length);
+  const stopData = await fetchStopNodes();
+  const results = new Array(BURGOS_LINES.length);
   const errors = [];
   let cursor = 0;
-  const concurrency = Math.min(8, chunks.length);
+  const concurrency = Math.min(5, BURGOS_LINES.length);
 
   await Promise.all(Array.from({ length: concurrency }, async () => {
     while (true) {
       const index = cursor++;
-      if (index >= chunks.length) return;
-      const chunk = chunks[index];
+      if (index >= BURGOS_LINES.length) return;
+      const line = BURGOS_LINES[index];
       try {
-        const payload = await fetchLiveJson(liveUrl("resourceEstimations", {
-          "_as_asac_isaenext_IsaenextWebPortlet_tipo": "1",
-          "_as_asac_isaenext_IsaenextWebPortlet_nodoIds": chunk.map(readLiveNodeId).join(",")
-        }));
-        if (!Array.isArray(payload)) throw new Error("respuesta de estimaciones no reconocible");
-        if (payload.length === 1 && chunk.length > 2) {
-          throw new Error("ISAENEXT sólo devolvió un resultado para un grupo de " + chunk.length + " paradas");
-        }
-        results[index] = { nodes: chunk, rows: payload };
+        const result = await fetchLineObservations(line, stopData.nodes);
+        results[index] = result.observations;
       } catch (error) {
         results[index] = null;
-        errors.push("grupo " + (index + 1) + ": " + (error?.message || String(error)));
+        errors.push({ line, error: error?.message || String(error) });
       }
     }
   }));
 
-  const complete = results.filter(Boolean);
+  const complete = results.filter(Array.isArray);
   if (!complete.length) {
-    throw new Error("No se pudo consultar ninguna tanda de estimaciones. " + errors.slice(0, 3).join(" | "));
+    throw new Error("No se pudo consultar ninguna línea mediante resourceEstimations. " +
+      errors.slice(0, 4).map(item => "Línea " + item.line + ": " + item.error).join(" | "));
   }
+
   const observations = [];
-  let resultCount = 0;
-  for (const result of complete) {
-    resultCount += result.rows.length;
-    observations.push(...normalizeLiveObservations(result.nodes, result.rows));
-  }
+  for (const rows of complete) observations.push(...rows);
 
   return {
     ok: true,
     fetchedAt: new Date().toISOString(),
-    source: BURGOS_LIVE_SOURCE,
-    sourceType: "ISAENEXT · estimaciones por parada",
-    stopCount: nodes.length,
-    resultCount,
+    source: stopData.source,
+    sourceType: "ISAENEXT · resourceEstimations por línea y parada",
+    stopCount: stopData.nodes.length,
+    resultCount: observations.length,
     completedGroups: complete.length,
-    totalGroups: chunks.length,
+    totalGroups: BURGOS_LINES.length,
     partial: errors.length > 0,
-    warnings: errors.slice(0, 5),
+    warnings: errors.slice(0, 5).map(item => "Línea " + item.line + ": " + item.error),
     observations
   };
 }
