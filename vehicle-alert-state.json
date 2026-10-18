@@ -1661,60 +1661,7 @@
       ]
     }
   },
-  "outbox": {
-    "route_after_gap:63a6c9ac343af7725504c0f7": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "AIREPORTUA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T06:07+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:63a6c9ac343af7725504c0f7",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T06:07:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2119"
-    },
-    "route_after_gap:c5d2b14b0520a1b68a8eac9f": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AIREPORTUA",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T06:07+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:c5d2b14b0520a1b68a8eac9f",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T06:07:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2090"
-    },
-    "vehicle_returned:caea64aa344eadf2b19e8c3a": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T06:07+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:caea64aa344eadf2b19e8c3a",
-      "lastKnown": {
-        "destination": "AIREPORTUA",
-        "direction": "",
-        "id": "2076",
-        "line": "A3247"
-      },
-      "line": "A3247",
-      "queuedAt": "2026-10-18T06:07:05+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2076"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2079": {
       "consecutiveChecks": 1,
