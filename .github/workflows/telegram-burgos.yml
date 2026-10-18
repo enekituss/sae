@@ -421,8 +421,49 @@ jobs:
           current = {}
           source_errors = []
 
-          # Fuente principal: resourceVehicles por línea. Así se compara la flota completa,
-          # no únicamente los coches que tienen una estimación de llegada en alguna parada.
+          # Primera opción: el Worker exclusivo de Burgos expone una instantánea completa
+          # de resourceVehicles y evita depender de conexiones directas inestables desde Actions.
+          try:
+              worker_url = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev/api/burgos/vehicles"
+              worker_request = urllib.request.Request(
+                  worker_url,
+                  headers={
+                      "Accept": "application/json",
+                      "Cache-Control": "no-cache",
+                      "User-Agent": "SAE-Spotter-Burgos-Telegram/1.0"
+                  }
+              )
+              with urllib.request.urlopen(worker_request, timeout=90) as response:
+                  worker_payload = json.loads(response.read().decode("utf-8"))
+              if not isinstance(worker_payload, dict) or worker_payload.get("ok") is not True:
+                  raise RuntimeError("el Worker de Burgos no devolvió una respuesta válida")
+              worker_vehicles = worker_payload.get("vehicles")
+              if not isinstance(worker_vehicles, list):
+                  raise RuntimeError("el Worker no devolvió la lista de vehículos")
+              expected_lines = int(worker_payload.get("totalLines") or 0)
+              completed_lines = int(worker_payload.get("lineCount") or 0)
+              if worker_payload.get("partial") or (expected_lines and completed_lines != expected_lines):
+                  raise RuntimeError(
+                      "instantánea parcial del Worker (" + str(completed_lines) + "/" + str(expected_lines) + " líneas)"
+                  )
+              worker_current = {}
+              for raw_vehicle in worker_vehicles:
+                  if not isinstance(raw_vehicle, dict):
+                      continue
+                  vehicle = normalise_vehicle(raw_vehicle)
+                  if vehicle:
+                      worker_current[vehicle["id"]] = vehicle
+              if len(worker_current) != len(worker_vehicles):
+                  raise RuntimeError("algún vehículo del Worker no contiene un ID reconocible")
+              current = worker_current
+              snapshot_ok = True
+              print("Snapshot completo de Burgos desde su Worker independiente: " + str(len(current)) + " coches; " + str(completed_lines) + "/" + str(expected_lines) + " líneas.")
+          except Exception as exc:
+              source_errors.append("Worker independiente de Burgos: " + str(exc))
+              current = {}
+              snapshot_ok = False
+
+          # Segundo respaldo: consultar resourceVehicles directamente por cada línea municipal.
           if not snapshot_ok:
               try:
                   burgos_lines = [f"{number:02d}" for number in range(1, 24)] + ["73", "87", "88", "89", "C1", "C2"]
@@ -521,8 +562,7 @@ jobs:
                   current = {}
                   snapshot_ok = False
 
-          # Respaldo: si resourceVehicles falla o la consulta queda incompleta, usar
-          # estimaciones oficiales por parada. Si tampoco es completa, no alertar bajas.
+          # Tercer respaldo: estimaciones oficiales por parada solo si fallan las dos fuentes de flota.
           if not snapshot_ok:
               try:
                   official_pages = [
