@@ -23904,63 +23904,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:f058faa43e2d35d2cd0cb6bb": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T21:05+02:00",
-      "direction": "",
-      "eventId": "missing:f058faa43e2d35d2cd0cb6bb",
-      "firstMissingAt": "2026-10-18T21:00:28+02:00",
-      "lastSeenAt": "2026-10-18T20:57:22+02:00",
-      "line": "A3915",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T21:05:06+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8661"
-    },
-    "route:246113295e0fd6eac4d0b85b": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "BARAKALDO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T21:05+02:00",
-      "direction": "",
-      "eventId": "route:246113295e0fd6eac4d0b85b",
-      "line": "A3137",
-      "queuedAt": "2026-10-18T21:05:06+02:00",
-      "type": "route_change",
-      "vehicleId": "7811"
-    },
-    "route:5329902536009e6177378e9a": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3517",
-          "old": "A3527"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUNGIA",
-          "old": "BILBAO  (Aut.)"
-        }
-      ],
-      "destination": "MUNGIA",
-      "detectedAt": "2026-10-18T21:05+02:00",
-      "direction": "",
-      "eventId": "route:5329902536009e6177378e9a",
-      "line": "A3517",
-      "queuedAt": "2026-10-18T21:05:06+02:00",
-      "type": "route_change",
-      "vehicleId": "2125"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1716": {
@@ -24254,7 +24198,7 @@
       "requiredMissing": 2
     },
     "8661": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:f058faa43e2d35d2cd0cb6bb",
       "firstMissingAt": "2026-10-18T21:00:28+02:00",
@@ -24265,7 +24209,7 @@
         "line": "A3915"
       },
       "lastSeenAt": "2026-10-18T20:57:22+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8678": {
