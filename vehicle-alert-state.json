@@ -25860,99 +25860,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:5811aea5963e47826af29bcc": {
-      "destination": "ZEBERIO",
-      "detectedAt": "2026-10-18T16:47+02:00",
-      "direction": "",
-      "eventId": "missing:5811aea5963e47826af29bcc",
-      "firstMissingAt": "2026-10-18T16:43:02+02:00",
-      "lastSeenAt": "2026-10-18T16:39:25+02:00",
-      "line": "A3928",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T16:47:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3360"
-    },
-    "route:78fdb7d76626a7eccd1d3f2d": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3527",
-          "old": "A3517"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BERMEO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "BERMEO",
-      "detectedAt": "2026-10-18T16:47+02:00",
-      "direction": "",
-      "eventId": "route:78fdb7d76626a7eccd1d3f2d",
-      "line": "A3527",
-      "queuedAt": "2026-10-18T16:47:05+02:00",
-      "type": "route_change",
-      "vehicleId": "2096"
-    },
-    "route:a96b3fb92f899476a0d88f4d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TRAPAGA Elguero",
-          "old": "ERREPELEGA"
-        }
-      ],
-      "destination": "TRAPAGA Elguero",
-      "detectedAt": "2026-10-18T16:47+02:00",
-      "direction": "",
-      "eventId": "route:a96b3fb92f899476a0d88f4d",
-      "line": "A3331",
-      "queuedAt": "2026-10-18T16:47:05+02:00",
-      "type": "route_change",
-      "vehicleId": "7834"
-    },
-    "route:f25e50f04c81dffbf050eec6": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "TRAPAGARAN"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T16:47+02:00",
-      "direction": "",
-      "eventId": "route:f25e50f04c81dffbf050eec6",
-      "line": "A3332",
-      "queuedAt": "2026-10-18T16:47:05+02:00",
-      "type": "route_change",
-      "vehicleId": "7861"
-    },
-    "route:f4b4dde6172fc6978469dc7d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "PLENTZIA (Metro)",
-          "old": "GORLIZ"
-        }
-      ],
-      "destination": "PLENTZIA (Metro)",
-      "detectedAt": "2026-10-18T16:47+02:00",
-      "direction": "",
-      "eventId": "route:f4b4dde6172fc6978469dc7d",
-      "line": "A3499",
-      "queuedAt": "2026-10-18T16:47:05+02:00",
-      "type": "route_change",
-      "vehicleId": "1714"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3364": {
@@ -26055,7 +25963,7 @@
       "requiredMissing": 2
     },
     "3360": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:5811aea5963e47826af29bcc",
       "firstMissingAt": "2026-10-18T16:43:02+02:00",
@@ -26066,7 +25974,7 @@
         "line": "A3928"
       },
       "lastSeenAt": "2026-10-18T16:39:25+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7864": {
