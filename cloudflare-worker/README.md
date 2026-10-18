@@ -65,6 +65,6 @@ El origen del recurso es `https://www.aytoburgos.es/web/movilidad/rutas-en-direc
 
 El endpoint `GET /api/burgos/live` continúa disponible para consultas auxiliares: consulta las estimaciones de ISAENEXT para las paradas municipales en grupos pequeños y con concurrencia limitada. La respuesta puede contener línea, identificador de vehículo, destino y distancia/tiempo estimados hasta una parada. No es un feed de posiciones GPS individuales.
 
-La página principal de Burgos en SAE Spotter ya no depende de este Worker ni de una conexión directa desde el navegador. Su listado de líneas y autobuses activos lee `burgos-vehicles.json`, que genera `scripts/update_burgos_vehicles.py` mediante el flujo `.github/workflows/update-burgos-vehicles.yml` cada cinco minutos. Así se evita que un error CORS del navegador deje vacío el panel.
+La página principal de Burgos en SAE Spotter ya no depende de este Worker. Su listado de líneas y autobuses activos consulta el recurso `resourceVehicles` por línea usando los proxies de acceso que también emplea SAMYT, con refresco aproximado cada 60 segundos. Así no intenta leer directamente el dominio municipal desde el navegador, donde Chrome puede bloquear la petición por CORS.
 
 Para probar manualmente las API del Worker, usa `https://TU-WORKER.workers.dev/api/burgos/vehicles`, `https://TU-WORKER.workers.dev/api/burgos/vehicles?line=01` y `https://TU-WORKER.workers.dev/api/burgos/live`. Las dos primeras respuestas deben contener `vehicles`; la última, `observations`. Los fallos parciales por línea se indican en `warnings`.
