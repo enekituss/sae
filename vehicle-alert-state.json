@@ -26529,55 +26529,7 @@
       "upcomingStops": []
     }
   },
-  "outbox": {
-    "missing:772ed7d27ed62d8c8cff32bd": {
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T16:27+02:00",
-      "direction": "",
-      "eventId": "missing:772ed7d27ed62d8c8cff32bd",
-      "firstMissingAt": "2026-10-18T16:23:02+02:00",
-      "lastSeenAt": "2026-10-18T16:19:39+02:00",
-      "line": "A3451",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T16:27:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1721"
-    },
-    "route_after_gap:d1ce2e61e1312a6326fcff34": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GETXO (Azkorri)",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "GETXO (Azkorri)",
-      "detectedAt": "2026-10-18T16:27+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:d1ce2e61e1312a6326fcff34",
-      "line": "A3411",
-      "queuedAt": "2026-10-18T16:27:00+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "1720"
-    },
-    "vehicle_returned:87f6638af2debd76c1ba84d4": {
-      "destination": "LEMOIZ Armintza",
-      "detectedAt": "2026-10-18T16:27+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:87f6638af2debd76c1ba84d4",
-      "lastKnown": {
-        "destination": "AREETA (Artea)",
-        "direction": "",
-        "id": "1719",
-        "line": "A3422"
-      },
-      "line": "A3451",
-      "queuedAt": "2026-10-18T16:27:00+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "1719"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1514": {
@@ -26667,7 +26619,7 @@
   },
   "pendingVehicles": {
     "1721": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:772ed7d27ed62d8c8cff32bd",
       "firstMissingAt": "2026-10-18T16:23:02+02:00",
@@ -26678,7 +26630,7 @@
         "line": "A3451"
       },
       "lastSeenAt": "2026-10-18T16:19:39+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2089": {
