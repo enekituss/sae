@@ -15677,50 +15677,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:515e9304397eb208209a5cce": {
-      "destination": "PLENTZIA (Metro)",
-      "detectedAt": "2026-10-18T07:51+02:00",
-      "direction": "",
-      "eventId": "entered:515e9304397eb208209a5cce",
-      "firstObservedAt": "2026-10-18T07:48:21+02:00",
-      "line": "A3499",
-      "queuedAt": "2026-10-18T07:51:02+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "1714"
-    },
-    "missing:751f956b53ad6ff147147376": {
-      "destination": "OTXANDIO-UBIDE",
-      "detectedAt": "2026-10-18T07:51+02:00",
-      "direction": "",
-      "eventId": "missing:751f956b53ad6ff147147376",
-      "firstMissingAt": "2026-10-18T07:47:00+02:00",
-      "lastSeenAt": "2026-10-18T07:43:26+02:00",
-      "line": "A3925",
-      "missingChecks": 4,
-      "queuedAt": "2026-10-18T07:51:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3335"
-    },
-    "route:95a2c40b57acdbebd61bcca7": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "EHU/UPV"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T07:51+02:00",
-      "direction": "",
-      "eventId": "route:95a2c40b57acdbebd61bcca7",
-      "line": "A2322",
-      "queuedAt": "2026-10-18T07:51:02+02:00",
-      "type": "route_change",
-      "vehicleId": "2103"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "7833": {
       "consecutiveChecks": 1,
@@ -15829,7 +15786,7 @@
       "requiredMissing": 2
     },
     "3335": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 4,
       "eventId": "missing:751f956b53ad6ff147147376",
       "firstMissingAt": "2026-10-18T07:47:00+02:00",
@@ -15840,7 +15797,7 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-18T07:43:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3375": {
