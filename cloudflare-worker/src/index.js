@@ -1,5 +1,8 @@
 const REPOSITORY = "enekituss/sae";
-const WORKFLOW_FILE = "update-siri.yml";
+const WORKFLOWS = [
+  { file: "update-siri.yml", label: "Bizkaibus" },
+  { file: "telegram-burgos.yml", label: "Telegram Burgos" }
+];
 const BRANCH = "main";
 const GITHUB_API = "https://api.github.com";
 const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
@@ -33,31 +36,31 @@ async function githubRequest(path, env, options = {}) {
   return body ? JSON.parse(body) : null;
 }
 
-async function activeRuns(status, env) {
+async function activeRuns(workflowFile, status, env) {
   const path =
     "/repos/" + REPOSITORY +
-    "/actions/workflows/" + WORKFLOW_FILE +
+    "/actions/workflows/" + workflowFile +
     "/runs?status=" + encodeURIComponent(status) + "&per_page=5";
   const data = await githubRequest(path, env);
   return Array.isArray(data?.workflow_runs) ? data.workflow_runs : [];
 }
 
-async function dispatchUpdate(env) {
-  const running = await activeRuns("in_progress", env);
+async function dispatchWorkflow(workflow, env) {
+  const running = await activeRuns(workflow.file, "in_progress", env);
   if (running.length) {
-    console.log("Actualización Bizkaibus omitida: ya existe una ejecución en curso.");
-    return { dispatched: false, reason: "in_progress" };
+    console.log(workflow.label + " omitido: ya existe una ejecución en curso.");
+    return { workflow: workflow.file, dispatched: false, reason: "in_progress" };
   }
 
-  const queued = await activeRuns("queued", env);
+  const queued = await activeRuns(workflow.file, "queued", env);
   if (queued.length) {
-    console.log("Actualización Bizkaibus omitida: ya existe una ejecución en cola.");
-    return { dispatched: false, reason: "queued" };
+    console.log(workflow.label + " omitido: ya existe una ejecución en cola.");
+    return { workflow: workflow.file, dispatched: false, reason: "queued" };
   }
 
   await githubRequest(
     "/repos/" + REPOSITORY +
-      "/actions/workflows/" + WORKFLOW_FILE + "/dispatches",
+      "/actions/workflows/" + workflow.file + "/dispatches",
     env,
     {
       method: "POST",
@@ -66,8 +69,27 @@ async function dispatchUpdate(env) {
     }
   );
 
-  console.log("Se ha solicitado una actualización del feed Bizkaibus SAE.");
-  return { dispatched: true };
+  console.log("Se ha solicitado la ejecución de " + workflow.label + " en GitHub Actions.");
+  return { workflow: workflow.file, dispatched: true };
+}
+
+async function dispatchUpdates(env) {
+  const results = [];
+  // Execute independently so a failure in one workflow doesn't prevent the other
+  // bot from processing its Telegram updates on this two-minute cycle.
+  for (const workflow of WORKFLOWS) {
+    try {
+      results.push(await dispatchWorkflow(workflow, env));
+    } catch (error) {
+      console.error("No se pudo solicitar " + workflow.label + ":", error?.message || String(error));
+      results.push({
+        workflow: workflow.file,
+        dispatched: false,
+        error: error?.message || String(error)
+      });
+    }
+  }
+  return results;
 }
 
 function corsHeaders(request, extra = {}) {
@@ -343,11 +365,7 @@ async function fetchBurgosVehiclesSnapshot() {
 
 export default {
   async scheduled(controller, env, ctx) {
-    try {
-      await dispatchUpdate(env);
-    } catch (error) {
-      console.error("No se pudo solicitar la actualización de GitHub Actions:", error?.message || String(error));
-    }
+    await dispatchUpdates(env);
   },
 
   async fetch(request, env) {
@@ -362,8 +380,9 @@ export default {
         ok: true,
         service: "SAE Spotter scheduler y proxy público",
         cadence: "*/2 * * * *",
+        dispatchWorkflows: WORKFLOWS.map(workflow => workflow.file),
         endpoints: ["/api/burgos/nodes", "/api/burgos/estimates?stopId=200", "/api/burgos/vehicles", "/api/burgos/vehicles?line=01", "/api/burgos/live"],
-        note: "La fuente pública entrega estimaciones por parada. Las coordenadas sólo se consideran GPS si el servicio las publica; si no, el mapa calcula una posición estimada sobre el trazado GTFS."
+        note: "Cada dos minutos se intentan ejecutar los workflows de Bizkaibus y Telegram Burgos. Si ya hay una ejecución en cola o curso, se omite ese ciclo. La fuente pública de Burgos entrega estimaciones por parada; las coordenadas sólo se consideran GPS si el servicio las publica."
       });
     }
 
