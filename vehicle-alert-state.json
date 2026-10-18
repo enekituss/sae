@@ -23621,73 +23621,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:b1edc4dfe738d0cf13a4613b": {
-      "destination": "CRUCES/GURUTZETA",
-      "detectedAt": "2026-10-18T09:09+02:00",
-      "direction": "",
-      "eventId": "missing:b1edc4dfe738d0cf13a4613b",
-      "firstMissingAt": "2026-10-18T09:05:01+02:00",
-      "lastSeenAt": "2026-10-18T09:01:21+02:00",
-      "line": "A3522",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T09:09:02+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2133"
-    },
-    "route:8ce31e3bd9e18d4d243a4cce": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO (Aut.)",
-          "old": "LEKEITIO"
-        }
-      ],
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T09:09+02:00",
-      "direction": "",
-      "eventId": "route:8ce31e3bd9e18d4d243a4cce",
-      "line": "A3512",
-      "queuedAt": "2026-10-18T09:09:02+02:00",
-      "type": "route_change",
-      "vehicleId": "8666"
-    },
-    "route_after_gap:7efc725156f9d858d31af190": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MENDATA",
-          "old": "MORGA"
-        }
-      ],
-      "destination": "MENDATA",
-      "detectedAt": "2026-10-18T09:09+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:7efc725156f9d858d31af190",
-      "line": "A3533",
-      "queuedAt": "2026-10-18T09:09:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "8682"
-    },
-    "vehicle_returned:a3a6813101103eb69a51b64e": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:09+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:a3a6813101103eb69a51b64e",
-      "lastKnown": {
-        "destination": "GALDAKAO Urreta",
-        "direction": "",
-        "id": "3356",
-        "line": "A3631"
-      },
-      "line": "A3631",
-      "queuedAt": "2026-10-18T09:09:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3356"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "7814": {
       "consecutiveChecks": 1,
@@ -23756,7 +23690,7 @@
       "requiredMissing": 2
     },
     "2133": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:b1edc4dfe738d0cf13a4613b",
       "firstMissingAt": "2026-10-18T09:05:01+02:00",
@@ -23767,7 +23701,7 @@
         "line": "A3522"
       },
       "lastSeenAt": "2026-10-18T09:01:21+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3362": {
