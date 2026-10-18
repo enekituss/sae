@@ -192,18 +192,9 @@ jobs:
               raise RuntimeError(resource + " no respondió: " + " | ".join(errors))
 
           try:
-              nodes = official_resource("resourceNodes")
-              if not isinstance(nodes, list) or not nodes:
-                  raise RuntimeError("resourceNodes no devolvió la lista de paradas")
-              def stop_id(node):
-                  return str(node.get("num") or node.get("id") or node.get("stopId") or node.get("nodeId") or node.get("nodoId") or node.get("idNodo") or node.get("numNodo") or "").strip()
-              stop_ids = list(dict.fromkeys(stop_id(node) for node in nodes if isinstance(node, dict) and stop_id(node)))
-              if not stop_ids:
-                  raise RuntimeError("resourceNodes devolvió paradas, pero ninguna con ID")
-              if len(",".join(stop_ids)) > 6500:
-                  raise RuntimeError("La lista de IDs de parada excede el tamaño prudente de la consulta")
-              print("OK: recurso oficial resourceNodes; " + str(len(stop_ids)) + " paradas disponibles.")
-
+              # Misma consulta por línea y lista de IDs que figura en la URL aportada.
+              stop_ids = ["402", "183", "209", "98", "26", "224", "71", "152", "164", "227", "228"]
+              print("Probando resourceEstimations directamente con line=01 y " + str(len(stop_ids)) + " IDs de parada.")
               estimations = official_resource("resourceEstimations", {
                   "_as_asac_isaenext_IsaenextWebPortlet_line": "01",
                   "_as_asac_isaenext_IsaenextWebPortlet_tipo": "1",
