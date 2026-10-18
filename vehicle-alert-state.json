@@ -3727,21 +3727,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:697d10f8c3bf572f6dae17ec": {
-      "destination": "DURANGO",
-      "detectedAt": "2026-10-18T23:19+02:00",
-      "direction": "",
-      "eventId": "missing:697d10f8c3bf572f6dae17ec",
-      "firstMissingAt": "2026-10-18T23:15:04+02:00",
-      "lastSeenAt": "2026-10-18T23:12:05+02:00",
-      "line": "A3911",
-      "missingChecks": 4,
-      "queuedAt": "2026-10-18T23:19:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3389"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {},
   "pendingVehicles": {
@@ -4463,7 +4449,7 @@
       "requiredMissing": 2
     },
     "3389": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 4,
       "eventId": "missing:697d10f8c3bf572f6dae17ec",
       "firstMissingAt": "2026-10-18T23:15:04+02:00",
@@ -4474,7 +4460,7 @@
         "line": "A3911"
       },
       "lastSeenAt": "2026-10-18T23:12:05+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "5017": {
