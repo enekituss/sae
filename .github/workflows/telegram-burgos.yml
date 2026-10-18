@@ -198,6 +198,7 @@ jobs:
               if clean(subscription.get("mode")) == "off":
                   message += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro."
               message += "\n\nConfigura tus preferencias en el chat privado con @SAEBUR_bot. La falta de posición publicada no confirma por sí sola una baja administrativa."
+              message += "\n\n⏱️ Las opciones se procesan en el siguiente ciclo automático, normalmente en unos dos minutos."
               telegram_api("sendMessage", {
                   "chat_id": chat_id,
                   "text": message,
