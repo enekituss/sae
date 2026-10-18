@@ -336,6 +336,7 @@ async function fetchBurgosVehiclesSnapshot() {
     partial: errors.length > 0,
     warnings: errors.slice(0, 5),
     count: uniqueVehicles.size,
+    failedLines: results.map((rows, index) => Array.isArray(rows) ? null : BURGOS_LINES[index]).filter(Boolean),
     vehicles: [...uniqueVehicles.values()]
   };
 }
