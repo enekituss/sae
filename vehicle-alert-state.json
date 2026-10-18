@@ -26512,57 +26512,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:9b8587dcfe5c682e3ee8b650": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T17:35+02:00",
-      "direction": "",
-      "eventId": "missing:9b8587dcfe5c682e3ee8b650",
-      "firstMissingAt": "2026-10-18T17:31:02+02:00",
-      "lastSeenAt": "2026-10-18T17:27:16+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T17:35:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2078"
-    },
-    "route:0e72f03096c1e8637f748fca": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "LEKEITIO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "LEKEITIO",
-      "detectedAt": "2026-10-18T17:35+02:00",
-      "direction": "",
-      "eventId": "route:0e72f03096c1e8637f748fca",
-      "line": "A3523",
-      "queuedAt": "2026-10-18T17:35:03+02:00",
-      "type": "route_change",
-      "vehicleId": "8645"
-    },
-    "route_after_gap:497a52d99f682b4c1fa86819": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SESTAO",
-          "old": "MUSKIZ"
-        }
-      ],
-      "destination": "SESTAO",
-      "detectedAt": "2026-10-18T17:35+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:497a52d99f682b4c1fa86819",
-      "line": "A3335",
-      "queuedAt": "2026-10-18T17:35:03+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7857"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1761": {
@@ -26653,7 +26603,7 @@
       "requiredMissing": 2
     },
     "2078": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:9b8587dcfe5c682e3ee8b650",
       "firstMissingAt": "2026-10-18T17:31:02+02:00",
@@ -26664,7 +26614,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-18T17:27:16+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3293": {
