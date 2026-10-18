@@ -25585,113 +25585,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:ac825f019956127409a3deab": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T20:25+02:00",
-      "direction": "",
-      "eventId": "missing:ac825f019956127409a3deab",
-      "firstMissingAt": "2026-10-18T20:21:08+02:00",
-      "lastSeenAt": "2026-10-18T20:17:18+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:25:12+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3364"
-    },
-    "route:a5182230326e885068c664a6": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AIREPORTUA",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-18T20:25+02:00",
-      "direction": "",
-      "eventId": "route:a5182230326e885068c664a6",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T20:25:12+02:00",
-      "type": "route_change",
-      "vehicleId": "2120"
-    },
-    "route:c14f5152891e3efdbee229e2": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3916",
-          "old": "A3915"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO (Aut.)",
-          "old": "ONDARROA"
-        }
-      ],
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T20:25+02:00",
-      "direction": "",
-      "eventId": "route:c14f5152891e3efdbee229e2",
-      "line": "A3916",
-      "queuedAt": "2026-10-18T20:25:12+02:00",
-      "type": "route_change",
-      "vehicleId": "8662"
-    },
-    "route:c464d1f0da23bc56da35f59f": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "MUNGIA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T20:25+02:00",
-      "direction": "",
-      "eventId": "route:c464d1f0da23bc56da35f59f",
-      "line": "A3517",
-      "queuedAt": "2026-10-18T20:25:12+02:00",
-      "type": "route_change",
-      "vehicleId": "2096"
-    },
-    "vehicle_returned:20f1ef40c555d0754201cdfa": {
-      "destination": "BAKIO (Aut.)",
-      "detectedAt": "2026-10-18T20:25+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:20f1ef40c555d0754201cdfa",
-      "lastKnown": {
-        "destination": "BAKIO (Aut.)",
-        "direction": "",
-        "id": "2099",
-        "line": "A3518"
-      },
-      "line": "A3518",
-      "queuedAt": "2026-10-18T20:25:12+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2099"
-    },
-    "vehicle_returned:f455afa0695c32a95ebfafa8": {
-      "destination": "GERNIKA LUMO",
-      "detectedAt": "2026-10-18T20:25+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:f455afa0695c32a95ebfafa8",
-      "lastKnown": {
-        "destination": "GERNIKA LUMO",
-        "direction": "",
-        "id": "8681",
-        "line": "A3532"
-      },
-      "line": "A3532",
-      "queuedAt": "2026-10-18T20:25:12+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "8681"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1512": {
@@ -25893,7 +25787,7 @@
       "requiredMissing": 2
     },
     "3364": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:ac825f019956127409a3deab",
       "firstMissingAt": "2026-10-18T20:21:08+02:00",
@@ -25904,7 +25798,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T20:17:18+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "5017": {
