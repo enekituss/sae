@@ -14,22 +14,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Inspeccionar recursos públicos de Bus Burgos
+      - name: Extraer rutas y canales públicos de Bus Burgos
         shell: bash
         run: |
           python - <<'PY'
           import re
-          import urllib.error
           import urllib.parse
           import urllib.request
           from html.parser import HTMLParser
-          from concurrent.futures import ThreadPoolExecutor, as_completed
 
           ROOT = "https://webburgos.com/bus/"
           HEADERS = {
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
-              "Accept": "text/html,application/javascript,*/*",
-              "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
+              "Accept": "text/html,application/javascript,*/*"
           }
 
           class Assets(HTMLParser):
@@ -43,61 +40,53 @@ jobs:
                       self.urls.append(candidate)
 
           def get(url, timeout=12):
-              request = urllib.request.Request(url, headers=HEADERS)
-              with urllib.request.urlopen(request, timeout=timeout) as response:
-                  return response.status, response.geturl(), response.read()
+              req = urllib.request.Request(url, headers=HEADERS)
+              with urllib.request.urlopen(req, timeout=timeout) as res:
+                  return res.geturl(), res.read()
 
           try:
-              status, page_url, html_bytes = get(ROOT, 15)
-              html = html_bytes.decode("utf-8", errors="replace")
-              print("PAGE_STATUS:", status)
-              print("PAGE_URL:", page_url)
-              print("PAGE_BYTES:", len(html_bytes))
+              page_url, raw = get(ROOT, 12)
+              html = raw.decode("utf-8", errors="replace")
           except Exception as exc:
               print("PAGE_ERROR:", repr(exc))
               raise SystemExit(0)
 
           parser = Assets()
           parser.feed(html)
-          assets = []
-          for item in parser.urls:
-              url = urllib.parse.urljoin(page_url, item)
-              if url not in assets and urllib.parse.urlparse(url).scheme in ("http", "https"):
-                  assets.append(url)
-          print("JS_ASSETS:", len(assets))
-          for url in assets[:30]:
-              print("ASSET:", url)
+          urls = list(dict.fromkeys(urllib.parse.urljoin(page_url, x) for x in parser.urls))
+          js_urls = [u for u in urls if urllib.parse.urlparse(u).netloc == "webburgos.com"]
+          print("APP_JS:", [u for u in js_urls if u.endswith(".js") or ".js?" in u])
 
-          def inspect_asset(url):
+          for url in js_urls:
+              if not (url.endswith(".js") or ".js?" in url):
+                  continue
               try:
-                  status, resolved, raw = get(url, 12)
+                  resolved, raw = get(url, 12)
                   text = raw.decode("utf-8", errors="replace")
-                  hits = set()
-                  patterns = [
-                      r"https?://[^\\s\"'<>\\)]+",
-                      r"wss?://[^\\s\"'<>\\)]+",
-                      r"/api/[A-Za-z0-9_./?=&%{}-]+",
-                      r"[A-Za-z0-9_.-]+\\.(?:workers\\.dev|cloudflareworkers\\.com|firebaseio\\.com|pusherapp\\.com|pusher\.com|supabase\.co)"
-                  ]
-                  for pattern in patterns:
-                      for match in re.findall(pattern, text, flags=re.I):
-                          value = match.rstrip(";,")
-                          if len(value) < 300:
-                              hits.add(value)
-                  keywords = []
-                  for term in ("pusher", "websocket", "resourceVehicles", "resourceEstimations", "vehicles", "busPositions", "live", "realtime", "apiBase", "baseURL"):
-                      idx = text.lower().find(term.lower())
-                      if idx >= 0:
-                          excerpt = re.sub(r"\\s+", " ", text[max(0, idx-120):idx+260])
-                          # Avoid dumping long opaque strings or keys.
-                          keywords.append(term + ": " + excerpt[:300])
-                  return {"url":url,"status":status,"bytes":len(raw),"hits":sorted(hits)[:60],"keywords":keywords[:12],"error":""}
               except Exception as exc:
-                  return {"url":url,"error":repr(exc)}
+                  print("ASSET_ERROR:", url, repr(exc))
+                  continue
+              print("ASSET_OK:", url, "bytes=", len(raw))
 
-          with ThreadPoolExecutor(max_workers=5) as pool:
-              futures = [pool.submit(inspect_asset, url) for url in assets[:30]]
-              for future in as_completed(futures):
-                  result = future.result()
-                  print("ASSET_RESULT:", result)
+              # API paths and action names embedded in the public JavaScript.
+              action_literals = sorted(set(re.findall(r'''["'`]([^"'`]{0,160}(?:action=|/api/|\.php|\.json)[^"'`]{0,160})["'`]''', text, flags=re.I)))
+              for value in action_literals[:100]:
+                  if len(value) < 240:
+                      print("ACTION_LITERAL:", value)
+
+              # Show short snippets around transport/API and realtime wiring.
+              terms = ("new Pusher(", "pusher.subscribe(", ".subscribe(", "llamarPusherGate", "iniciarPollingFallback", "fetch(", "XMLHttpRequest", "action=", "canalesSuscritos", "bind(")
+              for term in terms:
+                  positions = []
+                  start = 0
+                  while len(positions) < 8:
+                      i = text.lower().find(term.lower(), start)
+                      if i < 0:
+                          break
+                      positions.append(i)
+                      start = i + len(term)
+                  for i in positions:
+                      excerpt = re.sub(r"\\s+", " ", text[max(0, i-180):i+360])
+                      excerpt = re.sub(r'new Pusher\\([^,]+', 'new Pusher("[PUBLIC_KEY]"', excerpt)
+                      print("SNIPPET", term, ":", excerpt[:520])
           PY
