@@ -30,6 +30,28 @@
     .upcoming-stops li { padding: 2px 0; line-height: 1.35; }
     .upcoming-stops .upcoming-stop-next { font-weight: 700; }
     .upcoming-stops small { display: block; margin-top: 8px; line-height: 1.4; color: var(--muted, #607080); }
+    .itinerary-open { display: inline-flex; margin-top: 9px; padding: 7px 10px; border: 1px solid #e5a13c; border-radius: 8px; background: #fff4e2; color: #854b00; font-size: 11px; font-weight: 800; cursor: pointer; }
+    .itinerary-open:hover { background: #ffebc9; }
+    .itinerary-dialog { width: min(620px, calc(100% - 22px)); max-width: 620px; max-height: min(82dvh, 780px); padding: 0; border: 0; border-radius: 18px; color: var(--ink, #17212b); background: var(--panel, #fff); box-shadow: 0 22px 70px #0004; overflow: hidden; }
+    .itinerary-dialog::backdrop { background: #111b24a6; backdrop-filter: blur(3px); }
+    .itinerary-dialog-inner { display: flex; flex-direction: column; max-height: min(82dvh, 780px); }
+    .itinerary-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 18px 20px 14px; border-bottom: 1px solid var(--line, #e4e9ed); }
+    .itinerary-eyebrow { margin: 0 0 6px; color: var(--accent-dark, #c76c00); font-size: 10px; letter-spacing: .13em; font-weight: 850; }
+    .itinerary-dialog h2 { margin: 0; font-size: clamp(17px, 4vw, 21px); line-height: 1.25; }
+    .itinerary-subtitle { margin: 6px 0 0; color: var(--muted, #697783); font-size: 12px; line-height: 1.5; }
+    .itinerary-close { flex: 0 0 auto; width: 36px; height: 36px; border: 1px solid var(--line, #e4e9ed); border-radius: 10px; background: #fff; color: var(--ink, #17212b); cursor: pointer; }
+    .itinerary-content { overflow-y: auto; overscroll-behavior: contain; padding: 14px 20px 20px; }
+    .itinerary-message { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 130px; color: var(--muted, #697783); font-size: 13px; line-height: 1.55; text-align: center; }
+    .itinerary-message.error { display: block; padding: 16px; border: 1px solid #f2d5d5; border-radius: 12px; background: #fff7f7; color: #922d2d; text-align: left; }
+    .itinerary-list { list-style: none; display: grid; gap: 7px; margin: 0; padding: 0; }
+    .itinerary-list li { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 11px; border: 1px solid var(--line, #e4e9ed); border-radius: 10px; background: #fff; }
+    .itinerary-list li.itinerary-next { border-color: #f0c77f; background: #fff7e8; }
+    .itinerary-sequence { display: inline-grid; place-items: center; flex: 0 0 25px; width: 25px; height: 25px; border-radius: 8px; background: #f0f3f5; color: #52616d; font-size: 10px; font-weight: 850; }
+    .itinerary-next .itinerary-sequence { background: #f6dca9; color: #754600; }
+    .itinerary-stop-name { min-width: 0; flex: 1; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+    .itinerary-next-badge { color: #854b00; font-size: 10px; font-weight: 850; white-space: nowrap; }
+    .itinerary-note { margin: 13px 2px 0; color: var(--muted, #697783); font-size: 11px; line-height: 1.5; }
+    @media (max-width: 480px) { .itinerary-dialog-header { padding: 15px 14px 12px; } .itinerary-content { padding: 12px 14px 16px; } .itinerary-list li { padding: 9px; } .itinerary-next-badge { font-size: 9px; } }
     @media (max-width: 650px) { #logoutButton { width: 100%; } .connection-actions button { flex: 1 1 120px; } }
   </style>
   <script>document.documentElement.classList.add('auth-check');</script>
@@ -101,6 +123,20 @@
     </footer>
   </main>
 
-  <script src="./burgos-vehicles.js?v=20261018l"></script>
+  <dialog id="itineraryDialog" class="itinerary-dialog" aria-labelledby="itineraryTitle">
+    <div class="itinerary-dialog-inner">
+      <header class="itinerary-dialog-header">
+        <div>
+          <p class="itinerary-eyebrow">SAE SPOTTER · BURGOS</p>
+          <h2 id="itineraryTitle">Itinerario del autobús</h2>
+          <p id="itinerarySubtitle" class="itinerary-subtitle"></p>
+        </div>
+        <button id="closeItinerary" class="itinerary-close" type="button" aria-label="Cerrar itinerario">✕</button>
+      </header>
+      <div id="itineraryContent" class="itinerary-content"></div>
+    </div>
+  </dialog>
+
+  <script src="./burgos-vehicles.js?v=20261018m"></script>
 </body>
 </html>
