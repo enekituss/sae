@@ -24641,86 +24641,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:9cdcad086cda0ae9d61605cf": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T12:01+02:00",
-      "direction": "",
-      "eventId": "entered:9cdcad086cda0ae9d61605cf",
-      "firstObservedAt": "2026-10-18T11:57:01+02:00",
-      "line": "A3925",
-      "queuedAt": "2026-10-18T12:01:01+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "3352"
-    },
-    "missing:352496893f84069f5d12091d": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T12:01+02:00",
-      "direction": "",
-      "eventId": "missing:352496893f84069f5d12091d",
-      "firstMissingAt": "2026-10-18T11:57:01+02:00",
-      "lastSeenAt": "2026-10-18T11:53:53+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T12:01:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3365"
-    },
-    "route:a8475d4e1da3d1445373c8f8": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "Metro BOLUETA",
-          "old": "GALDAKAO"
-        }
-      ],
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-18T12:01+02:00",
-      "direction": "",
-      "eventId": "route:a8475d4e1da3d1445373c8f8",
-      "line": "A3932",
-      "queuedAt": "2026-10-18T12:01:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3388"
-    },
-    "route:c4f6545041e8a9cf5473e9ec": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "GALLARTA"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T12:01+02:00",
-      "direction": "",
-      "eventId": "route:c4f6545041e8a9cf5473e9ec",
-      "line": "A3333",
-      "queuedAt": "2026-10-18T12:01:01+02:00",
-      "type": "route_change",
-      "vehicleId": "7886"
-    },
-    "route:ef6a45b7e0db509bd01112f3": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "BASAURI S.Miguel"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T12:01+02:00",
-      "direction": "",
-      "eventId": "route:ef6a45b7e0db509bd01112f3",
-      "line": "A3632",
-      "queuedAt": "2026-10-18T12:01:01+02:00",
-      "type": "route_change",
-      "vehicleId": "3292"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2061": {
@@ -24842,7 +24763,7 @@
       "requiredMissing": 2
     },
     "3365": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:352496893f84069f5d12091d",
       "firstMissingAt": "2026-10-18T11:57:01+02:00",
@@ -24853,7 +24774,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T11:53:53+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3373": {
