@@ -26071,83 +26071,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:2f86b8fd32168df691791eb7": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T14:35+02:00",
-      "direction": "",
-      "eventId": "missing:2f86b8fd32168df691791eb7",
-      "firstMissingAt": "2026-10-18T14:31:02+02:00",
-      "lastSeenAt": "2026-10-18T14:27:12+02:00",
-      "line": "A3632",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T14:35:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3292"
-    },
-    "missing:57f6f6b6f74dd6d6ac6ae837": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-18T14:35+02:00",
-      "direction": "",
-      "eventId": "missing:57f6f6b6f74dd6d6ac6ae837",
-      "firstMissingAt": "2026-10-18T14:31:02+02:00",
-      "lastSeenAt": "2026-10-18T14:27:12+02:00",
-      "line": "A3923",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T14:35:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3376"
-    },
-    "missing:b29ec9a78b3b0745d016c041": {
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T14:35+02:00",
-      "direction": "",
-      "eventId": "missing:b29ec9a78b3b0745d016c041",
-      "firstMissingAt": "2026-10-18T14:31:02+02:00",
-      "lastSeenAt": "2026-10-18T14:27:12+02:00",
-      "line": "A3451",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T14:35:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1719"
-    },
-    "route:03723bc0ad3bbf861bdce89b": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "AREETA (Artea)",
-          "old": "BERANGO (Artea)"
-        }
-      ],
-      "destination": "AREETA (Artea)",
-      "detectedAt": "2026-10-18T14:35+02:00",
-      "direction": "",
-      "eventId": "route:03723bc0ad3bbf861bdce89b",
-      "line": "A3422",
-      "queuedAt": "2026-10-18T14:35:03+02:00",
-      "type": "route_change",
-      "vehicleId": "1718"
-    },
-    "route:395359d033cb3ace9503f0a8": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "ERREPELEGA",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "ERREPELEGA",
-      "detectedAt": "2026-10-18T14:35+02:00",
-      "direction": "",
-      "eventId": "route:395359d033cb3ace9503f0a8",
-      "line": "A3122",
-      "queuedAt": "2026-10-18T14:35:03+02:00",
-      "type": "route_change",
-      "vehicleId": "7833"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "3379": {
       "consecutiveChecks": 1,
@@ -26227,7 +26151,7 @@
   },
   "pendingVehicles": {
     "1719": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:b29ec9a78b3b0745d016c041",
       "firstMissingAt": "2026-10-18T14:31:02+02:00",
@@ -26238,7 +26162,7 @@
         "line": "A3451"
       },
       "lastSeenAt": "2026-10-18T14:27:12+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2129": {
@@ -26271,7 +26195,7 @@
       "requiredMissing": 2
     },
     "3292": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:2f86b8fd32168df691791eb7",
       "firstMissingAt": "2026-10-18T14:31:02+02:00",
@@ -26282,7 +26206,7 @@
         "line": "A3632"
       },
       "lastSeenAt": "2026-10-18T14:27:12+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3364": {
@@ -26301,7 +26225,7 @@
       "requiredMissing": 2
     },
     "3376": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:57f6f6b6f74dd6d6ac6ae837",
       "firstMissingAt": "2026-10-18T14:31:02+02:00",
@@ -26312,7 +26236,7 @@
         "line": "A3923"
       },
       "lastSeenAt": "2026-10-18T14:27:12+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3378": {
