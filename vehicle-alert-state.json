@@ -25964,52 +25964,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:5534fbec349d745e34c0f2ff": {
-      "destination": "EREÑO",
-      "detectedAt": "2026-10-18T20:31+02:00",
-      "direction": "",
-      "eventId": "missing:5534fbec349d745e34c0f2ff",
-      "firstMissingAt": "2026-10-18T20:27:05+02:00",
-      "lastSeenAt": "2026-10-18T20:23:54+02:00",
-      "line": "A3534",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:31:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8680"
-    },
-    "missing:99af7c915197388c0d37a17e": {
-      "destination": "ARTZINIEGA",
-      "detectedAt": "2026-10-18T20:31+02:00",
-      "direction": "",
-      "eventId": "missing:99af7c915197388c0d37a17e",
-      "firstMissingAt": "2026-10-18T20:27:05+02:00",
-      "lastSeenAt": "2026-10-18T20:23:54+02:00",
-      "line": "A3342",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T20:31:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "5038"
-    },
-    "route_after_gap:7d4e8bb9732e16bbfdbad809": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GETXO (Azkorri)",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "GETXO (Azkorri)",
-      "detectedAt": "2026-10-18T20:31+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:7d4e8bb9732e16bbfdbad809",
-      "line": "A3411",
-      "queuedAt": "2026-10-18T20:31:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "1720"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1718": {
@@ -26182,7 +26137,7 @@
       "requiredMissing": 2
     },
     "5038": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:99af7c915197388c0d37a17e",
       "firstMissingAt": "2026-10-18T20:27:05+02:00",
@@ -26193,7 +26148,7 @@
         "line": "A3342"
       },
       "lastSeenAt": "2026-10-18T20:23:54+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7885": {
@@ -26211,7 +26166,7 @@
       "requiredMissing": 2
     },
     "8680": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:5534fbec349d745e34c0f2ff",
       "firstMissingAt": "2026-10-18T20:27:05+02:00",
@@ -26222,7 +26177,7 @@
         "line": "A3534"
       },
       "lastSeenAt": "2026-10-18T20:23:54+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     }
   },
