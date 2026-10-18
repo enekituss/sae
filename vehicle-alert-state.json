@@ -25560,100 +25560,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:2f21fbb2466820b7a2823366": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:53+02:00",
-      "direction": "",
-      "eventId": "missing:2f21fbb2466820b7a2823366",
-      "firstMissingAt": "2026-10-18T09:49:01+02:00",
-      "lastSeenAt": "2026-10-18T09:45:17+02:00",
-      "line": "A2322",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T09:53:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2103"
-    },
-    "missing:570ac7c14d653452c656481c": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T09:53+02:00",
-      "direction": "",
-      "eventId": "missing:570ac7c14d653452c656481c",
-      "firstMissingAt": "2026-10-18T09:49:01+02:00",
-      "lastSeenAt": "2026-10-18T09:45:17+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T09:53:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3365"
-    },
-    "route_after_gap:f2bab0c1a51da5a7a18f6c49": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "AIREPORTUA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-18T09:53+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:f2bab0c1a51da5a7a18f6c49",
-      "line": "A3247",
-      "queuedAt": "2026-10-18T09:53:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2120"
-    },
-    "vehicle_returned:a85abc79f98ae0705c5314f3": {
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T09:53+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:a85abc79f98ae0705c5314f3",
-      "lastKnown": {
-        "destination": "SANTURTZI",
-        "direction": "",
-        "id": "7863",
-        "line": "A3136"
-      },
-      "line": "A3136",
-      "queuedAt": "2026-10-18T09:53:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "7863"
-    },
-    "vehicle_returned:d74bdfee8b8a10db30f1bbfa": {
-      "destination": "OTXANDIO-UBIDE",
-      "detectedAt": "2026-10-18T09:53+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:d74bdfee8b8a10db30f1bbfa",
-      "lastKnown": {
-        "destination": "OTXANDIO-UBIDE",
-        "direction": "",
-        "id": "3353",
-        "line": "A3925"
-      },
-      "line": "A3925",
-      "queuedAt": "2026-10-18T09:53:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3353"
-    },
-    "vehicle_returned:f561c3b35cc10c4a5e54f3b8": {
-      "destination": "ERRIGOITI",
-      "detectedAt": "2026-10-18T09:53+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:f561c3b35cc10c4a5e54f3b8",
-      "lastKnown": {
-        "destination": "ERRIGOITI",
-        "direction": "",
-        "id": "8680",
-        "line": "A3534"
-      },
-      "line": "A3534",
-      "queuedAt": "2026-10-18T09:53:01+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "8680"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "7883": {
       "consecutiveChecks": 2,
@@ -25787,7 +25694,7 @@
       "requiredMissing": 2
     },
     "2103": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:2f21fbb2466820b7a2823366",
       "firstMissingAt": "2026-10-18T09:49:01+02:00",
@@ -25798,7 +25705,7 @@
         "line": "A2322"
       },
       "lastSeenAt": "2026-10-18T09:45:17+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2133": {
@@ -25846,7 +25753,7 @@
       "requiredMissing": 2
     },
     "3365": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:570ac7c14d653452c656481c",
       "firstMissingAt": "2026-10-18T09:49:01+02:00",
@@ -25857,7 +25764,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T09:45:17+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3380": {
