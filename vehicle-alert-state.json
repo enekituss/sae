@@ -25176,50 +25176,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:71f8ebd5a09dc512d4c4ce7f": {
-      "destination": "OTXANDIO",
-      "detectedAt": "2026-10-18T10:49+02:00",
-      "direction": "",
-      "eventId": "missing:71f8ebd5a09dc512d4c4ce7f",
-      "firstMissingAt": "2026-10-18T10:45:01+02:00",
-      "lastSeenAt": "2026-10-18T10:41:14+02:00",
-      "line": "A3925",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T10:49:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3352"
-    },
-    "missing:da1548cc6ed6f44463933a1c": {
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-18T10:49+02:00",
-      "direction": "",
-      "eventId": "missing:da1548cc6ed6f44463933a1c",
-      "firstMissingAt": "2026-10-18T10:45:01+02:00",
-      "lastSeenAt": "2026-10-18T10:41:14+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T10:49:00+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3364"
-    },
-    "vehicle_returned:0557616bb59e081c2abbbfb2": {
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-18T10:49+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:0557616bb59e081c2abbbfb2",
-      "lastKnown": {
-        "destination": "MUNGIA",
-        "direction": "",
-        "id": "2061",
-        "line": "A3225"
-      },
-      "line": "A2161",
-      "queuedAt": "2026-10-18T10:49:00+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2061"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "7815": {
@@ -25352,7 +25309,7 @@
       "requiredMissing": 2
     },
     "3352": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:71f8ebd5a09dc512d4c4ce7f",
       "firstMissingAt": "2026-10-18T10:45:01+02:00",
@@ -25363,11 +25320,11 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-18T10:41:14+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3364": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:da1548cc6ed6f44463933a1c",
       "firstMissingAt": "2026-10-18T10:45:01+02:00",
@@ -25378,7 +25335,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-18T10:41:14+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "5042": {
