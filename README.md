@@ -19,14 +19,16 @@ Web de consulta de líneas y vehículos Bizkaibus detectados por SIRI, con desti
 
 ## Alertas de cambios de ruta por Telegram
 
-El bot tiene un menú personal por chat. Envía `/start` o `/menu` para elegir entre las siguientes modalidades. Se usa el teclado de respuesta de Telegram; como los mensajes se procesan en el siguiente ciclo de GitHub Actions, la respuesta no es instantánea:
+El bot tiene un menú personal por chat privado. Envía `/start` o `/menu` para elegir entre seis opciones. Como GitHub Actions procesa los mensajes en ciclos de unos cinco minutos, la respuesta del menú puede tardar:
 
-- **Todos los avisos** de vehículos.
-- **Solo vehículos sin posición reciente** (posible fin de servicio; no confirma una baja administrativa).
-- **Solo cambios del campo línea**; los cambios únicamente de destino o sentido no entran en este filtro.
-- **Seguir un coche por ID**, indicando su identificador numérico. También se puede usar `/id 1101` para configurarlo directamente.
+- **Todos los avisos:** recibe todas las clases de eventos confirmados.
+- **Solo fuera de servicio:** avisa cuando un vehículo deja de aparecer en el feed tras varias comprobaciones. No confirma una baja administrativa.
+- **Solo cambios de línea:** avisa cuando un coche que continúa activo aparece asignado a una línea diferente; los cambios solo de destino o sentido no cuentan.
+- **Nueva entrada (reaparición):** avisa cuando un coche previamente desaparecido vuelve a aparecer.
+- **Seguir coche(s) por ID:** escribe uno o varios identificadores, separados por espacios o comas. Se puede volver a seleccionar la opción para añadir más coches. También funciona `/id 1101 1102`.
+- **Pausar avisos:** no envía más avisos hasta que se seleccione otra modalidad. También funciona `/stop` o `/pausar`.
 
-Las preferencias se guardan por chat en `vehicle-alert-state.json`, así que los filtros de una persona no cambian los de las demás. El chat configurado en `TELEGRAM_CHAT_ID` conserva todos los avisos por defecto hasta que elija otra opción.
+Las preferencias se guardan por chat privado en `vehicle-alert-state.json`, así que cada usuario tiene sus filtros y su lista de coches independientes. El bot revisa la modalidad al enviar para evitar entregar mensajes pendientes que ya no corresponden a la configuración actual.
 La actualización automática compara snapshots consecutivos de SIRI y mantiene una cola persistente de avisos de Telegram:
 
 - **Entrada en el feed:** un vehículo con ID publicado que no estaba en el snapshot anterior debe aparecer en dos consultas válidas consecutivas separadas al menos dos minutos. La primera ejecución establece la referencia y no anuncia toda la flota como nueva.
@@ -51,7 +53,7 @@ El flujo `.github/workflows/telegram-burgos.yml` consulta el Worker municipal de
 
 Después, comparte el enlace [https://t.me/SAEBUR_bot](https://t.me/SAEBUR_bot) en tu grupo de comunidad. Los miembros deben pulsar **Iniciar** en el chat privado del bot para que se registren individualmente; no es necesario añadir el bot al grupo.
 
-Envía `/start` o `/menu` a [@SAEBUR_bot](https://t.me/SAEBUR_bot) para abrir el menú individual. Cada persona debe iniciar el bot en su chat privado: sus preferencias se guardan por separado de las de los demás. Puede elegir todos los avisos, solo vehículos sin posición reciente, solo cambios de línea, seguir un ID concreto o pausar los avisos. `/misavisos` y `/estado` vuelven a mostrar el menú; `/stop` o `/pausar` los pausa. Si un coche reaparece después de un aviso de desaparición confirmado, se identifica como reaparición; si vuelve con cambios recientes de línea/destino/sentido, se avisa como cambio tras la interrupción. Las horas de aviso se muestran en hora peninsular española. El estado se conserva en `burgos-telegram-state.json` y no comparte preferencias ni token con Bizkaibus.
+Envía `/start` o `/menu` a [@SAEBUR_bot](https://t.me/SAEBUR_bot) para abrir el menú individual. Cada persona debe iniciar el bot en su chat privado: sus preferencias se guardan por separado de las de los demás. El menú dispone de todos los avisos, solo fuera de servicio, solo cambios de línea entre coches activos, nueva entrada/reaparición, seguimiento de varios coches por ID y pausa total de avisos. Para añadir varios coches, escribe sus ID separados por espacios o comas, o repite la opción de seguimiento; también funciona `/id 1101 1102`. `/misavisos` y `/estado` muestran el menú; `/stop` o `/pausar` detienen los avisos hasta reactivarlos. La modalidad se comprueba de nuevo antes del envío para no recibir alertas pendientes que ya no encajan con las preferencias actuales. Las horas de aviso se muestran en hora peninsular española. El estado se conserva en `burgos-telegram-state.json` y no comparte preferencias ni token con Bizkaibus.
 
 Para activar Telegram:
 1. Crear un bot con [@BotFather](https://t.me/BotFather) usando `/newbot` y guardar su token de forma privada.
