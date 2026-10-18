@@ -180,6 +180,13 @@ async function fetchLineObservations(line, nodes) {
     [PORTLET_PREFIX + "tipo"]: "1",
     [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
   });
+  if (!Array.isArray(response.data) || response.data.length === 0) {
+    throw new Error("resourceEstimations devolvió una respuesta vacía o no reconocible para la línea " + line + ".");
+  }
+  if (response.data.length === 1 && nodes.length > 2) {
+    throw new Error("resourceEstimations devolvió un único resultado para " +
+      nodes.length + " IDs de parada; la respuesta podría estar incompleta.");
+  }
   return {
     observations: extractLineEstimations(line, nodes, response.data),
     source: response.source
