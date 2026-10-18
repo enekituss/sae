@@ -126,7 +126,7 @@ jobs:
           # que ahora prioriza el monitor de cambios.
           try:
               request = urllib.request.Request(
-                  worker_base + "/api/burgos/live",
+                  worker_base + "/api/burgos/live?fresh=1",
                   headers={"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "SAE-Burgos-Diagnostics/1.0"}
               )
               with urllib.request.urlopen(request, timeout=70) as response:
