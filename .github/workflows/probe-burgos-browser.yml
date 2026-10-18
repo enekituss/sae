@@ -124,82 +124,55 @@ jobs:
                   try:
                       response=await page.goto(ROOT,wait_until="domcontentloaded",timeout=35000)
                       print("PAGE:",json.dumps({"status":response.status if response else None,"url":page.url,"title":await page.title(),"mobile":await page.evaluate("matchMedia('(pointer: coarse)').matches")},ensure_ascii=False))
-                      print("BODY_TEXT:",(await page.locator("body").inner_text())[:2600].replace("\n"," | "))
-                      print("BUTTONS:",json.dumps((await page.locator("button:visible").all_text_contents())[:40],ensure_ascii=False))
-                      print("LINKS:",json.dumps((await page.locator("a:visible").all_text_contents())[:50],ensure_ascii=False))
-                      print("SCRIPT_URLS:",json.dumps(list(dict.fromkeys(script_urls))[:30],ensure_ascii=False))
+                      await page.wait_for_timeout(2500)
+
+                      # Arranca el selector de líneas usando la función pública de la propia app.
+                      # Se comporta como la opción normal de elegir líneas, no llama a su API directamente.
+                      if await page.evaluate("typeof window.m === 'function'"):
+                          await page.evaluate("window.m()")
+                          print("UI_ACTION: abierto selector de líneas de la app")
+                          await page.wait_for_timeout(700)
+
+                      checkbox_count = await page.locator(".linea-checkbox").count()
+                      print("LINE_SELECTOR:",json.dumps({"checkboxes":checkbox_count,"visible":await page.locator("#m").is_visible(),"bodyText":(await page.locator("#m").inner_text())[:500] if await page.locator("#m").count() else ""},ensure_ascii=False))
+
+                      selected = 0
+                      boxes = page.locator(".linea-checkbox")
+                      for idx in range(min(5, checkbox_count)):
+                          try:
+                              await boxes.nth(idx).check(timeout=1500)
+                              selected += 1
+                          except Exception as exc:
+                              print("LINE_SELECT_ERROR:",idx,str(exc)[:120])
+                      print("LINES_SELECTED_FOR_PROBE:",selected)
+
+                      # Solo procede si hay líneas seleccionables, no fuerza llamadas API ni datos falsos.
+                      save_load = page.locator('button[onclick="g()"]')
+                      if selected and await save_load.count():
+                          try:
+                              async with page.expect_navigation(wait_until="domcontentloaded",timeout=10000):
+                                  await save_load.first.click(timeout=2500)
+                              print("UI_ACTION: guardada selección de líneas mediante GUARDAR Y CARGAR")
+                              await page.wait_for_timeout(18000)
+                          except Exception as exc:
+                              print("UI_ACTION_ERROR:", "guardar/recargar líneas",str(exc)[:180])
+                      else:
+                          print("UI_ACTION: no se han guardado líneas; selector sin opciones")
+                          await page.wait_for_timeout(5000)
+
+                      functions = await page.evaluate("""async () => {
+                        const resp=await fetch('/bus/assets/app.76386513f25e.js',{cache:'no-store'});
+                        const source=await resp.text();
+                        const snippets={};
+                        for(const term of ['function j(','async function j(','X-Device-ID','X-Burgos-Token','iniciarRealtime','function i()','function m()','appBusBurgosConfig']){
+                          const i=source.indexOf(term);
+                          snippets[term]=i<0?'NOT_FOUND':source.slice(Math.max(0,i-240),Math.min(source.length,i+500)).replace(/\\s+/g,' ');
+                        }
+                        return {storageKeys:Object.keys(localStorage),config:localStorage.getItem('appBusBurgosConfig'),snippets};
+                      }""")
+                      print("APP_CONFIG_AFTER_UI:",json.dumps(functions,ensure_ascii=False)[:7500])
                       print("CONSOLE_ERRORS:",json.dumps(console_errors[:10],ensure_ascii=False))
                       print("PAGE_ERRORS:",json.dumps(page_errors[:10],ensure_ascii=False))
-                      controls = await page.evaluate("""() => ({
-                        buttons: Array.from(document.querySelectorAll('button')).slice(0,30).map(e => ({
-                          text: (e.innerText || '').trim().slice(0,100),
-                          title: e.title || '',
-                          aria: e.getAttribute('aria-label') || '',
-                          id: e.id || '',
-                          cls: (typeof e.className === 'string' ? e.className : '').slice(0,100),
-                          html: e.outerHTML.slice(0,260)
-                        })),
-                        selects: Array.from(document.querySelectorAll('select')).map(e => ({
-                          id:e.id, name:e.name, options:Array.from(e.options).slice(0,20).map(o=>({text:o.text,value:o.value}))
-                        })),
-                        inputs: Array.from(document.querySelectorAll('input')).slice(0,20).map(e=>({id:e.id,type:e.type,placeholder:e.placeholder,aria:e.getAttribute('aria-label')})),
-                        map: (() => { const e=document.querySelector('.leaflet-container'); return e ? {class:e.className, markers:e.querySelectorAll('.leaflet-marker-icon').length, layers:e.querySelectorAll('.leaflet-overlay-pane path').length, html:e.outerHTML.slice(0,600)} : null })()
-                      })""")
-                      print("CONTROLS:",json.dumps(controls,ensure_ascii=False)[:8000])
-                      state = await page.evaluate("""() => ({
-                        modals: Array.from(document.querySelectorAll('.modal')).map(e => ({
-                          id:e.id, cls:e.className, display:getComputedStyle(e).display,
-                          visibility:getComputedStyle(e).visibility, ariaHidden:e.getAttribute('aria-hidden'),
-                          text:(e.innerText||'').trim().slice(0,280)
-                        })),
-                        backdrops: document.querySelectorAll('.modal-backdrop').length,
-                        targetButtons: Array.from(document.querySelectorAll('button')).filter(e => /reconectar|guardar y cargar/i.test(e.innerText||'')).map(e => ({
-                          text:(e.innerText||'').trim(), display:getComputedStyle(e).display,
-                          visibility:getComputedStyle(e).visibility, visible:!!(e.offsetWidth||e.offsetHeight),
-                          disabled:e.disabled, parentModal:e.closest('.modal')?.id || '',
-                          parentModalClass:e.closest('.modal')?.className || ''
-                        })),
-                        localStorageKeys:Object.keys(localStorage),
-                        hasReconnect:typeof window.reconectarAhora==='function',
-                        hasSaveLoad:typeof window.g==='function'
-                      })""")
-                      print("UI_STATE:",json.dumps(state,ensure_ascii=False)[:5000])
-                      functions = await page.evaluate("""async () => {
-                        const resp = await fetch('/bus/assets/app.76386513f25e.js', {cache:'no-store'});
-                        const source = await resp.text();
-                        const snippets = {};
-                        for (const term of [
-                          'linea-checkbox','new bootstrap.Modal(q("m"))','B.show()','B.show',
-                          'showLineSelector','seleccionarDestinoLineas','lineas.json',
-                          'todas_las_paradas.json','appBusBurgosConfig','reconectarAhora',
-                          'function g()','rtStarted','localStorage.getItem','modal.show()',
-                          'new bootstrap.Modal'
-                        ]) {
-                          const i=source.indexOf(term);
-                          snippets[term]=i<0?'NOT_FOUND':source.slice(Math.max(0,i-260),Math.min(source.length,i+430)).replace(/\\s+/g,' ');
-                        }
-                        const buttons=Array.from(document.querySelectorAll('button')).map(e=>({
-                          text:(e.innerText||'').trim().slice(0,60),
-                          title:e.title||'',aria:e.getAttribute('aria-label')||'',id:e.id||'',
-                          cls:(typeof e.className==='string'?e.className:'').slice(0,80),
-                          onclick:e.getAttribute('onclick')||'',
-                          visible:!!(e.offsetWidth||e.offsetHeight),
-                          parent:e.closest('.modal')?.id||''
-                        }));
-                        return {
-                          reconectar: typeof window.reconectarAhora==='function' ? String(window.reconectarAhora).slice(0,900) : '',
-                          saveLoad: typeof window.g==='function' ? String(window.g).slice(0,900) : '',
-                          visibleAppFunctions:Object.keys(window).filter(k=>/reconect|guardar|linea|cargar|prefer/i.test(k)).slice(0,80),
-                          checkboxCount:document.querySelectorAll('.linea-checkbox').length,
-                          appButtons:buttons.filter(x=>/line|config|reconect|pausa|seleccion|mapa/i.test(x.onclick+' '+x.text+' '+x.id+' '+x.title)),
-                          storageKeys:Object.keys(localStorage),
-                          snippets
-                        }
-                      }""")
-                      print("APP_FUNCTIONS:",json.dumps(functions,ensure_ascii=False)[:15000])
-                      # Reconectar normalmente no hace nada si la app aún no terminó de inicializar rtStarted.
-                      # Por eso no se fuerza la función ni se envían parámetros fabricados.
-                      await page.wait_for_timeout(12000)
                   except Exception as exc:
                       print("PAGE_ERROR:",repr(exc)[:250])
 
