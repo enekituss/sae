@@ -23108,75 +23108,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:40fb1bc7c848c46e05c20b63": {
-      "destination": "DURANGO",
-      "detectedAt": "2026-10-18T21:19+02:00",
-      "direction": "",
-      "eventId": "missing:40fb1bc7c848c46e05c20b63",
-      "firstMissingAt": "2026-10-18T21:15:09+02:00",
-      "lastSeenAt": "2026-10-18T21:11:43+02:00",
-      "line": "A3913",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T21:19:10+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3372"
-    },
-    "route:2dad025192698d352b682ef8": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ",
-          "old": "BALMASEDA"
-        }
-      ],
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-18T21:19+02:00",
-      "direction": "",
-      "eventId": "route:2dad025192698d352b682ef8",
-      "line": "A3334",
-      "queuedAt": "2026-10-18T21:19:10+02:00",
-      "type": "route_change",
-      "vehicleId": "5024"
-    },
-    "route:9fe4270185a4144648cb56da": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BARAKALDO",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "BARAKALDO",
-      "detectedAt": "2026-10-18T21:19+02:00",
-      "direction": "",
-      "eventId": "route:9fe4270185a4144648cb56da",
-      "line": "A3137",
-      "queuedAt": "2026-10-18T21:19:10+02:00",
-      "type": "route_change",
-      "vehicleId": "7872"
-    },
-    "route:f63c1238603b0d18924a0d42": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GORLIZ",
-          "old": "PLENTZIA (Metro)"
-        }
-      ],
-      "destination": "GORLIZ",
-      "detectedAt": "2026-10-18T21:19+02:00",
-      "direction": "",
-      "eventId": "route:f63c1238603b0d18924a0d42",
-      "line": "A3499",
-      "queuedAt": "2026-10-18T21:19:10+02:00",
-      "type": "route_change",
-      "vehicleId": "1714"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3354": {
@@ -23371,7 +23303,7 @@
       "requiredMissing": 2
     },
     "3372": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:40fb1bc7c848c46e05c20b63",
       "firstMissingAt": "2026-10-18T21:15:09+02:00",
@@ -23382,7 +23314,7 @@
         "line": "A3913"
       },
       "lastSeenAt": "2026-10-18T21:11:43+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3386": {
