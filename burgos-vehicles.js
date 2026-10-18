@@ -25,6 +25,9 @@
   let lastQueryHadSuccess = false;
   let nextStopByVehicle = new Map();
   let nextStopQueryRunning = false;
+  let gtfsData = null;
+  let gtfsLoading = false;
+  const itineraryByVehicle = new Map();
 
   function normalizeLineKey(value) {
     return String(value ?? "").trim().toUpperCase()
@@ -67,6 +70,157 @@
     return "≈ " + Math.round(value / 60) + " min";
   }
 
+  function normalizeWords(value) {
+    return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  }
+
+  function destinationScore(a, b) {
+    const ignored = new Set(["de", "del", "la", "el", "los", "las", "a", "al", "y", "estacion", "parada"]);
+    const aa = normalizeWords(a).filter(word => !ignored.has(word));
+    const bb = normalizeWords(b).filter(word => !ignored.has(word));
+    if (!aa.length || !bb.length) return 0;
+    const bset = new Set(bb);
+    let shared = 0;
+    for (const token of aa) if (bset.has(token)) shared++;
+    return shared / Math.max(aa.length, bb.length);
+  }
+
+  function distanceMeters(a, b) {
+    const rad = value => value * Math.PI / 180;
+    const dLat = rad(b.lat - a.lat);
+    const dLon = rad(b.lon - a.lon);
+    const x = Math.sin(dLat / 2) ** 2 +
+      Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
+    return 6371000 * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(Math.max(0, 1 - x)));
+  }
+
+  async function loadGtfsForItinerary() {
+    if (gtfsLoading || gtfsData) return;
+    gtfsLoading = true;
+    try {
+      const response = await fetch("./burgos-data.json", {
+        method: "GET",
+        cache: "force-cache",
+        headers: { "Accept": "application/json" }
+      });
+      if (!response.ok) throw new Error("burgos-data.json respondió HTTP " + response.status);
+      const data = await response.json();
+      data.stops = Array.isArray(data.stops) ? data.stops : [];
+      data.routes = Array.isArray(data.routes) ? data.routes : [];
+      data.trips = Array.isArray(data.trips) ? data.trips : [];
+      data.stopById = new Map(data.stops.map(stop => [String(stop.id), stop]));
+      data.routeById = new Map(data.routes.map(route => [String(route.id), route]));
+      data.tripsByLineStop = new Map();
+
+      for (const trip of data.trips) {
+        const route = data.routeById.get(String(trip.routeId));
+        const lineKeys = [...new Set([route?.shortName, route?.id]
+          .map(normalizeLineKey).filter(Boolean))];
+        const stops = Array.isArray(trip.stops) ? trip.stops : [];
+        stops.forEach((stopTime, stopIndex) => {
+          const stopId = String(stopTime?.[0] ?? "").trim();
+          if (!stopId) return;
+          for (const line of lineKeys) {
+            const key = line + "|" + stopId;
+            if (!data.tripsByLineStop.has(key)) data.tripsByLineStop.set(key, []);
+            data.tripsByLineStop.get(key).push({ trip, route, stopIndex });
+          }
+        });
+      }
+
+      gtfsData = data;
+      itineraryByVehicle.clear();
+      console.info("SAE Burgos: GTFS cargado para itinerarios.",
+        "Líneas:", data.routes.length, "paradas:", data.stops.length, "viajes:", data.trips.length);
+      render();
+    } catch (error) {
+      console.warn("No se pudieron cargar los itinerarios GTFS de Burgos:", error?.message || String(error));
+    } finally {
+      gtfsLoading = false;
+    }
+  }
+
+  function matchTripForNextStop(observation) {
+    if (!gtfsData || !Array.isArray(gtfsData.stops)) return null;
+    const lat = Number(observation.stopLat);
+    const lon = Number(observation.stopLon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    const line = normalizeLineKey(observation.line);
+    if (!line) return null;
+
+    const nearby = [];
+    for (const stop of gtfsData.stops) {
+      const stopLat = Number(stop.lat);
+      const stopLon = Number(stop.lon);
+      if (!Number.isFinite(stopLat) || !Number.isFinite(stopLon)) continue;
+      const distance = distanceMeters({ lat, lon }, { lat: stopLat, lon: stopLon });
+      if (distance <= 280) nearby.push({ stop, distance });
+    }
+    nearby.sort((a, b) => a.distance - b.distance);
+
+    const candidates = [];
+    for (const item of nearby.slice(0, 8)) {
+      const rows = gtfsData.tripsByLineStop.get(line + "|" + String(item.stop.id)) || [];
+      for (const row of rows) {
+        const trip = row.trip;
+        candidates.push({
+          ...row,
+          matchedStop: item.stop,
+          stopDistance: item.distance,
+          score: destinationScore(observation.destination, trip.headsign)
+        });
+      }
+    }
+    if (!candidates.length) return null;
+    candidates.sort((a, b) => b.score - a.score || a.stopDistance - b.stopDistance);
+
+    if (candidates[0].score === 0) {
+      const possibleDestinations = new Set(candidates.map(candidate =>
+        normalizeWords(candidate.trip.headsign).join(" ")
+      ));
+      if (possibleDestinations.size > 1) return null;
+    }
+    return candidates[0];
+  }
+
+  function getVehicleItinerary(vehicle) {
+    const key = vehicleStopKey(vehicle.id, vehicle.line);
+    if (!key) return null;
+    if (itineraryByVehicle.has(key)) return itineraryByVehicle.get(key);
+    const observation = nextStopByVehicle.get(key);
+    if (!observation || !gtfsData) return null;
+
+    const match = matchTripForNextStop({ ...observation, line: vehicle.line });
+    if (!match) {
+      itineraryByVehicle.set(key, null);
+      return null;
+    }
+    const tripStops = Array.isArray(match.trip.stops) ? match.trip.stops : [];
+    const remaining = tripStops.slice(match.stopIndex);
+    if (!remaining.length) {
+      itineraryByVehicle.set(key, null);
+      return null;
+    }
+    const stops = remaining.map(item => {
+      const id = String(item?.[0] ?? "").trim();
+      const stop = gtfsData.stopById.get(id);
+      return { id, name: String(stop?.name || ("Parada " + id)).trim() };
+    }).filter(stop => stop.id && stop.name);
+    if (stops.length < 2) {
+      itineraryByVehicle.set(key, null);
+      return null;
+    }
+    const itinerary = {
+      destination: String(match.trip.headsign || observation.destination || "").trim(),
+      stops,
+      totalStops: stops.length,
+      source: "GTFS de Burgos; secuencia orientativa desde la próxima parada estimada"
+    };
+    itineraryByVehicle.set(key, itinerary);
+    return itinerary;
+  }
+
   async function refreshNextStopData(workerBase) {
     if (!workerBase || nextStopQueryRunning) return;
     nextStopQueryRunning = true;
@@ -100,13 +254,20 @@
           stopName: stopName || ("Parada " + stopId),
           seconds: nonNegativeNumber(observation.seconds),
           meters: nonNegativeNumber(observation.meters),
-          destination: String(observation.destination ?? "").trim()
+          destination: String(observation.destination ?? "").trim(),
+          line: String(observation.line ?? "").trim(),
+          vehicleId: String(observation.vehicleId ?? "").trim(),
+          stopLat: observation.stopLat === null || observation.stopLat === undefined ? null : Number(observation.stopLat),
+          stopLon: observation.stopLon === null || observation.stopLon === undefined ? null : Number(observation.stopLon)
         };
         const current = next.get(key);
         if (isBetterStop(candidate, current)) next.set(key, candidate);
       }
 
       nextStopByVehicle = next;
+      itineraryByVehicle.clear();
+      // Carga de la secuencia GTFS en paralelo con la consulta en directo.
+      loadGtfsForItinerary();
       console.info("SAE Burgos: próxima parada localizada para", next.size, "combinaciones vehículo/línea;",
         "estimaciones recibidas:", payload.observations.length,
         "paradas consultadas:", payload.stopCount,
@@ -267,7 +428,8 @@
     return [
       vehicle.id, vehicle.line, vehicle.destination, vehicle.direction,
       vehicle.model, vehicle.registration, vehicle.nextStop, vehicle.nextStopName, vehicle.ruta, vehicle.route,
-      nextStopByVehicle.get(vehicleStopKey(vehicle.id, vehicle.line))?.stopName
+      nextStopByVehicle.get(vehicleStopKey(vehicle.id, vehicle.line))?.stopName,
+      ...(getVehicleItinerary(vehicle)?.stops || []).map(stop => stop.name)
     ];
   }
 
@@ -346,10 +508,17 @@
         const arrivalText = nextStop ? formatEstimatedArrival(nextStop.seconds) : "";
         const distanceText = nextStop && nextStop.meters !== null && nextStop.meters > 0
           ? Math.round(nextStop.meters) + " m" : "";
+        const itinerary = nextStop ? getVehicleItinerary(vehicle) : null;
+        const itineraryDetail = itinerary
+          ? '<details class="upcoming-stops"><summary>Ver itinerario (' + itinerary.stops.length + ' paradas)</summary><ol>' +
+            itinerary.stops.map((stop, index) => '<li' + (index === 0 ? ' class="upcoming-stop-next"' : '') + '>' +
+              escapeHTML(stop.name) + '</li>').join("") + '</ol><small>Recorrido de referencia del GTFS. La estimación en directo se muestra solo para la próxima parada.</small></details>'
+          : "";
         const nextStopDetail = nextStopTitle
           ? "<strong>Próxima parada:</strong><br>" + escapeHTML(nextStopTitle) +
             (arrivalText ? "<br><span>Llegada estimada: " + escapeHTML(arrivalText) + "</span>" : "") +
-            (distanceText ? "<br><span>Distancia estimada: " + escapeHTML(distanceText) + "</span>" : "")
+            (distanceText ? "<br><span>Distancia estimada: " + escapeHTML(distanceText) + "</span>" : "") +
+            itineraryDetail
           : "";
         const details = [
           vehicle.registration ? "<strong>Matrícula:</strong><br>" + escapeHTML(vehicle.registration) : "",
