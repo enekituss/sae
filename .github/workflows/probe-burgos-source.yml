@@ -86,7 +86,6 @@ jobs:
                       positions.append(i)
                       start = i + len(term)
                   for i in positions:
-                      excerpt = re.sub(r"\\s+", " ", text[max(0, i-180):i+360])
-                      excerpt = re.sub(r'new Pusher\\([^,]+', 'new Pusher("[PUBLIC_KEY]"', excerpt)
+                      excerpt = text[max(0, i-180):i+360].replace("\n", " ")
                       print("SNIPPET", term, ":", excerpt[:520])
           PY
