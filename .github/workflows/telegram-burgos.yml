@@ -2,7 +2,7 @@ name: Alertas Telegram · Autobuses de Burgos
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/2 * * * *"
   workflow_dispatch:
   push:
     paths:
@@ -32,7 +32,7 @@ jobs:
         env:
           BURGOS_TELEGRAM_BOT_TOKEN: ${{ secrets.BURGOS_TELEGRAM_BOT_TOKEN }}
           BURGOS_TELEGRAM_CHAT_ID: ${{ secrets.BURGOS_TELEGRAM_CHAT_ID }}
-          BURGOS_WORKER_URL: https://burgos-sae-spotter.ecanteroalvarez.workers.dev
+          BURGOS_WORKER_URL: https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev
         shell: bash
         run: |
           python - <<'PY'
