@@ -10,6 +10,7 @@ const BURGOS_VEHICLES_SOURCE = "https://www.aytoburgos.es/web/movilidad/rutas-en
 const BURGOS_LINES = [...Array.from({ length: 23 }, (_, i) => String(i + 1).padStart(2, "0")), "73", "87", "88", "89", "C1", "C2"];
 const ALLOWED_ORIGIN = "https://enekituss.github.io";
 const ISAENEXT_PORTLET = "as_asac_isaenext_IsaenextWebPortlet";
+const TELEGRAM_WEBHOOK_BASE_URL = "https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev";
 
 async function githubRequest(path, env, options = {}) {
   const token = (env.GITHUB_TOKEN || "").trim();
@@ -742,35 +743,47 @@ async function processTelegramWebhook(request, env, city) {
   }
 }
 
+async function ensureTelegramWebhooks(env, origin = TELEGRAM_WEBHOOK_BASE_URL) {
+  const secret = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
+  const missing = [
+    ["TELEGRAM_BIZKAIBUS_BOT_TOKEN", env.TELEGRAM_BIZKAIBUS_BOT_TOKEN],
+    ["TELEGRAM_BURGOS_BOT_TOKEN", env.TELEGRAM_BURGOS_BOT_TOKEN],
+    ["TELEGRAM_WEBHOOK_SECRET", secret],
+    ["GITHUB_TOKEN", env.GITHUB_TOKEN]
+  ].filter(([name, value]) => !String(value || "").trim()).map(([name]) => name);
+  if (missing.length) {
+    throw new Error("Faltan secretos del Worker: " + missing.join(", "));
+  }
+
+  const configured = [];
+  for (const city of ["bizkaibus", "burgos"]) {
+    const token = String(env[TELEGRAM_BOTS[city].tokenEnv]).trim();
+    const expectedUrl = origin + "/telegram/" + city;
+    const info = await callTelegramApi(token, "getWebhookInfo", {});
+    if (String(info?.url || "") === expectedUrl) {
+      configured.push({ bot: city, configured: true, alreadyConfigured: true });
+      continue;
+    }
+    const result = await callTelegramApi(token, "setWebhook", {
+      url: expectedUrl,
+      secret_token: secret,
+      max_connections: 1,
+      allowed_updates: ["message"],
+      drop_pending_updates: false
+    });
+    configured.push({ bot: city, configured: Boolean(result), alreadyConfigured: false });
+  }
+  return configured;
+}
+
 async function setupTelegramWebhooks(request, env) {
   const secret = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
   const authorization = String(request.headers.get("Authorization") || "").trim();
   if (!secret || authorization !== "Bearer " + secret) {
     return jsonResponse(request, { ok: false, error: "No autorizado." }, 401);
   }
-  const missing = [
-    ["TELEGRAM_BIZKAIBUS_BOT_TOKEN", env.TELEGRAM_BIZKAIBUS_BOT_TOKEN],
-    ["TELEGRAM_BURGOS_BOT_TOKEN", env.TELEGRAM_BURGOS_BOT_TOKEN],
-    ["GITHUB_TOKEN", env.GITHUB_TOKEN]
-  ].filter(([name, value]) => !String(value || "").trim()).map(([name]) => name);
-  if (missing.length) {
-    return jsonResponse(request, { ok: false, error: "Faltan secretos del Worker: " + missing.join(", ") }, 400);
-  }
-
-  const origin = new URL(request.url).origin;
-  const configured = [];
   try {
-    for (const city of ["bizkaibus", "burgos"]) {
-      const token = String(env[TELEGRAM_BOTS[city].tokenEnv]).trim();
-      const result = await callTelegramApi(token, "setWebhook", {
-        url: origin + "/telegram/" + city,
-        secret_token: secret,
-        max_connections: 1,
-        allowed_updates: ["message"],
-        drop_pending_updates: false
-      });
-      configured.push({ bot: city, configured: Boolean(result) });
-    }
+    const configured = await ensureTelegramWebhooks(env, new URL(request.url).origin);
     return jsonResponse(request, {
       ok: true,
       webhooks: configured,
@@ -784,6 +797,15 @@ async function setupTelegramWebhooks(request, env) {
 
 export default {
   async scheduled(controller, env, ctx) {
+    try {
+      const webhooks = await ensureTelegramWebhooks(env);
+      const newlyConfigured = webhooks.filter(item => !item.alreadyConfigured);
+      if (newlyConfigured.length) {
+        console.log("Webhooks de Telegram configurados automáticamente: " + newlyConfigured.map(item => item.bot).join(", "));
+      }
+    } catch (error) {
+      console.error("No se pudieron verificar/registrar automáticamente los webhooks de Telegram:", error?.message || String(error));
+    }
     await dispatchUpdates(env);
   },
 
