@@ -6,7 +6,8 @@ const WORKFLOWS = [
 const BRANCH = "main";
 const GITHUB_API = "https://api.github.com";
 const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
-const BURGOS_VEHICLES_SOURCE = "https://www.aytoburgos.es/web/movilidad/rutas-en-directo";
+const BURGOS_VEHICLES_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
+const BURGOS_VEHICLES_LEGACY_SOURCE = "https://www.aytoburgos.es/web/movilidad/rutas-en-directo";
 const BURGOS_LINES = [...Array.from({ length: 23 }, (_, i) => String(i + 1).padStart(2, "0")), "73", "87", "88", "89", "C1", "C2"];
 const ALLOWED_ORIGIN = "https://enekituss.github.io";
 const ISAENEXT_PORTLET = "as_asac_isaenext_IsaenextWebPortlet";
@@ -270,9 +271,9 @@ async function fetchIsaenextJson(url) {
 }
 
 
-function isaenextVehiclesUrl(line) {
+function isaenextVehiclesUrl(line, source = BURGOS_VEHICLES_SOURCE) {
   const timestamp = Date.now();
-  const url = new URL(BURGOS_VEHICLES_SOURCE);
+  const url = new URL(source);
   url.searchParams.set("p_p_id", ISAENEXT_PORTLET);
   url.searchParams.set("p_p_lifecycle", "2");
   url.searchParams.set("p_p_state", "normal");
@@ -287,34 +288,50 @@ function isaenextVehiclesUrl(line) {
 }
 
 async function fetchBurgosVehicles(line) {
-  const url = isaenextVehiclesUrl(line);
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "Accept": "application/json, text/plain, */*",
-      "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter/1.0)",
-      "Referer": BURGOS_VEHICLES_SOURCE
-    },
-    signal: AbortSignal.timeout(12000)
-  });
-  const body = await response.text();
-  if (!response.ok) {
-    throw new Error("resourceVehicles de línea " + line + " respondió HTTP " + response.status);
+  const sources = [BURGOS_VEHICLES_SOURCE, BURGOS_VEHICLES_LEGACY_SOURCE];
+  const errors = [];
+
+  // Prioriza la dirección actual de Movilidad y conserva la antigua como respaldo.
+  for (const source of sources) {
+    try {
+      const url = isaenextVehiclesUrl(line, source);
+      const response = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+          "Accept": "application/json, text/plain, */*",
+          "User-Agent": "Mozilla/5.0 (compatible; SAE-Spotter/1.0)",
+          "Referer": source
+        },
+        signal: AbortSignal.timeout(12000)
+      });
+      const body = await response.text();
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+
+      let payload;
+      try {
+        payload = JSON.parse(body);
+      } catch {
+        throw new Error("respuesta no es JSON reconocible");
+      }
+      if (!Array.isArray(payload)) {
+        throw new Error("la respuesta no es una lista");
+      }
+
+      return payload.map(vehicle => ({
+        ...vehicle,
+        id: String(vehicle?.id ?? vehicle?.vehicleId ?? vehicle?.vehicle_id ?? "").trim(),
+        lineId: line
+      })).filter(vehicle => vehicle.id);
+    } catch (error) {
+      let host = source;
+      try { host = new URL(source).hostname; } catch {}
+      errors.push(host + ": " + (error?.message || String(error)));
+    }
   }
-  let payload;
-  try {
-    payload = JSON.parse(body);
-  } catch {
-    throw new Error("resourceVehicles de línea " + line + " no devolvió JSON reconocible.");
-  }
-  if (!Array.isArray(payload)) {
-    throw new Error("resourceVehicles de línea " + line + " no devolvió una lista.");
-  }
-  return payload.map(vehicle => ({
-    ...vehicle,
-    id: String(vehicle?.id ?? vehicle?.vehicleId ?? vehicle?.vehicle_id ?? "").trim(),
-    lineId: line
-  })).filter(vehicle => vehicle.id);
+
+  throw new Error("resourceVehicles de línea " + line + " falló en ambas direcciones. " + errors.join(" | "));
 }
 
 async function fetchBurgosVehiclesSnapshot() {
