@@ -27404,39 +27404,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:76ad9ba2b585b4c3b3f75612": {
-      "destination": "ARRESPALDITZA",
-      "detectedAt": "2026-10-18T17:05+02:00",
-      "direction": "",
-      "eventId": "missing:76ad9ba2b585b4c3b3f75612",
-      "firstMissingAt": "2026-10-18T17:01:02+02:00",
-      "lastSeenAt": "2026-10-18T16:57:23+02:00",
-      "line": "A3341",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-18T17:05:01+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "5039"
-    },
-    "route_after_gap:b30ddc5cf8840ef07d30c973": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "LA ARBOLEDA"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-18T17:05+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:b30ddc5cf8840ef07d30c973",
-      "line": "A3333",
-      "queuedAt": "2026-10-18T17:05:01+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7856"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2099": {
@@ -27626,7 +27594,7 @@
       "requiredMissing": 2
     },
     "5039": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:76ad9ba2b585b4c3b3f75612",
       "firstMissingAt": "2026-10-18T17:01:02+02:00",
@@ -27637,7 +27605,7 @@
         "line": "A3341"
       },
       "lastSeenAt": "2026-10-18T16:57:23+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7878": {
