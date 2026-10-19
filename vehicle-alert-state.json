@@ -9616,54 +9616,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:40de9c399e0b118037c08107": {
-      "destination": "GERNIKA LUMO",
-      "detectedAt": "2026-10-19T06:03+02:00",
-      "direction": "",
-      "eventId": "entered:40de9c399e0b118037c08107",
-      "firstObservedAt": "2026-10-19T06:01:06+02:00",
-      "line": "A3532",
-      "queuedAt": "2026-10-19T06:03:06+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "8681"
-    },
-    "entered:664d066d410e1f72f0d56292": {
-      "destination": "GALDAMES",
-      "detectedAt": "2026-10-19T06:03+02:00",
-      "direction": "",
-      "eventId": "entered:664d066d410e1f72f0d56292",
-      "firstObservedAt": "2026-10-19T06:01:06+02:00",
-      "line": "A3323",
-      "queuedAt": "2026-10-19T06:03:06+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "5026"
-    },
-    "entered:82944eab90ae1efe47485599": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T06:03+02:00",
-      "direction": "",
-      "eventId": "entered:82944eab90ae1efe47485599",
-      "firstObservedAt": "2026-10-19T06:01:06+02:00",
-      "line": "A3115",
-      "queuedAt": "2026-10-19T06:03:06+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "7840"
-    },
-    "missing:29feda99b90e310c43dd6bdf": {
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-19T06:03+02:00",
-      "direction": "",
-      "eventId": "missing:29feda99b90e310c43dd6bdf",
-      "firstMissingAt": "2026-10-19T05:59:05+02:00",
-      "lastSeenAt": "2026-10-19T05:55:49+02:00",
-      "line": "A3932",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T06:03:06+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3314"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "8641": {
       "consecutiveChecks": 1,
@@ -9706,7 +9659,7 @@
       "requiredMissing": 2
     },
     "3314": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:29feda99b90e310c43dd6bdf",
       "firstMissingAt": "2026-10-19T05:59:05+02:00",
@@ -9717,7 +9670,7 @@
         "line": "A3932"
       },
       "lastSeenAt": "2026-10-19T05:55:49+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3377": {
