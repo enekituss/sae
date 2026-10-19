@@ -1523,21 +1523,22 @@ jobs:
               print("AVISO: no se pudo leer la rama telegram-data; se conservarán las preferencias de respaldo: " + str(exc))
           primary_chat_id = str(chat_info.get("id") or chat_id)
           if primary_chat_id not in subscriptions:
-              subscriptions[primary_chat_id] = {"mode": "all", "vehicleId": "", "vehicleIds": [], "awaitingVehicleId": False}
+              subscriptions[primary_chat_id] = {"mode": "all", "vehicleId": "", "vehicleIds": [], "awaitingVehicleId": False, "awaitingVehicleAction": ""}
               state_dirty = True
 
           def settings_keyboard(subscription):
-              # Reply keyboard: GitHub Actions procesa los mensajes en ciclos, no en un proceso permanente.
-              labels = [
-                  "🔔 Todos los avisos",
-                  "⚠️ Solo fuera de servicio",
-                  "🔄 Solo cambios de línea",
-                  "🟢 Nueva entrada (reaparición)",
-                  "🚌 Seguir coche(s) por ID",
-                  "⏸️ Pausar avisos",
+              # Menú de respaldo; el Worker atiende normalmente las preferencias en tiempo real.
+              rows = [
+                  ["🔔 Todos los avisos"],
+                  ["⚠️ Solo fuera de servicio"],
+                  ["🔄 Solo cambios de línea"],
+                  ["🟢 Nueva entrada (reaparición)"],
+                  ["📋 Ver coches seguidos", "➕ Añadir coche(s) por ID"],
+                  ["➖ Quitar coche(s) por ID"],
+                  ["⏸️ Pausar avisos", "❎ Cerrar menú"],
               ]
               return {
-                  "keyboard": [[{"text": label}] for label in labels],
+                  "keyboard": [[{"text": label} for label in row] for row in rows],
                   "resize_keyboard": True,
                   "is_persistent": True,
                   "one_time_keyboard": False,
@@ -1589,8 +1590,10 @@ jobs:
               if notice:
                   text += notice + "\n\n"
               text += "Configuración actual: " + subscription_description(subscription) + "\n\nSelecciona qué avisos quieres recibir:"
-              if str(subscription.get("mode") or "all") == "vehicle":
-                  text += "\n\nPuedes escribir uno o varios ID separados por espacios o comas. Repite «Seguir coche(s) por ID» para añadir más."
+              ids = tracked_vehicle_ids(subscription)
+              text += "\n\nCoches seguidos por ID (" + str(len(ids)) + "): " + (", ".join(ids[:20]) if ids else "ninguno") + ((" y " + str(len(ids)-20) + " más") if len(ids) > 20 else "") + "."
+              text += "\n\nComandos: /avisos o /menu abre las opciones; /coches muestra los IDs; /coche 123 añade y /quitar 123 elimina."
+              text += "\nPulsa «❎ Cerrar menú» para ocultar los botones."
               if str(subscription.get("mode") or "all") == "off":
                   text += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro."
               text += "\n\n«Nueva entrada» avisa cuando un coche desaparecido vuelve a aparecer en el feed."
@@ -1628,7 +1631,7 @@ jobs:
                   incoming_chat_type = str(incoming_chat.get("type") or "")
                   if incoming_chat_id and incoming_chat_type == "private":
                       if incoming_chat_id not in subscriptions or not isinstance(subscriptions.get(incoming_chat_id), dict):
-                          subscriptions[incoming_chat_id] = {"mode": "all", "vehicleId": "", "awaitingVehicleId": False}
+                          subscriptions[incoming_chat_id] = {"mode": "all", "vehicleId": "", "vehicleIds": [], "awaitingVehicleId": False, "awaitingVehicleAction": ""}
                           state_dirty = True
                       subscription = subscriptions[incoming_chat_id]
 
@@ -1676,31 +1679,76 @@ jobs:
                           if raw_text:
                               command = raw_text.split()[0].split("@")[0].lower()
 
-                              if command in ("/start", "/help", "/menu", "/menú", "menu", "menú", "/config", "/misavisos", "/estado"):
-                                  show_settings(incoming_chat_id, "Bot conectado. Tus preferencias son independientes de las de los demás usuarios.")
+                              if command in ("/start", "/help", "/menu", "/menú", "/avisos", "/opciones", "menu", "menú", "/config", "/misavisos", "/estado"):
+                                  subscription["awaitingVehicleId"] = False
+                                  subscription["awaitingVehicleAction"] = ""
+                                  subscription.pop("modeBeforeVehicleEdit", None)
+                                  state_dirty = True
+                                  show_settings(incoming_chat_id, "Bot conectado. Para volver a abrir este menú, escribe /avisos.")
+                              elif command in ("/coches", "/miscoches") or raw_text in ("📋 Ver coches seguidos", "Ver coches seguidos"):
+                                  if subscription.get("modeBeforeVehicleEdit"):
+                                      subscription["mode"] = subscription.pop("modeBeforeVehicleEdit")
+                                  subscription["awaitingVehicleId"] = False
+                                  subscription["awaitingVehicleAction"] = ""
+                                  ids = tracked_vehicle_ids(subscription)
+                                  list_text = "📋 Coches seguidos por ID (" + str(len(ids)) + "):\n" + (", ".join(ids) if ids else "No sigues ningún coche todavía.")
+                                  list_text += "\n\nAñadir: pulsa «➕ Añadir coche(s) por ID» o escribe /coche 123.\nEliminar: pulsa «➖ Quitar coche(s) por ID» o escribe /quitar 123.\nVolver al menú: /avisos."
+                                  state_dirty = True
+                                  telegram_api("sendMessage", {"chat_id": incoming_chat_id, "text": list_text, "reply_markup": settings_keyboard(subscription)})
+                              elif raw_text in ("❎ Cerrar menú", "Cerrar menú", "Ocultar menú"):
+                                  if subscription.get("modeBeforeVehicleEdit"):
+                                      subscription["mode"] = subscription.pop("modeBeforeVehicleEdit")
+                                  subscription["awaitingVehicleId"] = False
+                                  subscription["awaitingVehicleAction"] = ""
+                                  state_dirty = True
+                                  telegram_api("sendMessage", {"chat_id": incoming_chat_id, "text": "✅ Menú ocultado. Escribe /avisos o /menu para volver a mostrar las opciones.", "reply_markup": {"remove_keyboard": True}})
+                              elif raw_text in ("➕ Añadir coche(s) por ID", "Añadir coche(s) por ID", "🚌 Seguir coche(s) por ID", "🚌 Seguir un coche por ID", "Seguir un coche por ID"):
+                                  if not subscription.get("awaitingVehicleId"):
+                                      subscription["modeBeforeVehicleEdit"] = subscription.get("mode", "all")
+                                  subscription.update({"mode": "vehicle", "awaitingVehicleId": True, "awaitingVehicleAction": "add"})
+                                  state_dirty = True
+                                  ids = tracked_vehicle_ids(subscription)
+                                  telegram_api("sendMessage", {"chat_id": incoming_chat_id, "text": "➕ Escribe los IDs que quieres añadir, separados por espacios o comas. Ya guardados: " + (", ".join(ids) if ids else "ninguno") + ".\nPuedes cancelar con /cancelar.", "reply_markup": settings_keyboard(subscription)})
+                              elif raw_text in ("➖ Quitar coche(s) por ID", "Quitar coche(s) por ID"):
+                                  if not subscription.get("awaitingVehicleId"):
+                                      subscription["modeBeforeVehicleEdit"] = subscription.get("mode", "all")
+                                  subscription.update({"mode": "vehicle", "awaitingVehicleId": True, "awaitingVehicleAction": "remove"})
+                                  state_dirty = True
+                                  ids = tracked_vehicle_ids(subscription)
+                                  telegram_api("sendMessage", {"chat_id": incoming_chat_id, "text": "➖ Escribe los IDs que quieres dejar de seguir, separados por espacios o comas. Ahora sigues: " + (", ".join(ids) if ids else "ningún coche") + ".\nPuedes cancelar con /cancelar.", "reply_markup": settings_keyboard(subscription)})
                               elif command in ("/stop", "/pausar") or raw_text in ("⏸️ Pausar avisos", "Pausar avisos"):
                                   subscription["mode"] = "off"
                                   subscription["awaitingVehicleId"] = False
+                                  subscription["awaitingVehicleAction"] = ""
+                                  subscription.pop("modeBeforeVehicleEdit", None)
                                   state_dirty = True
                                   show_settings(incoming_chat_id, "⏸️ Avisos pausados. No se enviarán más alertas hasta que los reactives.")
                               elif raw_text in ("🔔 Todos los avisos", "Todos los avisos"):
                                   subscription["mode"] = "all"
                                   subscription["awaitingVehicleId"] = False
+                                  subscription["awaitingVehicleAction"] = ""
+                                  subscription.pop("modeBeforeVehicleEdit", None)
                                   state_dirty = True
                                   show_settings(incoming_chat_id, "✅ Seleccionado: recibirás todos los avisos.")
                               elif raw_text in ("⚠️ Solo fuera de servicio", "⚠️ Solo fuera de servicio (sin posición reciente)", "⚠️ Solo sin posición reciente", "Solo sin posición reciente"):
                                   subscription["mode"] = "missing"
                                   subscription["awaitingVehicleId"] = False
+                                  subscription["awaitingVehicleAction"] = ""
+                                  subscription.pop("modeBeforeVehicleEdit", None)
                                   state_dirty = True
                                   show_settings(incoming_chat_id, "✅ Seleccionado: solo recibirás salidas de servicio confirmadas.")
                               elif raw_text in ("🔄 Solo cambios de línea", "Solo cambios de línea"):
                                   subscription["mode"] = "line"
                                   subscription["awaitingVehicleId"] = False
+                                  subscription["awaitingVehicleAction"] = ""
+                                  subscription.pop("modeBeforeVehicleEdit", None)
                                   state_dirty = True
                                   show_settings(incoming_chat_id, "✅ Seleccionado: recibirás solo cambios de línea de vehículos que siguen activos.")
                               elif raw_text in ("🟢 Nueva entrada (reaparición)", "🟢 Nueva entrada", "Nueva entrada"):
                                   subscription["mode"] = "entry"
                                   subscription["awaitingVehicleId"] = False
+                                  subscription["awaitingVehicleAction"] = ""
+                                  subscription.pop("modeBeforeVehicleEdit", None)
                                   state_dirty = True
                                   show_settings(incoming_chat_id, "✅ Seleccionado: recibirás solo reapariciones de coches que habían desaparecido.")
                               elif raw_text in ("🚌 Seguir coche(s) por ID", "🚌 Seguir un coche por ID", "Seguir un coche por ID"):
@@ -1713,11 +1761,34 @@ jobs:
                                       "reply_markup": settings_keyboard(subscription),
                                   })
                               elif command in ("/cancel", "/cancelar"):
-                                  subscription["awaitingVehicleId"] = False
-                                  if not str(subscription.get("vehicleId") or "").strip():
+                                  if subscription.get("modeBeforeVehicleEdit"):
+                                      subscription["mode"] = subscription.pop("modeBeforeVehicleEdit")
+                                  elif not tracked_vehicle_ids(subscription) and subscription.get("mode") == "vehicle":
                                       subscription["mode"] = "all"
+                                  subscription["awaitingVehicleId"] = False
+                                  subscription["awaitingVehicleAction"] = ""
                                   state_dirty = True
                                   show_settings(incoming_chat_id, "Operación cancelada.")
+                              elif command in ("/quitar", "/eliminar", "/borrar"):
+                                  parts = raw_text.split(maxsplit=1)
+                                  candidates = parts[1].replace(",", " ").replace(";", " ").split() if len(parts) > 1 else []
+                                  requested = [value for value in candidates if value.isdigit() and len(value) <= 12]
+                                  if requested:
+                                      ids = tracked_vehicle_ids(subscription)
+                                      removed = [value for value in requested if value in ids]
+                                      remaining = [value for value in ids if value not in requested]
+                                      save_tracked_vehicle_ids(subscription, remaining)
+                                      subscription.update({"mode": "vehicle", "awaitingVehicleId": False, "awaitingVehicleAction": ""})
+                                      subscription.pop("modeBeforeVehicleEdit", None)
+                                      state_dirty = True
+                                      notice = "🗑️ Eliminado(s): " + (", ".join(removed) if removed else "ninguno") + ".\nCoches seguidos: " + (", ".join(remaining) if remaining else "ninguno") + "."
+                                      show_settings(incoming_chat_id, notice)
+                                  else:
+                                      if not subscription.get("awaitingVehicleId"):
+                                          subscription["modeBeforeVehicleEdit"] = subscription.get("mode", "all")
+                                      subscription.update({"mode": "vehicle", "awaitingVehicleId": True, "awaitingVehicleAction": "remove"})
+                                      state_dirty = True
+                                      telegram_api("sendMessage", {"chat_id": incoming_chat_id, "text": "Escribe los IDs que quieres quitar, separados por espacios o comas. Puedes cancelar con /cancelar.", "reply_markup": settings_keyboard(subscription)})
                               elif command in ("/id", "/coche"):
                                   parts = raw_text.split(maxsplit=1)
                                   candidates = parts[1].replace(",", " ").replace(";", " ").split() if len(parts) > 1 else []
@@ -1732,12 +1803,18 @@ jobs:
                                       save_tracked_vehicle_ids(subscription, ids)
                                       subscription["mode"] = "vehicle"
                                       subscription["awaitingVehicleId"] = False
+                                      subscription["awaitingVehicleAction"] = ""
+                                      subscription.pop("modeBeforeVehicleEdit", None)
                                       state_dirty = True
                                       notice = "✅ Añadido(s) al seguimiento: " + ", ".join(added) + "." if added else "✅ Esos coches ya estaban en tu lista."
+                                      notice += "\nCoches seguidos: " + (", ".join(ids) if ids else "ninguno") + "."
                                       show_settings(incoming_chat_id, notice)
                                   else:
+                                      if not subscription.get("awaitingVehicleId"):
+                                          subscription["modeBeforeVehicleEdit"] = subscription.get("mode", "all")
                                       subscription["mode"] = "vehicle"
                                       subscription["awaitingVehicleId"] = True
+                                      subscription["awaitingVehicleAction"] = "add"
                                       state_dirty = True
                                       telegram_api("sendMessage", {
                                           "chat_id": incoming_chat_id,
@@ -1748,23 +1825,38 @@ jobs:
                                   candidates = raw_text.replace(",", " ").replace(";", " ").split()
                                   valid_ids = [value for value in candidates if value.isdigit() and len(value) <= 12]
                                   if valid_ids:
+                                      action = str(subscription.get("awaitingVehicleAction") or "add")
                                       ids = tracked_vehicle_ids(subscription)
-                                      added = []
-                                      for candidate in valid_ids:
-                                          if candidate not in ids:
-                                              ids.append(candidate)
-                                              added.append(candidate)
-                                      save_tracked_vehicle_ids(subscription, ids)
+                                      if action == "remove":
+                                          removed = [value for value in valid_ids if value in ids]
+                                          not_found = [value for value in valid_ids if value not in ids]
+                                          remaining = [value for value in ids if value not in valid_ids]
+                                          save_tracked_vehicle_ids(subscription, remaining)
+                                          notice = "🗑️ Eliminado(s): " + (", ".join(removed) if removed else "ninguno") + "."
+                                          if not_found:
+                                              notice += "\nNo estaban en tu lista: " + ", ".join(not_found) + "."
+                                          notice += "\nCoches seguidos: " + (", ".join(remaining) if remaining else "ninguno") + "."
+                                      else:
+                                          added = []
+                                          for candidate in valid_ids:
+                                              if candidate not in ids:
+                                                  ids.append(candidate)
+                                                  added.append(candidate)
+                                          save_tracked_vehicle_ids(subscription, ids)
+                                          notice = "✅ Añadido(s): " + (", ".join(added) if added else "ninguno (ya estaban guardados)") + "."
+                                          notice += "\nCoches seguidos: " + (", ".join(ids) if ids else "ninguno") + "."
                                       subscription["mode"] = "vehicle"
                                       subscription["awaitingVehicleId"] = False
+                                      subscription["awaitingVehicleAction"] = ""
+                                      subscription.pop("modeBeforeVehicleEdit", None)
                                       state_dirty = True
-                                      notice = "✅ Añadido(s) al seguimiento: " + ", ".join(added) + "." if added else "✅ Esos coches ya estaban en tu lista."
-                                      notice += " Puedes añadir más con «Seguir coche(s) por ID»."
                                       show_settings(incoming_chat_id, notice)
                                   else:
+                                      label = "quitar" if subscription.get("awaitingVehicleAction") == "remove" else "añadir"
                                       telegram_api("sendMessage", {
                                           "chat_id": incoming_chat_id,
-                                          "text": "El ID debe ser numérico. Envía uno o varios ID separados por espacios o comas, o escribe /cancelar.",
+                                          "text": "El ID debe ser numérico. Envía uno o varios ID para " + label + ", separados por espacios o comas, o escribe /cancelar.",
+                                          "reply_markup": settings_keyboard(subscription),
                                       })
               except Exception as exc:
                   print("AVISO: no se pudo procesar una actualización de Telegram: " + str(exc))
