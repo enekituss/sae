@@ -1073,7 +1073,9 @@
     const enrichedVehicles = currentVehicles.map(vehicle => {
       const detail = detailById.get(String(vehicle.id));
       const observation = bestByVehicle.get(String(vehicle.id));
-      const destination = observation?.destination || detail?.destination || vehicle.destination || "";
+      const detailDestination = detail?.destination && detail.destination !== "Destino no publicado"
+        ? detail.destination : "";
+      const destination = observation?.destination || detailDestination || vehicle.destination || "";
       const destinationId = observation?.destinationId || detail?.destinationId || vehicle.destinationId || "";
       const direction = observation?.direction || detail?.direction || vehicle.direction || "";
       return normalizeVehicle({
@@ -1091,16 +1093,19 @@
 
     lineSnapshots.set(line, enrichedVehicles);
 
-    // Sustituye solo las próximas paradas de esta línea y conserva las demás.
-    const next = new Map([...nextStopByVehicle.entries()].filter(([, item]) =>
-      normalizeLineKey(item?.line) !== normalizeLineKey(line)
-    ));
-    for (const [id, observation] of bestByVehicle.entries()) {
-      if (!observation.stopId && !observation.stopName) continue;
-      next.set(vehicleStopKey(id, line), observation);
+    // Solo reemplaza la caché de próximas paradas cuando la consulta está completa.
+    // Si falla resourceRoutes/resourceEstimations, conserva la última estimación conocida.
+    if (!payload.partial) {
+      const next = new Map([...nextStopByVehicle.entries()].filter(([, item]) =>
+        normalizeLineKey(item?.line) !== normalizeLineKey(line)
+      ));
+      for (const [id, observation] of bestByVehicle.entries()) {
+        if (!observation.stopId && !observation.stopName) continue;
+        next.set(vehicleStopKey(id, line), observation);
+      }
+      nextStopByVehicle = next;
+      saveNextStopCache(payload.fetchedAt);
     }
-    nextStopByVehicle = next;
-    saveNextStopCache(payload.fetchedAt);
     itineraryByVehicle.clear();
     render();
   }
