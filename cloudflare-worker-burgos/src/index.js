@@ -1,12 +1,12 @@
-// La ruta ISAENEXT facilitada para el visor de Burgos usa /web/movilidad/rutas-en-directo/-/isaenext/filter/XX.
-// Las consultas JSON del portlet se hacen en la base de esa ruta, añadiendo resourceVehicles/resourceRoutes/resourceEstimations.
-const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo";
+// La fuente ISAENEXT confirmada por los enlaces del usuario usa /rutas-en-directo.
+// Se prioriza exactamente esa ruta para resourceVehicles/resourceRoutes/resourceEstimations.
+const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
 const BURGOS_SOURCE_FALLBACKS = [
   BURGOS_SOURCE,
+  "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
   "https://www.aytoburgos.es/web/movilidad/rutas-en-directo",
   "https://movilidad.aytoburgos.es/es/rutas-en-directo",
-  "https://movilidad.aytoburgos.es/rutas-en-directo/-/isaenext/filter/23",
-  "https://movilidad.aytoburgos.es/rutas-en-directo"
+  "https://www.aytoburgos.es/rutas-en-directo"
 ];
 const PORTLET_ID = "as_asac_isaenext_IsaenextWebPortlet";
 const PORTLET_PREFIX = "_as_asac_isaenext_IsaenextWebPortlet_";
@@ -141,7 +141,8 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
         headers: {
           "Accept": "application/json, text/plain, */*",
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
-          "Referer": BURGOS_SOURCE
+          "Referer": BURGOS_SOURCE,
+          "X-Requested-With": "XMLHttpRequest"
         },
         signal: AbortSignal.timeout(timeoutMs)
       });
@@ -151,9 +152,18 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
         continue;
       }
       try {
-        return { data: JSON.parse(body), source: base };
-      } catch {
-        errors.push(new URL(base).host + " no devolvió JSON válido");
+        const payload = JSON.parse(body);
+        const serverError = payload && typeof payload === "object" && !Array.isArray(payload)
+          ? String(payload.error ?? payload.message ?? "").trim()
+          : "";
+        if (serverError && (payload.ok === false || /acceso denegado|bot detectado|falta token|unauthorized|forbidden/i.test(serverError))) {
+          errors.push(new URL(base).host + ": " + serverError);
+          continue;
+        }
+        return { data: payload, source: base };
+      } catch (error) {
+        if (error instanceof SyntaxError) errors.push(new URL(base).host + " no devolvió JSON válido");
+        else throw error;
       }
     } catch (error) {
       const message = error?.message || String(error);
@@ -815,7 +825,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.8-2026-10-19",
+        buildId: "burgos-live-v6.9-2026-10-19",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },
