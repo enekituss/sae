@@ -21,7 +21,7 @@ concurrency:
 jobs:
   monitor:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 8
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
@@ -197,8 +197,7 @@ jobs:
                   message += notice + "\n\n"
               message += "Configuración actual: " + mode_description(subscription) + "\n\nElige qué alertas quieres recibir con los botones del teclado."
               ids = tracked_vehicle_ids(subscription)
-              message += "\n\nCoches seguidos por ID (" + str(len(ids)) + "): " + (", ".join(ids[:20]) if ids else "ninguno") + ((" y " + str(len(ids)-20) + " más") if len(ids) > 20 else "") + "."
-              message += "\n\nComandos: /avisos o /menu abre las opciones; /coches muestra los IDs; /coche 123 añade y /quitar 123 elimina."
+              message += "\n\nCoches seguidos por ID (" + str(len(ids)) + "): " + (", ".join(ids[:20]) if ids else "ninguno") + ((" y " + str(len(ids)-20) + " más") if len(ids) > 20 else "") + "."              message += "\n\nComandos: /avisos o /menu abre las opciones; /coches muestra los IDs; /coche 123 añade y /quitar 123 elimina."
               message += "\nPulsa «❎ Cerrar menú» para ocultar los botones."
               if clean(subscription.get("mode")) == "off":
                   message += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro."
@@ -397,8 +396,7 @@ jobs:
                       elif raw_text in ("🔄 Solo cambios de línea", "Solo cambios de línea"):
                           subscription.update({"mode": "line", "awaitingVehicleId": False, "awaitingVehicleAction": ""})
                           dirty = True
-                          send_menu(incoming_chat_id, subscription, "✅ Seleccionado: solo recibirás cambios confirmados de línea de autobuses que siguen activos.")
-                      elif raw_text in ("🟢 Nueva entrada (reaparición)", "🟢 Nueva entrada", "Nueva entrada"):
+                          send_menu(incoming_chat_id, subscription, "✅ Seleccionado: solo recibirás cambios confirmados de línea de autobuses que siguen activos.")                      elif raw_text in ("🟢 Nueva entrada (reaparición)", "🟢 Nueva entrada", "Nueva entrada"):
                           subscription.update({"mode": "entry", "awaitingVehicleId": False, "awaitingVehicleAction": ""})
                           dirty = True
                           send_menu(incoming_chat_id, subscription, "✅ Seleccionado: recibirás avisos cuando un autobús desaparecido vuelva a aparecer en el feed.")
@@ -597,8 +595,7 @@ jobs:
                   vehicle.get("nombreParada") or vehicle.get("paradaNombre") or
                   vehicle.get("nodeName") or vehicle.get("nodoNombre")
               )
-              if isinstance(stop_value, dict):
-                  stop_name = stop_name or clean(
+              if isinstance(stop_value, dict):                  stop_name = stop_name or clean(
                       stop_value.get("name") or stop_value.get("stopName") or
                       stop_value.get("stop_name") or stop_value.get("nombre") or
                       stop_value.get("nombreParada")
@@ -751,11 +748,15 @@ jobs:
                       }
                   )
                   try:
-                      with urllib.request.urlopen(request, timeout=6) as response:
+                      with urllib.request.urlopen(request, timeout=5) as response:
                           payload = json.loads(response.read().decode("utf-8"))
                       return parse_line_payload(payload, host + " (directo)")
                   except urllib.error.HTTPError as exc:
                       failures.append(host + " HTTP " + str(exc.code))
+                      # Un error 5xx indica que el backend del mismo host está fallando.
+                      # Evita gastar otros timeouts consultando rutas equivalentes del mismo dominio.
+                      if exc.code >= 500:
+                          timed_out_hosts.add(host)
                   except Exception as exc:
                       detail = str(exc)
                       failures.append(host + ": " + detail[:150])
@@ -772,7 +773,7 @@ jobs:
                   ("CodeTabs", "https://api.codetabs.com/v1/proxy?quest=" + encoded_target)
               ]
               for proxy_name, proxy_url in proxies:
-                  for attempt in range(1, 3):
+                  for attempt in range(1, 2):
                       request = urllib.request.Request(
                           proxy_url,
                           headers={
@@ -782,7 +783,7 @@ jobs:
                           }
                       )
                       try:
-                          with urllib.request.urlopen(request, timeout=8) as response:
+                          with urllib.request.urlopen(request, timeout=5) as response:
                               body = response.read().decode("utf-8", errors="replace")
                           if body.startswith("URL_DECODED:"):
                               try:
@@ -797,8 +798,7 @@ jobs:
                           detail = str(exc)
                           failures.append(proxy_name + ": " + detail[:160] + ((" intento " + str(attempt)) if attempt == 1 else ""))
 
-              raise RuntimeError("sin acceso a resourceVehicles para línea " + line + ": " + " | ".join(failures[:9]))
-          def vehicle_fields_equal(a, b):
+              raise RuntimeError("sin acceso a resourceVehicles para línea " + line + ": " + " | ".join(failures[:9]))          def vehicle_fields_equal(a, b):
               return all(clean(a.get(field)) == clean(b.get(field)) for field in ("line", "destination", "direction"))
 
           def changed_fields(old, new):
@@ -858,7 +858,7 @@ jobs:
                           }
                       )
                       try:
-                          with urllib.request.urlopen(request, timeout=36) as response:
+                          with urllib.request.urlopen(request, timeout=18) as response:
                               payload = json.loads(response.read().decode("utf-8"))
                           if not isinstance(payload, dict) or payload.get("ok") is not True:
                               raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta no reconocible"))
@@ -997,8 +997,7 @@ jobs:
                   raw_baseline_lines = []
               baseline_lines = {clean(line) for line in raw_baseline_lines if clean(line) in burgos_lines}
 
-              source_changed = bool(state.get("monitorSource")) and state.get("monitorSource") != snapshot_source
-              if source_changed:
+              source_changed = bool(state.get("monitorSource")) and state.get("monitorSource") != snapshot_source              if source_changed:
                   confirmed = {}
                   pending_arrivals = {}
                   pending_missing = {}
@@ -1197,8 +1196,7 @@ jobs:
               # falla, el coche podría haberse movido a esa línea no consultada.
               if snapshot_complete:
                   for pending_vehicle_id in list(pending_arrivals):
-                      if pending_vehicle_id not in current:
-                          pending_arrivals.pop(pending_vehicle_id, None)
+                      if pending_vehicle_id not in current:                          pending_arrivals.pop(pending_vehicle_id, None)
                           dirty = True
 
               # Una desaparición en la red completa se confirma pronto (>=3 min y 2 lecturas).
@@ -1397,8 +1395,7 @@ jobs:
                               lines.append("Última línea antes de desaparecer: " + old_value)
                               lines.append("Nueva línea al reaparecer: " + new_value)
                           else:
-                              lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)
-                      lines.append("Destino actual: " + destination)
+                              lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)                      lines.append("Destino actual: " + destination)
                       lines.append("Sentido actual: " + direction)
                   lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))
               return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
@@ -1597,8 +1594,7 @@ jobs:
                           except (TypeError, ValueError):
                               pass
 
-                          # Une la cola de alertas y el progreso de entrega para evitar
-                          # perder una alerta o volver a enviar una ya entregada.
+                          # Une la cola de alertas y el progreso de entrega para evitar                          # perder una alerta o volver a enviar una ya entregada.
                           older_outbox = older_state.get("outbox", {})
                           newer_outbox = newest_state.get("outbox", {})
                           merged_outbox = {}
