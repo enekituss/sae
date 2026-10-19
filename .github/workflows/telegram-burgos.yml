@@ -215,6 +215,16 @@ jobs:
           subscriptions = state.get("telegramSubscriptions", {})
           if not isinstance(subscriptions, dict):
               subscriptions = {}
+          # Los destinatarios rechazados definitivamente por Telegram se apartan
+          # para que no bloqueen ni retrasen los avisos de los chats válidos.
+          disabled_chats = {
+              clean(chat_id) for chat_id in state.get("disabledTelegramChats", [])
+              if clean(chat_id)
+          }
+          invalid_chat_notices = {
+              clean(chat_id) for chat_id in state.get("invalidChatNoticesSent", [])
+              if clean(chat_id)
+          }
           try:
               pref_paths = subprocess.run(
                   ["git", "ls-tree", "-r", "--name-only", "refs/remotes/origin/telegram-data", "telegram-preferences/burgos"],
@@ -249,7 +259,7 @@ jobs:
               print("ERROR de configuración de Telegram para Burgos: " + str(exc))
               sys.exit(1)
 
-          if primary_chat_id not in subscriptions:
+          if primary_chat_id not in subscriptions and primary_chat_id not in disabled_chats:
               subscriptions[primary_chat_id] = {"mode": "all", "vehicleId": "", "vehicleIds": [], "awaitingVehicleId": False}
               dirty = True
 
@@ -283,6 +293,12 @@ jobs:
               chat_type = clean(chat.get("type"))
               raw_text = (message.get("text") or "").strip()
               if incoming_chat_id and raw_text and chat_type == "private":
+                  # Un mensaje nuevo desde un chat privado permite reactivar
+                  # un destinatario que se hubiese apartado por un error anterior.
+                  if incoming_chat_id in disabled_chats:
+                      disabled_chats.discard(incoming_chat_id)
+                      invalid_chat_notices.discard(incoming_chat_id)
+                      dirty = True
                   if incoming_chat_id not in subscriptions or not isinstance(subscriptions.get(incoming_chat_id), dict):
                       subscriptions[incoming_chat_id] = {"mode": "all", "vehicleId": "", "awaitingVehicleId": False}
                       dirty = True
@@ -517,43 +533,57 @@ jobs:
           # resourceRoutes ni resourceEstimations respondan para listar un coche.
           try:
               def fetch_worker_line(line):
-                  # Sin fresh=1: se permite reutilizar una respuesta reciente de la caché del Worker.
-                  url = worker_base + "/api/burgos/vehicles?" + urllib.parse.urlencode({
-                      "line": line
-                  })
-                  request = urllib.request.Request(
-                      url,
-                      headers={
-                          "Accept": "application/json",
-                          "User-Agent": "SAE-Spotter-Burgos-Telegram/1.0"
-                      }
-                  )
-                  with urllib.request.urlopen(request, timeout=55) as response:
-                      payload = json.loads(response.read().decode("utf-8"))
-                  if not isinstance(payload, dict) or payload.get("ok") is not True:
-                      raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta no reconocible"))
-                  if payload.get("stale"):
-                      raise RuntimeError("el Worker solo pudo ofrecer una copia antigua; no se usa para detectar cambios")
-                  rows = payload.get("vehicles")
-                  if not isinstance(rows, list):
-                      raise RuntimeError("el Worker no devolvió una lista de autobuses")
-                  if payload.get("partial"):
-                      raise RuntimeError("la respuesta de la línea fue parcial")
-                  source_type = clean(payload.get("sourceType"))
-                  if "resourceVehicles" not in source_type:
-                      raise RuntimeError("la respuesta no confirma resourceVehicles")
-                  line_current = {}
-                  for raw_vehicle in rows:
-                      if not isinstance(raw_vehicle, dict):
-                          continue
-                      vehicle = normalise_vehicle(raw_vehicle)
-                      if not vehicle:
-                          continue
-                      vehicle["line"] = clean(vehicle.get("line")) or line
-                      if vehicle["line"] != line:
-                          vehicle["line"] = line
-                      line_current[vehicle["id"]] = vehicle
-                  return line, line_current
+                  # Los 502 del portal municipal pueden ser transitorios. Reintenta
+                  # tres veces y fuerza una consulta nueva en los intentos posteriores;
+                  # una copia antigua nunca se acepta para confirmar una baja.
+                  last_error = None
+                  for attempt in range(3):
+                      query = {"line": line}
+                      if attempt > 0:
+                          query["fresh"] = "1"
+                      url = worker_base + "/api/burgos/vehicles?" + urllib.parse.urlencode(query)
+                      request = urllib.request.Request(
+                          url,
+                          headers={
+                              "Accept": "application/json",
+                              "User-Agent": "SAE-Spotter-Burgos-Telegram/1.1",
+                              "Cache-Control": "no-cache"
+                          }
+                      )
+                      try:
+                          with urllib.request.urlopen(request, timeout=30) as response:
+                              payload = json.loads(response.read().decode("utf-8"))
+                          if not isinstance(payload, dict) or payload.get("ok") is not True:
+                              raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta no reconocible"))
+                          if payload.get("stale"):
+                              raise RuntimeError("el Worker solo pudo ofrecer una copia antigua; no se usa para detectar cambios")
+                          rows = payload.get("vehicles")
+                          if not isinstance(rows, list):
+                              raise RuntimeError("el Worker no devolvió una lista de autobuses")
+                          if payload.get("partial"):
+                              raise RuntimeError("la respuesta de la línea fue parcial")
+                          source_type = clean(payload.get("sourceType"))
+                          if "resourceVehicles" not in source_type:
+                              raise RuntimeError("la respuesta no confirma resourceVehicles")
+                          line_current = {}
+                          for raw_vehicle in rows:
+                              if not isinstance(raw_vehicle, dict):
+                                  continue
+                              vehicle = normalise_vehicle(raw_vehicle)
+                              if not vehicle:
+                                  continue
+                              vehicle["line"] = clean(vehicle.get("line")) or line
+                              if vehicle["line"] != line:
+                                  vehicle["line"] = line
+                              line_current[vehicle["id"]] = vehicle
+                          return line, line_current
+                      except Exception as exc:
+                          last_error = exc
+                          if attempt < 2:
+                              wait_seconds = 1.5 * (2 ** attempt)
+                              print("Reintento " + str(attempt + 1) + "/2 para la línea " + line + " tras un error: " + str(exc))
+                              time.sleep(wait_seconds)
+                  raise RuntimeError("fallo tras 3 intentos: " + str(last_error))
 
               with ThreadPoolExecutor(max_workers=3) as executor:
                   futures = {executor.submit(fetch_worker_line, line): line for line in burgos_lines}
@@ -971,6 +1001,11 @@ jobs:
               for chat_id in targets:
                   if chat_id in delivered_to:
                       continue
+                  if chat_id in disabled_chats:
+                      delivered_to.append(chat_id)
+                      event["deliveredTo"] = delivered_to
+                      dirty = True
+                      continue
                   current_subscription = subscriptions.get(str(chat_id), {})
                   if not isinstance(current_subscription, dict) or not event_matches(event, current_subscription):
                       # Las preferencias pudieron cambiar después de poner el aviso en cola.
@@ -989,15 +1024,62 @@ jobs:
                       dirty = True
                       time.sleep(1.1)
                   except Exception as exc:
-                      print("ERROR al enviar aviso de Burgos a un chat: " + str(exc))
+                      error_text = str(exc)
+                      print("ERROR al enviar aviso de Burgos a chat " + chat_id + ": " + error_text)
+                      lowered = error_text.lower()
+                      permanent_recipient_error = any(marker in lowered for marker in (
+                          "bot can't send messages to the bot",
+                          "bot cant send messages to the bot",
+                          "chat not found",
+                          "bot was blocked by the user",
+                          "user is deactivated",
+                          "peer_id_invalid"
+                      ))
+                      if permanent_recipient_error:
+                          # No se debe reintentar indefinidamente un chat inválido:
+                          # conserva la cola, entrega a los demás y permite que el
+                          # usuario vuelva a activarse escribiendo /start al bot.
+                          disabled_chats.add(chat_id)
+                          subscriptions.pop(chat_id, None)
+                          delivered_to.append(chat_id)
+                          event["deliveredTo"] = delivered_to
+                          dirty = True
+                          print("Destinatario " + chat_id + " desactivado por rechazo permanente de Telegram.")
+                          if chat_id not in invalid_chat_notices:
+                              notice = (
+                                  "⚠️ SAE Spotter · Autobuses de Burgos\n\n"
+                                  "Telegram ha rechazado un destinatario por ser un bot, no existir o haber bloqueado al bot. "
+                                  "Se ha apartado ese destinatario para que no impida el resto de alertas. "
+                                  "Para recibir avisos en una cuenta personal, abre @SAEBUR_bot y pulsa /start."
+                              )
+                              for notify_chat_id, notify_subscription in list(subscriptions.items()):
+                                  if notify_chat_id == chat_id or notify_chat_id in disabled_chats:
+                                      continue
+                                  if not isinstance(notify_subscription, dict) or clean(notify_subscription.get("mode")) in ("off", "paused"):
+                                      continue
+                                  try:
+                                      telegram_api("sendMessage", {
+                                          "chat_id": notify_chat_id,
+                                          "text": notice,
+                                          "disable_web_page_preview": True
+                                      })
+                                      break
+                                  except Exception as notice_error:
+                                      print("No se pudo enviar el aviso de configuración a otro chat: " + str(notice_error))
+                              invalid_chat_notices.add(chat_id)
+                          continue
+                      # Un fallo temporal de un destinatario no debe impedir que
+                      # los demás reciban esta misma alerta.
                       complete = False
-                      break
+                      continue
               if complete and all(chat_id in delivered_to for chat_id in targets):
                   outbox.pop(event_id, None)
                   dirty = True
 
           state["schemaVersion"] = 1
           state["telegramSubscriptions"] = subscriptions
+          state["disabledTelegramChats"] = sorted(disabled_chats)
+          state["invalidChatNoticesSent"] = sorted(invalid_chat_notices)
           state["outbox"] = outbox
           state["pendingArrivals"] = pending_arrivals
           state["pendingMissing"] = pending_missing
