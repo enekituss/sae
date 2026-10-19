@@ -394,7 +394,7 @@ async function fetchVehicleListForLine(line) {
   let vehicleResult = null;
   let primaryError = "";
   try {
-    vehicleResult = await requestIsaenext("resourceVehicles", lineParams);
+    vehicleResult = await requestIsaenext("resourceVehicles", lineParams, { timeoutMs: 6000, maxSources: 4 });
   } catch (error) {
     primaryError = error?.message || String(error);
   }
@@ -438,7 +438,7 @@ async function fetchVehicleListForLine(line) {
   const warnings = ["resourceVehicles no disponible: " + primaryError];
   try {
     const routeResult = await requestIsaenext("resourceRoutes", lineParams, {
-      timeoutMs: 4000,
+      timeoutMs: 3000,
       maxSources: 4
     });
     const routePayload = routeResult.data;
@@ -453,7 +453,7 @@ async function fetchVehicleListForLine(line) {
       [PORTLET_PREFIX + "tipo"]: "1",
       [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
     }, {
-      timeoutMs: 6000,
+      timeoutMs: 4000,
       maxSources: 4
     });
     if (!Array.isArray(estimationResult.data)) {
