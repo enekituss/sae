@@ -1,7 +1,7 @@
 const REPOSITORY = "enekituss/sae";
+// El despachador de Bizkaibus solo puede lanzar sus propios flujos.
 const WORKFLOWS = [
-  { file: "update-siri.yml", label: "Bizkaibus" },
-  { file: "telegram-burgos.yml", label: "Telegram Burgos" }
+  { file: "update-siri.yml", label: "Bizkaibus" }
 ];
 const BRANCH = "main";
 const GITHUB_API = "https://api.github.com";
@@ -908,7 +908,9 @@ async function ensureTelegramWebhooks(env, origin = TELEGRAM_WEBHOOK_BASE_URL) {
   }
 
   const configured = [];
-  for (const city of ["bizkaibus", "burgos"]) {
+  // El Worker compartido registra exclusivamente el webhook de Bizkaibus.
+  // El menú/las preferencias de Burgos pertenecen al circuito independiente de Burgos.
+  for (const city of ["bizkaibus"]) {
     const tokenName = TELEGRAM_BOTS[city].tokenEnv;
     const token = String(env[tokenName] || "").trim();
     if (!token) {
@@ -992,11 +994,6 @@ export default {
       return processTelegramWebhook(request, env, "bizkaibus");
     }
 
-    if (request.method === "POST" && url.pathname === "/telegram/burgos") {
-      return processTelegramWebhook(request, env, "burgos");
-    }
-
-
     if (request.method === "OPTIONS" && url.pathname.startsWith("/api/burgos/")) {
       return new Response(null, { status: 204, headers: corsHeaders(request, { "Access-Control-Max-Age": "86400" }) });
     }
@@ -1008,7 +1005,7 @@ export default {
         cadence: "*/2 * * * *",
         dispatchWorkflows: WORKFLOWS.map(workflow => workflow.file),
         endpoints: ["/api/burgos/nodes", "/api/burgos/estimates?stopId=200", "/api/burgos/vehicles", "/api/burgos/vehicles?line=01", "/api/burgos/live"],
-        telegramEndpoints: ["/telegram/bizkaibus", "/telegram/burgos", "POST /admin/telegram/setup"],
+        telegramEndpoints: ["/telegram/bizkaibus", "POST /admin/telegram/setup"],
         telegramSecretStatus: {
           githubToken: Boolean(String(env.GITHUB_TOKEN || "").trim()),
           webhookSecret: Boolean(String(env.TELEGRAM_WEBHOOK_SECRET || "").trim()),
