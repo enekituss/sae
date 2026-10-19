@@ -64,6 +64,23 @@ function stopIdFrom(value, allowGenericId = false) {
   return String(direct ?? "").trim();
 }
 
+function destinationText(value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value).trim();
+  if (typeof value === "object") {
+    return String(value.destinationName ?? value.destinationText ?? value.name ?? value.nombre ??
+      value.description ?? value.descripcion ?? value.headsign ?? value.label ?? value.text ?? "").trim();
+  }
+  return "";
+}
+
+function destinationId(value) {
+  if (!value || typeof value !== "object") return "";
+  return String(value.destinationId ?? value.destination_id ?? value.destinoId ??
+    value.destino_id ?? value.idDestino ?? value.id_destino ?? value.destId ??
+    value.dest_id ?? value.destinationCode ?? value.codigoDestino ?? value.codDestino ?? "").trim();
+}
+
 function normalizeLineCode(value) {
   let line = String(value ?? "").trim().toUpperCase();
   line = line.replace(/^L[IÍ]NEA\s*/, "").replace(/^L(?=\d)/, "");
@@ -262,7 +279,10 @@ function extractVehicleRows(payload, line) {
       id,
       lineId: String(row.lineId ?? row.line ?? row.route ?? row.ruta ?? line).trim() || line,
       line: String(row.line ?? row.lineId ?? row.route ?? line).trim() || line,
-      destination: String(row.destination ?? row.destino ?? row.destinationName ?? row.headsign ?? row.destiny ?? "").trim(),
+      destination: destinationText(row.destination ?? row.destino ?? row.destinationName ??
+        row.destinationText ?? row.headsign ?? row.destiny ?? row.destinoNombre ??
+        row.nombreDestino ?? row.destinationLabel ?? row.destinationDescription ?? ""),
+      destinationId: destinationId(row),
       direction: String(row.direction ?? row.sentido ?? row.direccion ?? "").trim()
     });
   }
@@ -306,8 +326,14 @@ function extractLineEstimations(line, nodes, payload) {
         observations.push({
           vehicleId,
           line: reportedLine || line,
-          destination: String(item.destination ?? routeGroup.destination ?? "").trim(),
-          direction: String(item.direction ?? routeGroup.direction ?? "").trim(),
+          destination: destinationText(item.destination ?? item.destinationName ?? item.destinationText ??
+            item.destino ?? item.destinoNombre ?? item.nombreDestino ?? item.destinationLabel ??
+            item.destinationDescription ?? item.headsign ?? routeGroup.destination ??
+            routeGroup.destinationName ?? routeGroup.destinationText ?? routeGroup.destino ??
+            routeGroup.destinoNombre ?? routeGroup.nombreDestino ?? ""),
+          destinationId: destinationId(item) || destinationId(routeGroup),
+          direction: String(item.direction ?? item.sentido ?? item.direccion ??
+            routeGroup.direction ?? routeGroup.sentido ?? routeGroup.direccion ?? "").trim(),
           seconds: Number.isFinite(seconds) ? seconds : null,
           meters: Number.isFinite(meters) ? meters : null,
           stopId: stopId || "",
