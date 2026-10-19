@@ -23,6 +23,7 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
         with:
+          ref: main
           persist-credentials: true
 
       - name: Descargar rama de preferencias de Telegram
