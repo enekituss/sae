@@ -5,11 +5,7 @@ on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
-  # Evita duplicar ejecuciones de alertas al editar el proxy de datos.
-  # El monitor se ejecuta por cron y puede lanzarse manualmente.
-  push:
-    paths:
-      - ".github/workflows/telegram-burgos.yml"
+  # No lanzar el monitor por cada commit; el cron y el Worker dedicado lo programan.
 
 permissions:
   contents: write
