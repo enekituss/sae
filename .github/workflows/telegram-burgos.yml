@@ -8,6 +8,7 @@ on:
   push:
     paths:
       - ".github/workflows/telegram-burgos.yml"
+      - "burgos-modelos.json"
       - "cloudflare-worker-burgos/src/index.js"
       - "cloudflare-worker-burgos/wrangler.jsonc"
 
@@ -488,6 +489,34 @@ jobs:
           if not isinstance(recently_missing, dict):
               recently_missing = {}
 
+          def normalise_model_id(value):
+              vehicle_id = clean(value)
+              return str(int(vehicle_id)) if vehicle_id.isdigit() else vehicle_id.upper()
+
+          try:
+              with open("burgos-modelos.json", encoding="utf-8") as handle:
+                  model_data = json.load(handle)
+              raw_vehicle_models = model_data.get("models", {}) if isinstance(model_data, dict) else {}
+              vehicle_models = {
+                  normalise_model_id(vehicle_id): clean(model)
+                  for vehicle_id, model in raw_vehicle_models.items()
+                  if clean(vehicle_id) and clean(model)
+              } if isinstance(raw_vehicle_models, dict) else {}
+              print("Base de modelos de Burgos cargada: " + str(len(vehicle_models)) + " coches.")
+          except Exception as exc:
+              vehicle_models = {}
+              print("AVISO: no se pudo leer burgos-modelos.json; los avisos mostrarán solo el ID: " + str(exc))
+
+          def vehicle_model_name(vehicle_id):
+              return vehicle_models.get(normalise_model_id(vehicle_id), "")
+
+          def vehicle_identity_lines(vehicle_id):
+              result = ["Coche: " + vehicle_id]
+              model = vehicle_model_name(vehicle_id)
+              if model:
+                  result.append("Modelo: " + model)
+              return result
+
           def normalise_vehicle(vehicle):
               vehicle_id = clean(vehicle.get("id") or vehicle.get("vehicleId") or vehicle.get("vehicle_id") or vehicle.get("vehicle"))
               if not vehicle_id:
@@ -544,6 +573,9 @@ jobs:
                   "line": line,
                   "destination": destination,
                   "direction": direction,
+                  "model": vehicle_model_name(vehicle_id) or clean(
+                      vehicle.get("model") or vehicle.get("modelo") or vehicle.get("vehicleModel")
+                  ),
                   "stopId": stop_id,
                   "stopName": stop_name
               }
@@ -1165,7 +1197,7 @@ jobs:
               if event_type == "vehicle_missing":
                   lines = [
                       "⚠️ VEHÍCULO SIN POSICIÓN RECIENTE (POSIBLE FIN DE SERVICIO)",
-                      "Coche: " + vehicle_id,
+                      *vehicle_identity_lines(vehicle_id),
                       "Última línea publicada: " + line,
                       "Último destino publicado: " + destination,
                       "Último sentido publicado: " + direction,
@@ -1180,7 +1212,7 @@ jobs:
               elif event_type == "vehicle_entered":
                   lines = [
                       "🟢 AUTOBÚS DETECTADO ENTRANDO EN SERVICIO",
-                      "Coche: " + vehicle_id,
+                      *vehicle_identity_lines(vehicle_id),
                       "Línea actual: " + line,
                       "Destino actual: " + destination,
                       "Sentido actual: " + direction,
@@ -1193,7 +1225,7 @@ jobs:
                   last_known = event.get("lastKnown", {})
                   lines = [
                       "✅ AUTOBÚS REAPARECE EN EL FEED",
-                      "Coche: " + vehicle_id,
+                      *vehicle_identity_lines(vehicle_id),
                       "Línea actual: " + line,
                       "Destino actual: " + destination,
                       "Sentido actual: " + direction,
@@ -1221,7 +1253,7 @@ jobs:
                   if line_changed:
                       lines = [
                           "🔁 CAMBIO DE LÍNEA TRAS REAPARICIÓN" if route_after_gap else "🔄 CAMBIO DE LÍNEA DETECTADO",
-                          "Coche: " + vehicle_id,
+                          *vehicle_identity_lines(vehicle_id),
                           "Línea de origen: " + old_line,
                           "Última parada registrada: " + recorded_stop(old_vehicle),
                           "➡️ Línea actual: " + new_line,
