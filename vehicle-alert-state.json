@@ -37539,63 +37539,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:cc2aa1b77836adf5effeda9b": {
-      "destination": "AREETA/LAS ARENAS",
-      "detectedAt": "2026-10-19T07:25+02:00",
-      "direction": "",
-      "eventId": "missing:cc2aa1b77836adf5effeda9b",
-      "firstMissingAt": "2026-10-19T07:21:05+02:00",
-      "lastSeenAt": "2026-10-19T07:17:19+02:00",
-      "line": "A3451",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T07:25:06+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1721"
-    },
-    "route_after_gap:498be1bd172a1b9bd4fdbe49": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3335",
-          "old": "A3135"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-19T07:25+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:498be1bd172a1b9bd4fdbe49",
-      "line": "A3335",
-      "queuedAt": "2026-10-19T07:25:06+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7859"
-    },
-    "route_after_gap:b30fe4253d7f866060a4781b": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TRAPAGARAN",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "TRAPAGARAN",
-      "detectedAt": "2026-10-19T07:25+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:b30fe4253d7f866060a4781b",
-      "line": "A3332",
-      "queuedAt": "2026-10-19T07:25:06+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7861"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "7784": {
       "consecutiveChecks": 1,
@@ -37818,7 +37762,7 @@
       "requiredMissing": 2
     },
     "1721": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:cc2aa1b77836adf5effeda9b",
       "firstMissingAt": "2026-10-19T07:21:05+02:00",
@@ -37829,7 +37773,7 @@
         "line": "A3451"
       },
       "lastSeenAt": "2026-10-19T07:17:19+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2076": {
