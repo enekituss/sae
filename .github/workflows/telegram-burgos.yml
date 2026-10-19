@@ -1087,10 +1087,14 @@ jobs:
           state["confirmedVehicles"] = confirmed
           state["recentlyMissing"] = recently_missing
           if dirty:
-              with open(STATE_PATH + ".tmp", "w", encoding="utf-8") as handle:
-                  json.dump(state, handle, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
-                  handle.write("\n")
-              os.replace(STATE_PATH + ".tmp", STATE_PATH)
+              def write_state_file(value):
+                  with open(STATE_PATH + ".tmp", "w", encoding="utf-8") as handle:
+                      json.dump(value, handle, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+                      handle.write("\n")
+                  os.replace(STATE_PATH + ".tmp", STATE_PATH)
+
+              state["stateUpdatedAt"] = iso_now()
+              write_state_file(state)
               try:
                   subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
                   subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
@@ -1099,9 +1103,111 @@ jobs:
                   if diff.returncode == 1:
                       subprocess.run(["git", "commit", "-m", "Guardar estado de alertas de Burgos"], check=True)
                       subprocess.run(["git", "fetch", "origin", "main"], check=True)
-                      subprocess.run(["git", "rebase", "origin/main"], check=True)
-                      subprocess.run(["git", "push", "origin", "HEAD:main"], check=True)
-                      print("Estado de alertas de Burgos guardado en GitHub.")
+                      try:
+                          subprocess.run(["git", "rebase", "origin/main"], check=True)
+                          subprocess.run(["git", "push", "origin", "HEAD:main"], check=True)
+                          print("Estado de alertas de Burgos guardado en GitHub.")
+                      except subprocess.CalledProcessError as sync_error:
+                          # Bizkaibus y Burgos pueden guardar sus estados casi a la vez.
+                          # Si un estado de Burgos se ha actualizado en remoto mientras
+                          # este job trabajaba, se fusionan los eventos pendientes y se
+                          # conserva como base el detector del estado más reciente.
+                          print("Colisión al guardar estado de Burgos; conciliando el estado remoto: " + str(sync_error))
+                          subprocess.run(["git", "rebase", "--abort"], check=False)
+                          subprocess.run(["git", "fetch", "origin", "main"], check=True)
+                          remote_raw = subprocess.run(
+                              ["git", "show", "origin/main:" + STATE_PATH],
+                              capture_output=True, text=True, check=True
+                          ).stdout
+                          remote_state = json.loads(remote_raw)
+                          local_state = state
+                          local_stamp = parse_time(local_state.get("stateUpdatedAt"))
+                          remote_stamp = parse_time(remote_state.get("stateUpdatedAt"))
+                          if remote_stamp and (not local_stamp or remote_stamp > local_stamp):
+                              newest_state, older_state = remote_state, local_state
+                          else:
+                              newest_state, older_state = local_state, remote_state
+                          merged_state = dict(newest_state)
+
+                          # Conserva las preferencias de ambos estados; el más reciente
+                          # prevalece si un chat cambió de modo durante la ejecución.
+                          older_subs = older_state.get("telegramSubscriptions", {})
+                          newer_subs = newest_state.get("telegramSubscriptions", {})
+                          combined_subs = dict(older_subs) if isinstance(older_subs, dict) else {}
+                          if isinstance(newer_subs, dict):
+                              combined_subs.update(newer_subs)
+
+                          disabled_union = set()
+                          for source_state in (local_state, remote_state):
+                              raw_disabled = source_state.get("disabledTelegramChats", [])
+                              if isinstance(raw_disabled, list):
+                                  disabled_union.update(clean(value) for value in raw_disabled if clean(value))
+                          for disabled_chat in disabled_union:
+                              combined_subs.pop(disabled_chat, None)
+                          merged_state["telegramSubscriptions"] = combined_subs
+                          merged_state["disabledTelegramChats"] = sorted(disabled_union)
+
+                          notice_union = set()
+                          for source_state in (local_state, remote_state):
+                              raw_notices = source_state.get("invalidChatNoticesSent", [])
+                              if isinstance(raw_notices, list):
+                                  notice_union.update(clean(value) for value in raw_notices if clean(value))
+                          merged_state["invalidChatNoticesSent"] = sorted(notice_union)
+                          try:
+                              merged_state["telegramUpdateOffset"] = max(
+                                  int(local_state.get("telegramUpdateOffset", 0) or 0),
+                                  int(remote_state.get("telegramUpdateOffset", 0) or 0)
+                              )
+                          except (TypeError, ValueError):
+                              pass
+
+                          # Une la cola de alertas y el progreso de entrega para evitar
+                          # perder una alerta o volver a enviar una ya entregada.
+                          older_outbox = older_state.get("outbox", {})
+                          newer_outbox = newest_state.get("outbox", {})
+                          merged_outbox = {}
+                          if isinstance(older_outbox, dict):
+                              for event_id, event in older_outbox.items():
+                                  if isinstance(event, dict):
+                                      merged_outbox[event_id] = dict(event)
+                          if isinstance(newer_outbox, dict):
+                              for event_id, event in newer_outbox.items():
+                                  if not isinstance(event, dict):
+                                      continue
+                                  if event_id not in merged_outbox:
+                                      merged_outbox[event_id] = dict(event)
+                                      continue
+                                  previous = merged_outbox[event_id]
+                                  combined_event = dict(previous)
+                                  combined_event.update(event)
+                                  targets = set(str(value) for value in previous.get("targetChats", []) if str(value))
+                                  targets.update(str(value) for value in event.get("targetChats", []) if str(value))
+                                  delivered = set(str(value) for value in previous.get("deliveredTo", []) if str(value))
+                                  delivered.update(str(value) for value in event.get("deliveredTo", []) if str(value))
+                                  combined_event["targetChats"] = sorted(targets)
+                                  combined_event["deliveredTo"] = sorted(delivered)
+                                  merged_outbox[event_id] = combined_event
+                          for event_id, event in list(merged_outbox.items()):
+                              targets = set(str(value) for value in event.get("targetChats", []) if str(value))
+                              delivered = set(str(value) for value in event.get("deliveredTo", []) if str(value))
+                              if targets and targets.issubset(delivered):
+                                  merged_outbox.pop(event_id, None)
+                          merged_state["outbox"] = merged_outbox
+                          merged_state["stateUpdatedAt"] = iso_now()
+
+                          subprocess.run(["git", "reset", "--mixed", "origin/main"], check=True)
+                          write_state_file(merged_state)
+                          subprocess.run(["git", "add", STATE_PATH], check=True)
+                          merged_diff = subprocess.run(["git", "diff", "--cached", "--quiet"], check=False)
+                          if merged_diff.returncode == 1:
+                              subprocess.run(["git", "commit", "-m", "Conciliar estado de alertas de Burgos"], check=True)
+                              subprocess.run(["git", "push", "origin", "HEAD:main"], check=True)
+                          elif merged_diff.returncode != 0:
+                              raise RuntimeError("git diff devolvió el código " + str(merged_diff.returncode))
+                          state = merged_state
+                          outbox = merged_state.get("outbox", {})
+                          subscriptions = merged_state.get("telegramSubscriptions", {})
+                          print("Estado de alertas de Burgos conciliado y guardado en GitHub.")
                   elif diff.returncode != 0:
                       raise RuntimeError("git diff devolvió el código " + str(diff.returncode))
               except Exception as exc:
