@@ -41235,52 +41235,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:c70622b1df8f916898991738": {
-      "destination": "OROZKO Ibarra",
-      "detectedAt": "2026-10-19T10:15+02:00",
-      "direction": "",
-      "eventId": "missing:c70622b1df8f916898991738",
-      "firstMissingAt": "2026-10-19T10:11:07+02:00",
-      "lastSeenAt": "2026-10-19T10:07:46+02:00",
-      "line": "A3613",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T10:15:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3316"
-    },
-    "missing:d2b214e4ed17408b81f9bf21": {
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-19T10:15+02:00",
-      "direction": "",
-      "eventId": "missing:d2b214e4ed17408b81f9bf21",
-      "firstMissingAt": "2026-10-19T10:11:07+02:00",
-      "lastSeenAt": "2026-10-19T10:07:46+02:00",
-      "line": "A3336",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T10:15:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7824"
-    },
-    "route_after_gap:88826a3478a3d8362b74ebac": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "LA ARBOLEDA",
-          "old": "GALLARTA"
-        }
-      ],
-      "destination": "LA ARBOLEDA",
-      "detectedAt": "2026-10-19T10:15+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:88826a3478a3d8362b74ebac",
-      "line": "A3333",
-      "queuedAt": "2026-10-19T10:15:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7829"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1512": {
       "consecutiveChecks": 2,
@@ -41766,7 +41721,7 @@
       "requiredMissing": 2
     },
     "3316": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:c70622b1df8f916898991738",
       "firstMissingAt": "2026-10-19T10:11:07+02:00",
@@ -41777,7 +41732,7 @@
         "line": "A3613"
       },
       "lastSeenAt": "2026-10-19T10:07:46+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3321": {
@@ -42005,7 +41960,7 @@
       "requiredMissing": 2
     },
     "7824": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:d2b214e4ed17408b81f9bf21",
       "firstMissingAt": "2026-10-19T10:11:07+02:00",
@@ -42016,7 +41971,7 @@
         "line": "A3336"
       },
       "lastSeenAt": "2026-10-19T10:07:46+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7846": {
