@@ -103,7 +103,7 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
   // inmediatamente la petición contra otra ruta del mismo host: pasamos al
   // dominio de respaldo para no desperdiciar casi todo el tiempo del monitor.
   const timeoutValue = Number(options.timeoutMs);
-  const defaultTimeoutMs = resource === "resourceVehicles" ? 10000 : 6000;
+  const defaultTimeoutMs = resource === "resourceVehicles" ? 15000 : 6000;
   const timeoutMs = Number.isFinite(timeoutValue) && timeoutValue > 0
     ? Math.min(timeoutValue, defaultTimeoutMs) : defaultTimeoutMs;
   const sourceValue = Number(options.maxSources);
@@ -658,7 +658,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.5-2026-10-19",
+        buildId: "burgos-live-v6.6-2026-10-19",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(env?.BURGOS_GITHUB_TOKEN), cadence: "*/2 * * * *" },
