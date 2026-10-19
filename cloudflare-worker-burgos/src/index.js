@@ -66,10 +66,10 @@ function stopIdFrom(value, allowGenericId = false) {
 
 function normalizeLineCode(value) {
   let line = String(value ?? "").trim().toUpperCase();
-  line = line.replace(/^L[IÍ]NEA\\s*/, "").replace(/^L(?=\\d)/, "");
-  const match = line.match(/(?:^|[^A-Z0-9])(C[12]|\\d{1,2})(?=$|[^A-Z0-9])/);
+  line = line.replace(/^L[IÍ]NEA\s*/, "").replace(/^L(?=\d)/, "");
+  const match = line.match(/(?:^|[^A-Z0-9])(C[12]|\d{1,2})(?=$|[^A-Z0-9])/);
   const token = match ? match[1] : line;
-  if (/^\\d+$/.test(token)) return String(Number(token));
+  if (/^\d+$/.test(token)) return String(Number(token));
   return token;
 }
 
@@ -130,7 +130,7 @@ function extractRouteStopIds(payload) {
   const stopIdKey = /^(?:numNodo|idNodo|stopId|stop_id|nodeId|node_id|nodoId|paradaId|idParada|numParada)$/i;
   const add = value => {
     const id = String(value ?? "").trim();
-    if (!/^\\d{1,12}$/.test(id) || seen.has(id)) return;
+    if (!/^\d{1,12}$/.test(id) || seen.has(id)) return;
     seen.add(id);
     ids.push(id);
   };
@@ -142,7 +142,7 @@ function extractRouteStopIds(payload) {
     if (typeof value === "string" || typeof value === "number") {
       if (context) {
         const text = String(value).trim();
-        if (/^\\d{1,12}(?:\\s*,\\s*\\d{1,12})+$/.test(text)) text.split(",").forEach(add);
+        if (/^\d{1,12}(?:\s*,\s*\d{1,12})+$/.test(text)) text.split(",").forEach(add);
         else add(text);
       }
       return;
