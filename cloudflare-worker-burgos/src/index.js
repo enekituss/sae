@@ -609,10 +609,29 @@ async function dispatchBurgosTelegramWorkflow(env) {
   }
 
   const runsPayload = await runsResponse.json();
+  const now = Date.now();
+  const activeStatuses = new Set(["queued", "in_progress", "waiting", "pending", "requested"]);
   const activeRun = (Array.isArray(runsPayload?.workflow_runs) ? runsPayload.workflow_runs : [])
-    .find(run => ["queued", "in_progress", "waiting", "pending", "requested"].includes(String(run?.status || "").toLowerCase()));
+    .find(run => {
+      const status = String(run?.status || "").toLowerCase();
+      if (!activeStatuses.has(status)) return false;
+      const runStamp = Date.parse(String(run?.run_started_at || run?.created_at || ""));
+      // Una ejecución en cola puede quedarse bloqueada indefinidamente. No debe
+      // impedir que el cron vuelva a lanzar el monitor si supera 4 minutos.
+      // Una ejecución ya iniciada puede tardar más por los 29 recursos municipales.
+      const maxAgeMs = status === "in_progress" ? 12 * 60 * 1000 :
+        (status === "waiting" ? 10 * 60 * 1000 : 4 * 60 * 1000);
+      if (Number.isFinite(runStamp) && now - runStamp > maxAgeMs) {
+        console.warn("Se ignora una ejecución atascada de Telegram Burgos: status=" +
+          status + ", run #" + String(run?.run_number || run?.id || "desconocido") +
+          ", edad=" + Math.floor((now - runStamp) / 60000) + " min.");
+        return false;
+      }
+      // Si no hay marca temporal fiable, actúa de forma conservadora y evita duplicar.
+      return true;
+    });
   if (activeRun) {
-    console.log("Se omite la comprobación de Burgos: ya hay una ejecución " +
+    console.log("Se omite la comprobación de Burgos: ya hay una ejecución reciente " +
       String(activeRun.status) + " (run #" + String(activeRun.run_number || activeRun.id || "desconocido") + ").");
     return;
   }
