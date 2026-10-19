@@ -414,7 +414,7 @@ jobs:
 
               def fetch_worker_line(line):
                   # /vehicles es deliberadamente ligero; /live combina el recorrido, la flota y las estimaciones.
-              url = worker_base + "/api/burgos/live?" + urllib.parse.urlencode({
+                  url = worker_base + "/api/burgos/live?" + urllib.parse.urlencode({
                       "line": line,
                       "fresh": "1",
                       "_t": str(int(time.time() * 1000))
