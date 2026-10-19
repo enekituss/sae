@@ -606,7 +606,7 @@ function telegramModeDescription(subscription) {
   if (mode === "entry") return "Solo reapariciones de autobuses que habían desaparecido";
   if (mode === "vehicle") {
     const ids = normalizeTrackedIds(subscription);
-    return ids.length ? "Siguiendo ID: " + ids.slice(0, 10).join(", ") + (ids.length > 10 ? " y " + (ids.length - 10) + " más" : "") : "Seguimiento de coches (falta indicar ID)";
+    return ids.length ? "Siguiendo ID: " + ids.slice(0, 10).join(", ") + (ids.length > 10 ? " y " + (ids.length - 10) + " más" : "") : "Seguimiento por ID activado, pero la lista está vacía";
   }
   return "Todos los avisos";
 }
@@ -757,7 +757,7 @@ async function processTelegramWebhook(request, env, city) {
       cancelTelegramVehicleEdit(subscription);
       notice = "Bot conectado. Tus preferencias son independientes de las de los demás usuarios.";
       save = true;
-    } else if (["/coches", "/miscoches", "/miscoches"].includes(command) ||
+    } else if (["/coches", "/miscoches"].includes(command) ||
                ["📋 Ver coches seguidos", "Ver coches seguidos"].includes(rawText)) {
       if (subscription.awaitingVehicleId) cancelTelegramVehicleEdit(subscription);
       reply = "trackedList";
