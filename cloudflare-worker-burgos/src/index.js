@@ -407,13 +407,8 @@ async function fetchVehiclesForLine(line) {
     [PORTLET_PREFIX + "label"]: line
   };
 
-  // Cada consulta usa los tres recursos municipales con el mismo número de línea.
-  let routeResult;
-  try {
-    routeResult = await requestIsaenext("resourceRoutes", lineParams);
-  } catch (error) {
-    throw new Error("resourceRoutes: " + (error?.message || String(error)));
-  }
+  // resourceVehicles es la base fiable de coches publicados. Debe consultarse
+  // primero para que un fallo de trazado no haga perder el listado del SAE.
   let vehicleResult;
   try {
     vehicleResult = await requestIsaenext("resourceVehicles", lineParams);
@@ -421,49 +416,14 @@ async function fetchVehiclesForLine(line) {
     throw new Error("resourceVehicles: " + (error?.message || String(error)));
   }
 
-  const routePayload = routeResult.data;
-  if (!routePayload || (Array.isArray(routePayload) && routePayload.length === 0)) {
-    throw new Error("resourceRoutes no devolvió el recorrido de la línea " + line + ".");
-  }
-
-  let nodeIds = extractRouteStopIds(routePayload);
-  if (!nodeIds.length && line === "01") {
-    // IDs que aparecen en el enlace de resourceEstimations facilitado por el usuario.
-    nodeIds = [...BURGOS_KNOWN_NODE_IDS];
-  }
-  if (!nodeIds.length) {
-    const topKeys = Array.isArray(routePayload)
-      ? (routePayload[0] && typeof routePayload[0] === "object" ? Object.keys(routePayload[0]).slice(0, 20) : ["elementos no objeto"])
-      : (routePayload && typeof routePayload === "object" ? Object.keys(routePayload).slice(0, 20) : [typeof routePayload]);
-    throw new Error("resourceRoutes respondió para la línea " + line +
-      ", pero no se pudieron extraer IDs de parada. Claves visibles: " + topKeys.join(", ") + ".");
-  }
-
-  let estimationResult;
-  try {
-    estimationResult = await requestIsaenext("resourceEstimations", {
-      [PORTLET_PREFIX + "line"]: line,
-      [PORTLET_PREFIX + "tipo"]: "1",
-      [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
-    });
-  } catch (error) {
-    throw new Error("resourceEstimations: " + (error?.message || String(error)));
-  }
-  if (!Array.isArray(estimationResult.data)) {
-    throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
-  }
-
-  // Conserva los metadatos del recorrido para enlazar el ID de parada con su nombre y coordenadas.
-  const routeNodeDetails = extractRouteNodeDetails(routePayload);
-  const routeNodes = nodeIds.map(id => routeNodeDetails.get(id) || ({ num: id, __stopId: id }));
   const vehicleRows = extractVehicleRows(vehicleResult.data, line);
-  const observations = extractLineEstimations(line, routeNodes, estimationResult.data);
   const byId = new Map();
 
-  // resourceVehicles es la lista principal de coches publicados por línea.
   for (const row of vehicleRows) {
     const lat = Number(row.lat ?? row.latitude);
     const lon = Number(row.lng ?? row.lon ?? row.longitude);
+    const validLat = Number.isFinite(lat) && lat >= 42 && lat <= 43;
+    const validLon = Number.isFinite(lon) && lon >= -4 && lon <= -3;
     byId.set(row.id, {
       ...row,
       id: row.id,
@@ -476,16 +436,65 @@ async function fetchVehiclesForLine(line) {
       stopId: "",
       stopName: "",
       position: {
-        lat: Number.isFinite(lat) && lat >= 42 && lat <= 43 ? lat : null,
-        lon: Number.isFinite(lon) && lon >= -4 && lon <= -3 ? lon : null,
-        source: Number.isFinite(lat) && lat >= 42 && lat <= 43 && Number.isFinite(lon) && lon >= -4 && lon <= -3
-          ? "GPS publicado por resourceVehicles" : ""
+        lat: validLat ? lat : null,
+        lon: validLon ? lon : null,
+        source: validLat && validLon ? "GPS publicado por resourceVehicles" : ""
       }
     });
   }
 
-  // resourceEstimations complementa destino y próxima parada, y puede aportar IDs
-  // que no estuviesen presentes en resourceVehicles.
+  let routePayload = null;
+  let nodeIds = [];
+  let routeCount = 0;
+  let observations = [];
+  const warnings = [];
+
+  // El trazado es complementario. Si falla, se devuelve la lista de coches
+  // con una advertencia y sin inventar próximas paradas.
+  try {
+    const routeResult = await requestIsaenext("resourceRoutes", lineParams);
+    routePayload = routeResult.data;
+    if (!routePayload || (Array.isArray(routePayload) && routePayload.length === 0)) {
+      throw new Error("resourceRoutes no devolvió el recorrido de la línea " + line + ".");
+    }
+
+    nodeIds = extractRouteStopIds(routePayload);
+    if (!nodeIds.length && line === "01") {
+      // IDs que aparecen en el enlace de resourceEstimations facilitado por el usuario.
+      nodeIds = [...BURGOS_KNOWN_NODE_IDS];
+    }
+    if (!nodeIds.length) {
+      const topKeys = Array.isArray(routePayload)
+        ? (routePayload[0] && typeof routePayload[0] === "object" ? Object.keys(routePayload[0]).slice(0, 20) : ["elementos no objeto"])
+        : (routePayload && typeof routePayload === "object" ? Object.keys(routePayload).slice(0, 20) : [typeof routePayload]);
+      throw new Error("no se pudieron extraer IDs de parada. Claves visibles: " + topKeys.join(", ") + ".");
+    }
+    routeCount = Array.isArray(routePayload) ? routePayload.length : 1;
+  } catch (error) {
+    warnings.push("resourceRoutes: " + (error?.message || String(error)));
+  }
+
+  // Solo hay estimaciones consultables cuando el trazado entregó IDs de parada.
+  if (!warnings.length) {
+    try {
+      const estimationResult = await requestIsaenext("resourceEstimations", {
+        [PORTLET_PREFIX + "line"]: line,
+        [PORTLET_PREFIX + "tipo"]: "1",
+        [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
+      });
+      if (!Array.isArray(estimationResult.data)) {
+        throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
+      }
+      const routeNodeDetails = extractRouteNodeDetails(routePayload);
+      const routeNodes = nodeIds.map(id => routeNodeDetails.get(id) || ({ num: id, __stopId: id }));
+      observations = extractLineEstimations(line, routeNodes, estimationResult.data);
+    } catch (error) {
+      warnings.push("resourceEstimations: " + (error?.message || String(error)));
+    }
+  }
+
+  // Las estimaciones completan destino/próxima parada; nunca eliminan los coches
+  // ya publicados en resourceVehicles si la parte adicional falla.
   const bestEta = new Map();
   for (const observation of observations) {
     const seconds = Number.isFinite(observation.seconds) && observation.seconds >= 0
@@ -520,14 +529,17 @@ async function fetchVehiclesForLine(line) {
     ok: true,
     line,
     fetchedAt: new Date().toISOString(),
-    source: BURGOS_SOURCE,
-    sourceType: "ISAENEXT · resourceRoutes + resourceVehicles + resourceEstimations por línea",
+    source: vehicleResult.source || BURGOS_SOURCE,
+    sourceType: warnings.length
+      ? "ISAENEXT · resourceVehicles por línea (parcial)"
+      : "ISAENEXT · resourceRoutes + resourceVehicles + resourceEstimations por línea",
     routeStopCount: nodeIds.length,
-    routeCount: Array.isArray(routePayload) ? routePayload.length : 1,
+    routeCount,
     vehicleRowCount: vehicleRows.length,
     estimationCount: observations.length,
     count: byId.size,
-    partial: false,
+    partial: warnings.length > 0,
+    warnings,
     vehicles: [...byId.values()],
     observations
   };
@@ -636,7 +648,8 @@ export default {
           totalLines: 1,
           completedGroups: 1,
           totalGroups: 1,
-          partial: false,
+          partial: data.partial === true,
+          warnings: data.warnings || [],
           resultCount: data.observations.length
         });
       } catch (error) {
@@ -675,7 +688,7 @@ export default {
         if (cached) {
           const data = await cached.json();
           return jsonResponse(request, { ...data, cacheHit: true }, 200, {
-            "Cache-Control": "public, max-age=8"
+            "Cache-Control": "public, max-age=20"
           });
         }
       } catch {
@@ -689,13 +702,13 @@ export default {
         await cache.put(cacheRequest, new Response(JSON.stringify(data), {
           headers: {
             "Content-Type": "application/json; charset=utf-8",
-            "Cache-Control": "public, max-age=8"
+            "Cache-Control": "public, max-age=20"
           }
         }));
       } catch {
         // La respuesta sigue siendo válida si no se puede guardar la caché.
       }
-      return jsonResponse(request, data, 200, { "Cache-Control": "public, max-age=8" });
+      return jsonResponse(request, data, 200, { "Cache-Control": "public, max-age=20" });
     } catch (error) {
       return jsonResponse(request, {
         ok: false,
