@@ -38169,88 +38169,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:2ce1ce3c50067887218386a6": {
-      "destination": "OTXANDIO-UBIDE",
-      "detectedAt": "2026-10-19T11:57+02:00",
-      "direction": "",
-      "eventId": "missing:2ce1ce3c50067887218386a6",
-      "firstMissingAt": "2026-10-19T11:53:05+02:00",
-      "lastSeenAt": "2026-10-19T11:49:24+02:00",
-      "line": "A3925",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T11:57:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3337"
-    },
-    "missing:c6c0fe4d93ea0a683e6f75cb": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T11:57+02:00",
-      "direction": "",
-      "eventId": "missing:c6c0fe4d93ea0a683e6f75cb",
-      "firstMissingAt": "2026-10-19T11:53:05+02:00",
-      "lastSeenAt": "2026-10-19T11:49:24+02:00",
-      "line": "A3523",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T11:57:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8644"
-    },
-    "route_after_gap:d7e0164c0c890066d0eb9f08": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "MUSKIZ"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T11:57+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:d7e0164c0c890066d0eb9f08",
-      "line": "A3340",
-      "queuedAt": "2026-10-19T11:57:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7900"
-    },
-    "route_after_gap:e36fef7e8a9f77801be649ab": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO (Aut.)",
-          "old": "GALDAKAO (Aut.)"
-        }
-      ],
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-19T11:57+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:e36fef7e8a9f77801be649ab",
-      "line": "A3930",
-      "queuedAt": "2026-10-19T11:57:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3363"
-    },
-    "route_after_gap:fde6511b5df1ba9f937a7ce5": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "MUSKIZ"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T11:57+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:fde6511b5df1ba9f937a7ce5",
-      "line": "A3336",
-      "queuedAt": "2026-10-19T11:57:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7792"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2104": {
@@ -38552,7 +38471,7 @@
       "requiredMissing": 2
     },
     "3337": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:2ce1ce3c50067887218386a6",
       "firstMissingAt": "2026-10-19T11:53:05+02:00",
@@ -38563,7 +38482,7 @@
         "line": "A3925"
       },
       "lastSeenAt": "2026-10-19T11:49:24+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3367": {
@@ -38802,7 +38721,7 @@
       "requiredMissing": 2
     },
     "8644": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:c6c0fe4d93ea0a683e6f75cb",
       "firstMissingAt": "2026-10-19T11:53:05+02:00",
@@ -38813,7 +38732,7 @@
         "line": "A3523"
       },
       "lastSeenAt": "2026-10-19T11:49:24+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8656": {
@@ -38855,8 +38774,9 @@
       "vehicleId": ""
     },
     "5333330154": {
-      "awaitingVehicleId": true,
-      "mode": "vehicle",
+      "awaitingVehicleAction": "",
+      "awaitingVehicleId": false,
+      "mode": "all",
       "vehicleId": "7830",
       "vehicleIds": [
         "7830",
@@ -38865,5 +38785,5 @@
       ]
     }
   },
-  "telegramUpdateOffset": 30217627
+  "telegramUpdateOffset": 30217628
 }
