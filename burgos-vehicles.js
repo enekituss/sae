@@ -638,6 +638,7 @@
       const supportedVersions = [
         "sae-three-resources-per-line-v3",
         "sae-three-resources-per-line-v4",
+        "sae-three-resources-per-line-v5",
         WORKER_API_VERSION
       ];
       if (!supportedVersions.includes(String(health?.apiVersion || "")) ||
