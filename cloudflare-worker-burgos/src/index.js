@@ -96,11 +96,14 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
     "https://movilidad.aytoburgos.es/rutas-en-directo",
     "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
   ];
-  // Los recursos complementarios del itinerario deben fallar rápido para
-  // devolver a tiempo la lista principal de coches, aunque el portal municipal vaya lento.
+  // resourceVehicles es imprescindible para detectar altas y bajas; algunos
+  // recursos del portal municipal responden lentamente, por eso recibe hasta 7,5 s
+  // por host. Los recursos complementarios siguen fallando rápido para no bloquear
+  // la lista principal de coches.
   const timeoutValue = Number(options.timeoutMs);
+  const defaultTimeoutMs = resource === "resourceVehicles" ? 7500 : 6000;
   const timeoutMs = Number.isFinite(timeoutValue) && timeoutValue > 0
-    ? Math.min(timeoutValue, 6000) : 6000;
+    ? Math.min(timeoutValue, defaultTimeoutMs) : defaultTimeoutMs;
   const sourceValue = Number(options.maxSources);
   const maxSources = Number.isFinite(sourceValue) && sourceValue > 0
     ? Math.min(Math.floor(sourceValue), sources.length) : sources.length;
@@ -637,7 +640,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.2-2026-10-19",
+        buildId: "burgos-live-v6.3-2026-10-19",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(env?.BURGOS_GITHUB_TOKEN), cadence: "*/2 * * * *" },
