@@ -16,7 +16,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: alertas-telegram-burgos
+  # Grupo nuevo para sacar el monitor de ejecuciones pendientes antiguas.
+  group: alertas-telegram-burgos-v2
   cancel-in-progress: false
 
 jobs:
