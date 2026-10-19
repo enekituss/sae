@@ -776,7 +776,12 @@ jobs:
           snapshot_complete = False
           current = {}
           line_rows = {}
+          # successful_lines solo incluye listas completas de resourceVehicles.
+          # observed_lines incluye también el respaldo de estimaciones, que sirve
+          # para detectar altas/cambios, pero nunca para confirmar bajas.
           successful_lines = set()
+          observed_lines = set()
+          fallback_lines = set()
           failed_lines = set()
           snapshot_source = ""
           source_errors = []
@@ -815,11 +820,16 @@ jobs:
                           rows = payload.get("vehicles")
                           if not isinstance(rows, list):
                               raise RuntimeError("el Worker no devolvió una lista de autobuses")
-                          if payload.get("partial"):
-                              raise RuntimeError("la respuesta de la línea fue parcial")
                           source_type = clean(payload.get("sourceType"))
-                          if "resourceVehicles" not in source_type:
-                              raise RuntimeError("la respuesta no confirma resourceVehicles")
+                          fallback_source = (
+                              "resourceRoutes" in source_type and
+                              "resourceEstimations" in source_type and
+                              "respaldo" in source_type.lower()
+                          )
+                          if payload.get("partial") and not fallback_source:
+                              raise RuntimeError("la respuesta de la línea fue parcial y no confirma la lista principal")
+                          if "resourceVehicles" not in source_type and not fallback_source:
+                              raise RuntimeError("la respuesta no confirma resourceVehicles ni el respaldo de estimaciones")
                           line_current = {}
                           for raw_vehicle in rows:
                               if not isinstance(raw_vehicle, dict):
@@ -831,7 +841,7 @@ jobs:
                               if vehicle["line"] != line:
                                   vehicle["line"] = line
                               line_current[vehicle["id"]] = vehicle
-                          return line, line_current
+                          return line, line_current, (not fallback_source)
                       except Exception as exc:
                           detail = str(exc)
                           if isinstance(exc, urllib.error.HTTPError):
@@ -858,7 +868,10 @@ jobs:
                               )
                               time.sleep(wait_seconds)
                   try:
-                      return fetch_direct_line(line)
+                      direct_line, direct_vehicles = fetch_direct_line(line)
+                      # fetch_direct_line consulta resourceVehicles directamente:
+                      # si responde, esa línea sí permite confirmar ausencias.
+                      return direct_line, direct_vehicles, True
                   except Exception as direct_error:
                       raise RuntimeError(
                           "Worker: " + str(last_error) + " || " + str(direct_error)
@@ -871,15 +884,23 @@ jobs:
                   for future in as_completed(futures):
                       line = futures[future]
                       try:
-                          result_line, vehicles = future.result()
+                          result_line, vehicles, authoritative = future.result()
                           line_rows[result_line] = vehicles
-                          print("SAE Burgos línea " + result_line + ": " + str(len(vehicles)) + " autobuses identificados.")
+                          observed_lines.add(result_line)
+                          if authoritative:
+                              successful_lines.add(result_line)
+                          else:
+                              fallback_lines.add(result_line)
+                          print(
+                              "SAE Burgos línea " + result_line + ": " + str(len(vehicles)) +
+                              " autobuses identificados" +
+                              (" (lista completa resourceVehicles)." if authoritative else " (respaldo por estimaciones; no se confirmarán bajas).")
+                          )
                       except Exception as exc:
                           print("AVISO: fallo de consulta en la línea " + line + ": " + str(exc))
           except Exception as exc:
               source_errors.append("SAE oficial de Burgos por línea: " + str(exc))
 
-          successful_lines = set(line_rows)
           failed_lines = set(burgos_lines) - successful_lines
           if line_rows:
               candidate_current = {}
@@ -899,15 +920,16 @@ jobs:
               snapshot_complete = not failed_lines
               snapshot_source = "isaenext_resourceVehicles_per_line"
               print(
-                  "Snapshot SAE de Burgos: " + str(len(current)) + " autobuses identificados en " +
-                  str(len(successful_lines)) + "/" + str(len(burgos_lines)) + " líneas."
+                  "Snapshot SAE de Burgos: " + str(len(current)) + " autobuses identificados; " +
+                  str(len(successful_lines)) + "/" + str(len(burgos_lines)) +
+                  " líneas con lista completa y " + str(len(fallback_lines)) + " con respaldo por estimaciones."
               )
               if failed_lines:
                   print(
-                      "AVISO: snapshot parcial; líneas con respuesta válida: " +
+                      "AVISO: snapshot incompleto; las bajas solo se evaluarán en las líneas con lista completa. " +
+                      "Líneas completas: " +
                       ", ".join(line for line in burgos_lines if line in successful_lines) +
-                      ". Las posibles salidas solo se evaluarán para coches cuya última línea conocida " +
-                      "haya respondido correctamente; los demás quedan en espera. Fallos: " +
+                      ". Líneas que solo aportan observaciones o fallaron: " +
                       ", ".join(line for line in burgos_lines if line in failed_lines)
                   )
           else:
