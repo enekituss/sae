@@ -9,7 +9,7 @@
   ];
   // Worker dedicado a Burgos: viene configurado por defecto en el proyecto.
   const DEFAULT_WORKER_URL = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev";
-  const WORKER_API_VERSION = "sae-three-resources-per-line-v4";
+  const WORKER_API_VERSION = "sae-three-resources-per-line-v5";
   const WORKER_STORAGE_KEY = "saeBurgosDedicatedWorkerUrl";
   const WORKER_CONFIG_VERSION_KEY = "saeBurgosDedicatedWorkerApiVersion";
   const ALL_LINES = [
@@ -517,10 +517,7 @@
       if (!response.ok || health?.ok !== true) {
         throw new Error(health?.error || ("El Worker de Burgos respondió HTTP " + response.status + "."));
       }
-      const supportedVersions = [
-        "sae-three-resources-per-line-v3",
-        "sae-three-resources-per-line-v4"
-      ];
+      const supportedVersions = [WORKER_API_VERSION];
       if (!supportedVersions.includes(String(health?.apiVersion || "")) ||
           !String(health?.service || "").toLowerCase().includes("burgos")) {
         throw new Error("El Worker de Burgos necesita una versión compatible. Revisa el despliegue de cloudflare-worker-burgos; no se ha utilizado el Worker de Bizkaibus.");
