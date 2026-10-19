@@ -193,28 +193,47 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
     proxyUrl.searchParams.set(key, String(value));
   }
 
+  // Mismos tres transportes usados por la versión de Bus Burgos que ya consultaba
+  // ISAENEXT desde el navegador. CodeTabs era el tercer respaldo y faltaba en el Worker.
   for (const proxy of [
     { name: "corsproxy.io", url: "https://corsproxy.io/?" + encodeURIComponent(proxyUrl.toString()) },
-    { name: "AllOrigins", url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(proxyUrl.toString()) }
+    { name: "AllOrigins", url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(proxyUrl.toString()) },
+    { name: "CodeTabs", url: "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(proxyUrl.toString()) }
   ]) {
-    try {
-      const response = await fetch(proxy.url, {
-        method: "GET",
-        headers: { "Accept": "application/json, text/plain, */*" },
-        signal: AbortSignal.timeout(6000)
-      });
-      const body = await response.text();
-      if (!response.ok) {
-        errors.push(proxy.name + " HTTP " + response.status);
-        continue;
-      }
+    // El proxy puede fallar de forma transitoria; se hacen dos intentos breves por proveedor.
+    let succeeded = false;
+    for (let attempt = 1; attempt <= 2 && !succeeded; attempt++) {
       try {
-        return { data: JSON.parse(body), source: proxyBase, transport: proxy.name };
-      } catch {
-        errors.push(proxy.name + " no devolvió JSON válido");
+        const response = await fetch(proxy.url, {
+          method: "GET",
+          headers: { "Accept": "application/json, text/plain, */*" },
+          signal: AbortSignal.timeout(6000)
+        });
+        let body = await response.text();
+        if (!response.ok) {
+          errors.push(proxy.name + " HTTP " + response.status + (attempt < 2 ? " (intento " + attempt + ")" : ""));
+          continue;
+        }
+        if (body.startsWith("URL_DECODED:")) {
+          try { body = decodeURIComponent(body.slice("URL_DECODED:".length)); } catch {}
+        }
+        try {
+          const payload = JSON.parse(body);
+          const serverError = payload && typeof payload === "object" && !Array.isArray(payload)
+            ? String(payload.error ?? payload.message ?? "").trim()
+            : "";
+          if (serverError && (payload.ok === false || /acceso denegado|bot detectado|falta token|unauthorized|forbidden/i.test(serverError))) {
+            errors.push(proxy.name + ": " + serverError);
+            continue;
+          }
+          return { data: payload, source: proxyBase, transport: proxy.name };
+        } catch (error) {
+          if (error instanceof SyntaxError) errors.push(proxy.name + " no devolvió JSON válido");
+          else errors.push(proxy.name + ": " + (error?.message || String(error)));
+        }
+      } catch (error) {
+        errors.push(proxy.name + ": " + (error?.message || String(error)) + (attempt < 2 ? " (intento " + attempt + ")" : ""));
       }
-    } catch (error) {
-      errors.push(proxy.name + ": " + (error?.message || String(error)));
     }
   }
 
@@ -825,7 +844,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.9-2026-10-19",
+        buildId: "burgos-live-v6.10-2026-10-19",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },
