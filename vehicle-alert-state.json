@@ -27431,71 +27431,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:b546eb524ae41b8fa7266f12": {
-      "destination": "LARRABETZU",
-      "detectedAt": "2026-10-19T06:45+02:00",
-      "direction": "",
-      "eventId": "missing:b546eb524ae41b8fa7266f12",
-      "firstMissingAt": "2026-10-19T06:41:04+02:00",
-      "lastSeenAt": "2026-10-19T06:37:50+02:00",
-      "line": "A3631",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T06:45:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3308"
-    },
-    "route_after_gap:725be64b7fc88ef269d5b3bc": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "MUSKIZ",
-          "old": "PORTUGALETE"
-        }
-      ],
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-19T06:45+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:725be64b7fc88ef269d5b3bc",
-      "line": "A3321",
-      "queuedAt": "2026-10-19T06:45:04+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7762"
-    },
-    "vehicle_returned:2377284554a77b648edb25d5": {
-      "destination": "MUNGIA",
-      "detectedAt": "2026-10-19T06:45+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:2377284554a77b648edb25d5",
-      "lastKnown": {
-        "destination": "MUNGIA",
-        "direction": "",
-        "id": "2093",
-        "line": "A3527"
-      },
-      "line": "A3527",
-      "queuedAt": "2026-10-19T06:45:04+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2093"
-    },
-    "vehicle_returned:906dabad9b421eebe22297c1": {
-      "destination": "LARRABETZU",
-      "detectedAt": "2026-10-19T06:45+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:906dabad9b421eebe22297c1",
-      "lastKnown": {
-        "destination": "LARRABETZU",
-        "direction": "",
-        "id": "2113",
-        "line": "A3223"
-      },
-      "line": "A3223",
-      "queuedAt": "2026-10-19T06:45:04+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2113"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1551": {
       "consecutiveChecks": 1,
@@ -27673,7 +27609,7 @@
       "requiredMissing": 2
     },
     "3308": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:b546eb524ae41b8fa7266f12",
       "firstMissingAt": "2026-10-19T06:41:04+02:00",
@@ -27684,7 +27620,7 @@
         "line": "A3631"
       },
       "lastSeenAt": "2026-10-19T06:37:50+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3316": {
