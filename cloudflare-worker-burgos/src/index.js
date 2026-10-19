@@ -1,11 +1,12 @@
-// El cliente web de Burgos usa /es/rutas-en-directo para las consultas ISAENEXT.
-// Se prioriza esa ruta antes de probar las rutas alternativas del mismo portal.
-const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/es/rutas-en-directo";
+// La ruta ISAENEXT facilitada para el visor de Burgos usa /web/movilidad/rutas-en-directo/-/isaenext/filter/XX.
+// Las consultas JSON del portlet se hacen en la base de esa ruta, añadiendo resourceVehicles/resourceRoutes/resourceEstimations.
+const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo";
 const BURGOS_SOURCE_FALLBACKS = [
   BURGOS_SOURCE,
+  "https://www.aytoburgos.es/web/movilidad/rutas-en-directo",
+  "https://movilidad.aytoburgos.es/es/rutas-en-directo",
   "https://movilidad.aytoburgos.es/rutas-en-directo/-/isaenext/filter/23",
-  "https://movilidad.aytoburgos.es/rutas-en-directo",
-  "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
+  "https://movilidad.aytoburgos.es/rutas-en-directo"
 ];
 const PORTLET_ID = "as_asac_isaenext_IsaenextWebPortlet";
 const PORTLET_PREFIX = "_as_asac_isaenext_IsaenextWebPortlet_";
@@ -164,8 +165,51 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
     }
   }
 
+  // Respaldo derivado de SAMyT: si la consulta directa falla, probar una vez
+  // a través de un proxy público. El contenido sigue procediendo de ISAENEXT;
+  // no se usa este respaldo si una petición directa ya respondió correctamente.
+  const proxyBase = "https://www.aytoburgos.es/web/movilidad/rutas-en-directo";
+  const proxyUrl = new URL(proxyBase);
+  proxyUrl.searchParams.set("p_p_id", PORTLET_ID);
+  proxyUrl.searchParams.set("p_p_lifecycle", "2");
+  proxyUrl.searchParams.set("p_p_state", "normal");
+  proxyUrl.searchParams.set("p_p_mode", "view");
+  proxyUrl.searchParams.set("p_p_cacheability", "cacheLevelPage");
+  proxyUrl.searchParams.set("p_p_resource_id", resource);
+  const proxyTimestamp = String(Date.now());
+  proxyUrl.searchParams.set(PORTLET_PREFIX + "formDate", proxyTimestamp);
+  proxyUrl.searchParams.set("_t", proxyTimestamp);
+  for (const [key, value] of Object.entries(extra)) {
+    proxyUrl.searchParams.set(key, String(value));
+  }
+
+  for (const proxy of [
+    { name: "corsproxy.io", url: "https://corsproxy.io/?" + encodeURIComponent(proxyUrl.toString()) },
+    { name: "AllOrigins", url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(proxyUrl.toString()) }
+  ]) {
+    try {
+      const response = await fetch(proxy.url, {
+        method: "GET",
+        headers: { "Accept": "application/json, text/plain, */*" },
+        signal: AbortSignal.timeout(6000)
+      });
+      const body = await response.text();
+      if (!response.ok) {
+        errors.push(proxy.name + " HTTP " + response.status);
+        continue;
+      }
+      try {
+        return { data: JSON.parse(body), source: proxyBase, transport: proxy.name };
+      } catch {
+        errors.push(proxy.name + " no devolvió JSON válido");
+      }
+    } catch (error) {
+      errors.push(proxy.name + ": " + (error?.message || String(error)));
+    }
+  }
+
   throw new Error(resource + " línea " + String(extra[PORTLET_PREFIX + "line"] || "?") +
-    " no respondió en ninguna ruta municipal: " + errors.join(" | "));
+    " no respondió en ninguna ruta municipal ni mediante los proxies de respaldo: " + errors.join(" | "));
 }
 
 // resourceRoutes contiene el trazado y, según el formato publicado, los IDs de parada.
@@ -771,7 +815,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.7-2026-10-19",
+        buildId: "burgos-live-v6.8-2026-10-19",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },
