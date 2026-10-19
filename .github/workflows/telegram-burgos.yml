@@ -5,12 +5,11 @@ on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
+  # Evita duplicar ejecuciones de alertas al editar el proxy de datos.
+  # El monitor se ejecuta por cron y puede lanzarse manualmente.
   push:
     paths:
       - ".github/workflows/telegram-burgos.yml"
-      - "burgos-modelos.json"
-      - "cloudflare-worker-burgos/src/index.js"
-      - "cloudflare-worker-burgos/wrangler.jsonc"
 
 permissions:
   contents: write
