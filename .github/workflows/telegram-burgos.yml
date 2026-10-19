@@ -420,8 +420,10 @@ jobs:
                       elif raw_text in ("🔄 Solo cambios de línea", "Solo cambios de línea"):
                           subscription.update({"mode": "line", "awaitingVehicleId": False, "awaitingVehicleAction": ""})
                           dirty = True
-                          send_menu(incoming_chat_id, subscription, "✅ Seleccionado: solo recibirás cambios confirmados de línea de autobuses que siguen activos.")                      elif raw_text in ("🟢 Nueva entrada (reaparición)", "🟢 Nueva entrada", "Nueva entrada"):
-                          subscription.update({"mode": "entry", "awaitingVehicleId": False, "awaitingVehicleAction": ""})                          dirty = True
+                          send_menu(incoming_chat_id, subscription, "✅ Seleccionado: solo recibirás cambios confirmados de línea de autobuses que siguen activos.")
+                      elif raw_text in ("🟢 Nueva entrada (reaparición)", "🟢 Nueva entrada", "Nueva entrada"):
+                          subscription.update({"mode": "entry", "awaitingVehicleId": False, "awaitingVehicleAction": ""})
+                          dirty = True
                           send_menu(incoming_chat_id, subscription, "✅ Seleccionado: recibirás avisos cuando un autobús desaparecido vuelva a aparecer en el feed.")
                       elif raw_text in ("➕ Añadir coche(s) por ID", "Añadir coche(s) por ID", "🚌 Seguir coche(s) por ID", "🚌 Seguir un coche por ID", "Seguir un coche por ID"):
                           if not subscription.get("awaitingVehicleId"):
