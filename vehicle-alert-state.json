@@ -37519,45 +37519,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:c49a519d0dc328f60d56a1ef": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T07:31+02:00",
-      "direction": "",
-      "eventId": "missing:c49a519d0dc328f60d56a1ef",
-      "firstMissingAt": "2026-10-19T07:27:08+02:00",
-      "lastSeenAt": "2026-10-19T07:23:26+02:00",
-      "line": "A3631",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T07:31:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3305"
-    },
-    "route_after_gap:6ea89ee58cf793de7be06405": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3613",
-          "old": "A3641"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "LAUDIO-OROZKO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T07:31+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:6ea89ee58cf793de7be06405",
-      "line": "A3613",
-      "queuedAt": "2026-10-19T07:31:04+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3366"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1723": {
       "consecutiveChecks": 1,
@@ -37843,7 +37805,7 @@
       "requiredMissing": 2
     },
     "3305": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:c49a519d0dc328f60d56a1ef",
       "firstMissingAt": "2026-10-19T07:27:08+02:00",
@@ -37854,7 +37816,7 @@
         "line": "A3631"
       },
       "lastSeenAt": "2026-10-19T07:23:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3308": {
@@ -38028,7 +37990,7 @@
     },
     "5333330154": {
       "awaitingVehicleId": false,
-      "mode": "all",
+      "mode": "off",
       "vehicleId": "7830",
       "vehicleIds": [
         "7830",
@@ -38036,5 +37998,5 @@
       ]
     }
   },
-  "telegramUpdateOffset": 30217622
+  "telegramUpdateOffset": 30217623
 }
