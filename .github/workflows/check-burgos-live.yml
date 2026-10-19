@@ -5,6 +5,7 @@ on:
       - "burgos.html"
       - "burgos.css"
       - "burgos.js"
+      - "burgos-vehicles.js"
       - "scripts/update_burgos_gtfs.py"
       - "cloudflare-worker/src/index.js"
       - "cloudflare-worker-burgos/src/index.js"
@@ -16,8 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Comprobar JavaScript de la web
+      - name: Comprobar JavaScript de la web heredada
         run: node --check burgos.js
+      - name: Comprobar JavaScript de la vista activa de Burgos
+        run: node --check burgos-vehicles.js
       - name: Comprobar JavaScript del proxy Cloudflare
         run: node --check cloudflare-worker/src/index.js
       - name: Comprobar JavaScript del Worker independiente de Burgos
