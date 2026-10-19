@@ -274,6 +274,55 @@ function extractLineEstimations(line, nodes, payload) {
   return observations;
 }
 
+async function fetchVehicleListForLine(line) {
+  const lineParams = {
+    [PORTLET_PREFIX + "line"]: line,
+    [PORTLET_PREFIX + "label"]: line
+  };
+
+  // La lista de vehículos no debe depender de resourceRoutes ni de las estimaciones.
+  // Así una incidencia al extraer paradas no hace desaparecer la línea completa.
+  let vehicleResult;
+  try {
+    vehicleResult = await requestIsaenext("resourceVehicles", lineParams);
+  } catch (error) {
+    throw new Error("resourceVehicles línea " + line + ": " + (error?.message || String(error)));
+  }
+
+  const vehicles = extractVehicleRows(vehicleResult.data, line).map(row => {
+    const lat = Number(row.lat ?? row.latitude);
+    const lon = Number(row.lng ?? row.lon ?? row.longitude);
+    const validPosition = Number.isFinite(lat) && lat >= 42 && lat <= 43 &&
+      Number.isFinite(lon) && lon >= -4 && lon <= -3;
+    return {
+      ...row,
+      id: row.id,
+      lineId: line,
+      line,
+      destination: row.destination || "Destino no publicado",
+      direction: row.direction || "",
+      position: {
+        lat: validPosition ? lat : null,
+        lon: validPosition ? lon : null,
+        source: validPosition ? "GPS publicado por resourceVehicles" : ""
+      }
+    };
+  });
+
+  return {
+    ok: true,
+    line,
+    fetchedAt: new Date().toISOString(),
+    source: vehicleResult.source || BURGOS_SOURCE,
+    sourceType: "ISAENEXT · resourceVehicles por línea",
+    vehicleRowCount: vehicles.length,
+    count: vehicles.length,
+    partial: false,
+    vehicles,
+    observations: []
+  };
+}
+
 async function fetchVehiclesForLine(line) {
   const lineParams = {
     [PORTLET_PREFIX + "line"]: line,
@@ -481,7 +530,7 @@ export default {
       return jsonResponse(request, {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
-        apiVersion: "sae-three-resources-per-line-v2",
+        apiVersion: "sae-three-resources-per-line-v3",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(env?.BURGOS_GITHUB_TOKEN), cadence: "*/2 * * * *" },
@@ -554,7 +603,7 @@ export default {
     }
 
     try {
-      const data = await fetchVehiclesForLine(requestedLine);
+      const data = await fetchVehicleListForLine(requestedLine);
       try {
         await cache.put(cacheRequest, new Response(JSON.stringify(data), {
           headers: {
