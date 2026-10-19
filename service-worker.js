@@ -1,8 +1,10 @@
-const CACHE_NAME = 'sae-spotter-shell-v3';
+const CACHE_NAME = 'sae-spotter-shell-v4';
 const SHELL = [
   './',
   './index.html',
   './login.html',
+  './set-password.html',
+  './set-password.js',
   './bizkaibus.html',
   './burgos.html',
   './hub.css',
