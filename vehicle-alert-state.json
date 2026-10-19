@@ -42244,79 +42244,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:f1ec4d8eec0eec37397f44d0": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T09:15+02:00",
-      "direction": "",
-      "eventId": "missing:f1ec4d8eec0eec37397f44d0",
-      "firstMissingAt": "2026-10-19T09:11:06+02:00",
-      "lastSeenAt": "2026-10-19T09:07:16+02:00",
-      "line": "A2318",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T09:15:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7901"
-    },
-    "route_after_gap:80c9068f8e98eb939c2e15c0": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "LARRABETZU",
-          "old": "AREETA/LAS ARENAS"
-        }
-      ],
-      "destination": "LARRABETZU",
-      "detectedAt": "2026-10-19T09:15+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:80c9068f8e98eb939c2e15c0",
-      "line": "A2151",
-      "queuedAt": "2026-10-19T09:15:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2136"
-    },
-    "route_after_gap:a370c32056cce6a49c15de24": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3334",
-          "old": "A0654"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "BALMASEDA"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-19T09:15+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:a370c32056cce6a49c15de24",
-      "line": "A3334",
-      "queuedAt": "2026-10-19T09:15:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "5024"
-    },
-    "vehicle_returned:3c31cc50054d8df49fc41428": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T09:15+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:3c31cc50054d8df49fc41428",
-      "lastKnown": {
-        "destination": "EHU/UPV",
-        "direction": "",
-        "id": "7799",
-        "line": "A2318"
-      },
-      "line": "A2318",
-      "queuedAt": "2026-10-19T09:15:05+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "7799"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1678": {
@@ -43235,7 +43163,7 @@
       "requiredMissing": 2
     },
     "7901": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:f1ec4d8eec0eec37397f44d0",
       "firstMissingAt": "2026-10-19T09:11:06+02:00",
@@ -43246,7 +43174,7 @@
         "line": "A2318"
       },
       "lastSeenAt": "2026-10-19T09:07:16+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8638": {
