@@ -1264,7 +1264,7 @@ jobs:
                   else:
                       lines = [
                           "🔁 CAMBIO DETECTADO TRAS REAPARICIÓN" if route_after_gap else "🔄 CAMBIO DE DATOS PUBLICADOS DEL AUTOBÚS",
-                          "Coche: " + vehicle_id
+                          *vehicle_identity_lines(vehicle_id)
                       ]
                       labels = {"line": "Línea", "destination": "Destino", "direction": "Sentido"}
                       for item in event.get("changed", []):
