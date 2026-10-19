@@ -29266,55 +29266,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:4224c3b7d6657de0ce985788": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-19T06:49+02:00",
-      "direction": "",
-      "eventId": "missing:4224c3b7d6657de0ce985788",
-      "firstMissingAt": "2026-10-19T06:45:04+02:00",
-      "lastSeenAt": "2026-10-19T06:41:50+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T06:49:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2119"
-    },
-    "route_after_gap:1938d1f5a4db60873aba9f71": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "PORTUGALETE",
-          "old": "MUSKIZ-Cobaron"
-        }
-      ],
-      "destination": "PORTUGALETE",
-      "detectedAt": "2026-10-19T06:49+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:1938d1f5a4db60873aba9f71",
-      "line": "A3321",
-      "queuedAt": "2026-10-19T06:49:04+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7880"
-    },
-    "vehicle_returned:58b1b40a9788c42ea48c2bbe": {
-      "destination": "BAKIO (Aut.)",
-      "detectedAt": "2026-10-19T06:49+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:58b1b40a9788c42ea48c2bbe",
-      "lastKnown": {
-        "destination": "BAKIO (Aut.)",
-        "direction": "",
-        "id": "2098",
-        "line": "A3518"
-      },
-      "line": "A3518",
-      "queuedAt": "2026-10-19T06:49:04+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2098"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2110": {
       "consecutiveChecks": 1,
@@ -29475,7 +29427,7 @@
       "requiredMissing": 2
     },
     "2119": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:4224c3b7d6657de0ce985788",
       "firstMissingAt": "2026-10-19T06:45:04+02:00",
@@ -29486,7 +29438,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-19T06:41:50+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2135": {
