@@ -401,30 +401,28 @@ jobs:
               outbox[event_id] = event
 
           snapshot_ok = False
+          snapshot_complete = False
           current = {}
+          line_rows = {}
+          successful_lines = set()
+          failed_lines = set()
           snapshot_source = ""
           source_errors = []
+          worker_base = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev"
+          burgos_lines = [f"{number:02d}" for number in range(1, 24)] + ["73", "87", "88", "89", "C1", "C2"]
 
-          # Detector básico: snapshot de cada línea desde resourceVehicles.
-          # No depende de resourceRoutes ni de resourceEstimations para confirmar presencia;
-          # el enriquecimiento del recorrido se mantiene en el endpoint /api/burgos/live.
+          # Detector básico: usa el recurso ligero de vehículos. No exige que
+          # resourceRoutes ni resourceEstimations respondan para listar un coche.
           try:
-              worker_base = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev"
-              burgos_lines = [f"{number:02d}" for number in range(1, 24)] + ["73", "87", "88", "89", "C1", "C2"]
-
               def fetch_worker_line(line):
-                  # /vehicles es deliberadamente ligero; /live combina el recorrido, la flota y las estimaciones.
+                  # Sin fresh=1: se permite reutilizar una respuesta reciente de la caché del Worker.
                   url = worker_base + "/api/burgos/vehicles?" + urllib.parse.urlencode({
-                      "line": line,
-                      "fresh": "1",
-                      "_t": str(int(time.time() * 1000))
+                      "line": line
                   })
                   request = urllib.request.Request(
                       url,
                       headers={
                           "Accept": "application/json",
-                          "Cache-Control": "no-cache",
-                          "Pragma": "no-cache",
                           "User-Agent": "SAE-Spotter-Burgos-Telegram/1.0"
                       }
                   )
@@ -453,9 +451,7 @@ jobs:
                       line_current[vehicle["id"]] = vehicle
                   return line, line_current
 
-              line_rows = {}
-              line_errors = []
-              with ThreadPoolExecutor(max_workers=5) as executor:
+              with ThreadPoolExecutor(max_workers=3) as executor:
                   futures = {executor.submit(fetch_worker_line, line): line for line in burgos_lines}
                   for future in as_completed(futures):
                       line = futures[future]
@@ -464,18 +460,17 @@ jobs:
                           line_rows[result_line] = vehicles
                           print("SAE Burgos línea " + result_line + ": " + str(len(vehicles)) + " autobuses identificados.")
                       except Exception as exc:
-                          line_errors.append("línea " + line + ": " + str(exc))
+                          print("AVISO: fallo de consulta en la línea " + line + ": " + str(exc))
+          except Exception as exc:
+              source_errors.append("SAE oficial de Burgos por línea: " + str(exc))
 
-              if line_errors or len(line_rows) != len(burgos_lines):
-                  raise RuntimeError(
-                      str(len(line_errors)) + "/" + str(len(burgos_lines)) +
-                      " líneas no respondieron de forma válida. " + " | ".join(line_errors[:6])
-                  )
-
+          successful_lines = set(line_rows)
+          failed_lines = set(burgos_lines) - successful_lines
+          if line_rows:
               candidate_current = {}
               candidate_eta = {}
               for line in burgos_lines:
-                  for vehicle_id, vehicle in line_rows[line].items():
+                  for vehicle_id, vehicle in line_rows.get(line, {}).items():
                       try:
                           eta = float(vehicle.get("seconds"))
                       except (TypeError, ValueError):
@@ -486,157 +481,212 @@ jobs:
 
               current = candidate_current
               snapshot_ok = True
+              snapshot_complete = not failed_lines
               snapshot_source = "isaenext_resourceVehicles_per_line"
               print(
-                  "Snapshot completo del SAE oficial: " + str(len(current)) +
-                  " autobuses identificados en " + str(len(line_rows)) +
-                  "/" + str(len(burgos_lines)) + " líneas. "
-                  "Fuente del snapshot: resourceVehicles por línea; las estimaciones del recorrido son un enriquecimiento separado."
+                  "Snapshot SAE de Burgos: " + str(len(current)) + " autobuses identificados en " +
+                  str(len(successful_lines)) + "/" + str(len(burgos_lines)) + " líneas."
               )
-          except Exception as exc:
-              source_errors.append("SAE oficial de Burgos por línea: " + str(exc))
-              current = {}
+              if failed_lines:
+                  print(
+                      "AVISO: snapshot parcial; líneas con respuesta válida: " +
+                      ", ".join(line for line in burgos_lines if line in successful_lines) +
+                      ". No se evaluarán desapariciones en esta pasada. Fallos: " +
+                      ", ".join(line for line in burgos_lines if line in failed_lines)
+                  )
+          else:
+              source_errors.append("0/" + str(len(burgos_lines)) + " líneas respondieron de forma válida.")
               snapshot_ok = False
+              snapshot_complete = False
 
-          # Si todas las fuentes municipales directas fallan, se conserva el estado
-          # anterior y no se generan alertas falsas.
           if not snapshot_ok:
-              print("AVISO: no se ha podido obtener un snapshot completo de Burgos; no se recalcularán las alertas: " + " || ".join(source_errors))
-          if snapshot_ok:
+              print("AVISO: no se ha podido obtener datos utilizables del SAE de Burgos; se conserva el estado del detector: " + " || ".join(source_errors))
+          else:
               now = iso_now()
-              empty_state = state.get("emptyFeedState", {})
-              if not isinstance(empty_state, dict):
-                  empty_state = {"consecutiveChecks": 0, "firstObservedAt": "", "confirmed": False}
 
-              if current:
-                  if empty_state.get("consecutiveChecks") or empty_state.get("confirmed"):
-                      empty_state = {"consecutiveChecks": 0, "firstObservedAt": "", "confirmed": False}
-                      dirty = True
-              else:
-                  previous_checks = int(empty_state.get("consecutiveChecks") or 0)
-                  if previous_checks == 0:
-                      empty_state["firstObservedAt"] = now
-                  empty_state["consecutiveChecks"] = previous_checks + 1
-                  first_empty = parse_time(empty_state.get("firstObservedAt"))
-                  elapsed = (datetime.now(timezone.utc) - first_empty).total_seconds() if first_empty else 0
-                  if empty_state["consecutiveChecks"] >= 4 and elapsed >= 15 * 60:
-                      empty_state["confirmed"] = True
-                  state["emptyFeedState"] = empty_state
-                  dirty = True
+              # El estado conserva una línea base por línea. Una línea que falla
+              # no bloquea altas/cambios de las demás; solo una lectura completa
+              # permite confirmar ausencias de coches.
+              raw_baseline_lines = state.get("baselineLines", [])
+              if not isinstance(raw_baseline_lines, list):
+                  raw_baseline_lines = []
+              baseline_lines = {clean(line) for line in raw_baseline_lines if clean(line) in burgos_lines}
 
-              source_changed = bool(state.get("initialized")) and state.get("monitorSource") != snapshot_source
-              if not state.get("initialized") or source_changed:
-                  confirmed = current.copy()
-                  state["initialized"] = True
-                  state["baselineAt"] = now
-                  state["monitorSource"] = snapshot_source
-                  # Al cambiar el tipo de lectura, no comparar campos de formatos distintos:
-                  # se toma una nueva línea base para no notificar falsos cambios.
+              source_changed = bool(state.get("monitorSource")) and state.get("monitorSource") != snapshot_source
+              if source_changed:
+                  confirmed = {}
                   pending_arrivals = {}
                   pending_missing = {}
                   pending_routes = {}
                   recently_missing = {}
-                  empty_state = {"consecutiveChecks": 0, "firstObservedAt": "", "confirmed": False}
-                  state["emptyFeedState"] = empty_state
+                  baseline_lines = set()
+                  state["initialized"] = False
+                  state.pop("baselineAt", None)
+                  state["emptyFeedState"] = {"consecutiveChecks": 0, "firstObservedAt": "", "confirmed": False}
+                  print("Ha cambiado la fuente del SAE; se volverá a crear una línea base progresiva sin alertas falsas.")
                   dirty = True
-                  if source_changed:
-                      print("Ha cambiado la fuente del SAE; se guarda una nueva línea base sin emitir falsas alertas.")
+              elif state.get("initialized") and not baseline_lines:
+                  # Compatibilidad con un estado antiguo que ya tuviera una
+                  # línea base global completa, pero aún no guardara baselineLines.
+                  baseline_lines = set(burgos_lines)
+
+              known_before = set(confirmed)
+              newly_baselined_lines = successful_lines - baseline_lines
+
+              # Los vehículos de una línea observada por primera vez se incorporan
+              # como línea base, no se anuncian de golpe como altas.
+              for vehicle_id, vehicle in current.items():
+                  observed_line = clean(vehicle.get("line"))
+                  if observed_line in newly_baselined_lines and vehicle_id not in confirmed:
+                      confirmed[vehicle_id] = vehicle
+                      dirty = True
+                      pending_arrivals.pop(vehicle_id, None)
+                      pending_missing.pop(vehicle_id, None)
+                      pending_routes.pop(vehicle_id, None)
+
+              baseline_lines.update(successful_lines)
+              if newly_baselined_lines:
+                  dirty = True
+              if state.get("monitorSource") != snapshot_source:
+                  state["monitorSource"] = snapshot_source
+                  dirty = True
+              state["baselineLines"] = [line for line in burgos_lines if line in baseline_lines]
+              was_initialized = bool(state.get("initialized"))
+              state["initialized"] = len(baseline_lines) == len(burgos_lines)
+              if state["initialized"] and (not was_initialized or not state.get("baselineAt")):
+                  state["baselineAt"] = now
+                  dirty = True
+              if not state["initialized"]:
+                  print(
+                      "Línea base de Burgos acumulada: " + str(len(baseline_lines)) +
+                      "/" + str(len(burgos_lines)) + " líneas. No se anunciarán autobuses existentes "
+                      "en las líneas incorporadas por primera vez."
+                  )
+
+              empty_state = state.get("emptyFeedState", {})
+              if not isinstance(empty_state, dict):
+                  empty_state = {"consecutiveChecks": 0, "firstObservedAt": "", "confirmed": False}
+
+              if snapshot_complete:
+                  if current:
+                      if empty_state.get("consecutiveChecks") or empty_state.get("confirmed"):
+                          empty_state = {"consecutiveChecks": 0, "firstObservedAt": "", "confirmed": False}
+                          dirty = True
                   else:
-                      print("Primera consulta guardada como línea base: no se anuncian todos los coches como nuevas incorporaciones.")
+                      previous_checks = int(empty_state.get("consecutiveChecks") or 0)
+                      if previous_checks == 0:
+                          empty_state["firstObservedAt"] = now
+                      empty_state["consecutiveChecks"] = previous_checks + 1
+                      first_empty = parse_time(empty_state.get("firstObservedAt"))
+                      elapsed = (datetime.now(timezone.utc) - first_empty).total_seconds() if first_empty else 0
+                      if empty_state["consecutiveChecks"] >= 4 and elapsed >= 15 * 60:
+                          empty_state["confirmed"] = True
+                      state["emptyFeedState"] = empty_state
+                      dirty = True
               else:
-                  feed_allows_missing = bool(current) or bool(empty_state.get("confirmed"))
-                  for vehicle_id, vehicle in current.items():
-                      if vehicle_id in confirmed:
-                          pending_arrivals.pop(vehicle_id, None)
-                          if vehicle_id in pending_missing:
-                              pending_missing.pop(vehicle_id, None)
-                              dirty = True
-                          old = confirmed[vehicle_id]
-                          changes = changed_fields(old, vehicle)
-                          pending = pending_routes.get(vehicle_id)
-                          if changes:
-                              if pending and vehicle_fields_equal(pending.get("new", {}), vehicle):
-                                  pending["checks"] = int(pending.get("checks") or 1) + 1
-                              else:
-                                  pending = {"old": old, "new": vehicle, "checks": 1, "firstDetectedAt": now}
-                                  pending_routes[vehicle_id] = pending
-                              dirty = True
-                              first_change_dt = parse_time(pending.get("firstDetectedAt"))
-                              elapsed_change = (datetime.now(timezone.utc) - first_change_dt.astimezone(timezone.utc)).total_seconds() if first_change_dt else 0
-                              if pending["checks"] >= 2 and elapsed_change >= 120:
-                                  queue_event({
-                                      "type": "route_change",
-                                      "vehicleId": vehicle_id,
-                                      "line": vehicle.get("line", ""),
-                                      "destination": vehicle.get("destination", ""),
-                                      "direction": vehicle.get("direction", ""),
-                                      "old": old,
-                                      "new": vehicle,
-                                      "changed": changed_fields(old, vehicle)
-                                  })
-                                  confirmed[vehicle_id] = vehicle
-                                  pending_routes.pop(vehicle_id, None)
-                                  dirty = True
-                          elif vehicle_id in pending_routes:
+                  print("Consulta incompleta: se evaluarán altas/cambios en líneas válidas, pero no bajas.")
+
+              # Cambios y altas se pueden detectar en líneas exitosas aunque haya
+              # fallado otra línea. En líneas recién incorporadas solo se establece baseline.
+              for vehicle_id, vehicle in current.items():
+                  observed_line = clean(vehicle.get("line"))
+                  if observed_line in newly_baselined_lines and vehicle_id not in known_before:
+                      continue
+                  if vehicle_id in confirmed:
+                      pending_arrivals.pop(vehicle_id, None)
+                      if vehicle_id in pending_missing:
+                          pending_missing.pop(vehicle_id, None)
+                          dirty = True
+                      old = confirmed[vehicle_id]
+                      changes = changed_fields(old, vehicle)
+                      pending = pending_routes.get(vehicle_id)
+                      if changes:
+                          if pending and vehicle_fields_equal(pending.get("new", {}), vehicle):
+                              pending["checks"] = int(pending.get("checks") or 1) + 1
+                          else:
+                              pending = {"old": old, "new": vehicle, "checks": 1, "firstDetectedAt": now}
+                              pending_routes[vehicle_id] = pending
+                          dirty = True
+                          first_change_dt = parse_time(pending.get("firstDetectedAt"))
+                          elapsed_change = (datetime.now(timezone.utc) - first_change_dt.astimezone(timezone.utc)).total_seconds() if first_change_dt else 0
+                          if pending["checks"] >= 2 and elapsed_change >= 120:
+                              queue_event({
+                                  "type": "route_change",
+                                  "vehicleId": vehicle_id,
+                                  "line": vehicle.get("line", ""),
+                                  "destination": vehicle.get("destination", ""),
+                                  "direction": vehicle.get("direction", ""),
+                                  "old": old,
+                                  "new": vehicle,
+                                  "changed": changed_fields(old, vehicle)
+                              })
+                              confirmed[vehicle_id] = vehicle
                               pending_routes.pop(vehicle_id, None)
                               dirty = True
-                      else:
-                          pending_missing.pop(vehicle_id, None)
-                          pending = pending_routes.pop(vehicle_id, None)
-                          if pending:
-                              dirty = True
-                          candidate = pending_arrivals.get(vehicle_id)
-                          if candidate and vehicle_fields_equal(candidate.get("vehicle", {}), vehicle):
-                              candidate["checks"] = int(candidate.get("checks") or 1) + 1
-                          else:
-                              candidate = {"vehicle": vehicle, "checks": 1, "firstDetectedAt": now}
-                              pending_arrivals[vehicle_id] = candidate
+                      elif vehicle_id in pending_routes:
+                          pending_routes.pop(vehicle_id, None)
                           dirty = True
-                          first_seen_dt = parse_time(candidate.get("firstDetectedAt"))
-                          elapsed_since_seen = (datetime.now(timezone.utc) - first_seen_dt.astimezone(timezone.utc)).total_seconds() if first_seen_dt else 0
-                          if candidate["checks"] >= 2 and elapsed_since_seen >= 120:
-                              gap_record = recently_missing.get(vehicle_id)
-                              if isinstance(gap_record, dict):
-                                  previous_vehicle = gap_record.get("vehicle", {})
-                                  changes = changed_fields(previous_vehicle, vehicle)
-                                  first_missing_dt = parse_time(gap_record.get("firstMissingAt"))
-                                  recent_gap = bool(first_missing_dt and (datetime.now(timezone.utc) - first_missing_dt.astimezone(timezone.utc)).total_seconds() <= 15 * 60)
-                                  if changes and recent_gap:
-                                      queue_event({
-                                          "type": "route_change_after_gap",
-                                          "vehicleId": vehicle_id,
-                                          "line": vehicle.get("line", ""),
-                                          "destination": vehicle.get("destination", ""),
-                                          "direction": vehicle.get("direction", ""),
-                                          "old": previous_vehicle,
-                                          "new": vehicle,
-                                          "changed": changes
-                                      })
-                                  else:
-                                      queue_event({
-                                          "type": "vehicle_returned",
-                                          "vehicleId": vehicle_id,
-                                          "line": vehicle.get("line", ""),
-                                          "destination": vehicle.get("destination", ""),
-                                          "direction": vehicle.get("direction", ""),
-                                          "lastKnown": previous_vehicle,
-                                          "lastSeenAt": gap_record.get("lastSeenAt", ""),
-                                          "firstMissingAt": gap_record.get("firstMissingAt", "")
-                                      })
-                                  recently_missing.pop(vehicle_id, None)
-                              else:
+                  else:
+                      pending_missing.pop(vehicle_id, None)
+                      pending = pending_routes.pop(vehicle_id, None)
+                      if pending:
+                          dirty = True
+                      candidate = pending_arrivals.get(vehicle_id)
+                      if candidate and vehicle_fields_equal(candidate.get("vehicle", {}), vehicle):
+                          candidate["checks"] = int(candidate.get("checks") or 1) + 1
+                      else:
+                          candidate = {"vehicle": vehicle, "checks": 1, "firstDetectedAt": now}
+                          pending_arrivals[vehicle_id] = candidate
+                      dirty = True
+                      first_seen_dt = parse_time(candidate.get("firstDetectedAt"))
+                      elapsed_since_seen = (datetime.now(timezone.utc) - first_seen_dt.astimezone(timezone.utc)).total_seconds() if first_seen_dt else 0
+                      if candidate["checks"] >= 2 and elapsed_since_seen >= 120:
+                          gap_record = recently_missing.get(vehicle_id)
+                          if isinstance(gap_record, dict):
+                              previous_vehicle = gap_record.get("vehicle", {})
+                              changes = changed_fields(previous_vehicle, vehicle)
+                              first_missing_dt = parse_time(gap_record.get("firstMissingAt"))
+                              recent_gap = bool(first_missing_dt and (datetime.now(timezone.utc) - first_missing_dt.astimezone(timezone.utc)).total_seconds() <= 15 * 60)
+                              if changes and recent_gap:
                                   queue_event({
-                                      "type": "vehicle_entered",
+                                      "type": "route_change_after_gap",
                                       "vehicleId": vehicle_id,
                                       "line": vehicle.get("line", ""),
                                       "destination": vehicle.get("destination", ""),
                                       "direction": vehicle.get("direction", ""),
-                                      "firstObservedAt": candidate.get("firstDetectedAt", now)
+                                      "old": previous_vehicle,
+                                      "new": vehicle,
+                                      "changed": changes
                                   })
-                              confirmed[vehicle_id] = vehicle
-                              pending_arrivals.pop(vehicle_id, None)
-                              dirty = True
+                              else:
+                                  queue_event({
+                                      "type": "vehicle_returned",
+                                      "vehicleId": vehicle_id,
+                                      "line": vehicle.get("line", ""),
+                                      "destination": vehicle.get("destination", ""),
+                                      "direction": vehicle.get("direction", ""),
+                                      "lastKnown": previous_vehicle,
+                                      "lastSeenAt": gap_record.get("lastSeenAt", ""),
+                                      "firstMissingAt": gap_record.get("firstMissingAt", "")
+                                  })
+                              recently_missing.pop(vehicle_id, None)
+                          else:
+                              queue_event({
+                                  "type": "vehicle_entered",
+                                  "vehicleId": vehicle_id,
+                                  "line": vehicle.get("line", ""),
+                                  "destination": vehicle.get("destination", ""),
+                                  "direction": vehicle.get("direction", ""),
+                                  "firstObservedAt": candidate.get("firstDetectedAt", now)
+                              })
+                          confirmed[vehicle_id] = vehicle
+                          pending_arrivals.pop(vehicle_id, None)
+                          dirty = True
 
+              # Solo una pasada completa de las 29 líneas permite incrementar
+              # los contadores de ausencia: un fallo parcial no significa baja.
+              if snapshot_complete:
+                  feed_allows_missing = bool(current) or bool(empty_state.get("confirmed"))
                   for vehicle_id, old_vehicle in list(confirmed.items()):
                       if vehicle_id in current:
                           continue
@@ -681,9 +731,9 @@ jobs:
               state["pendingArrivals"] = pending_arrivals
               state["pendingMissing"] = pending_missing
               state["pendingRouteChanges"] = pending_routes
+              state["recentlyMissing"] = recently_missing
               state["emptyFeedState"] = empty_state
               state["outbox"] = outbox
-
           # Conserva durante una hora el contexto de los coches cuyo aviso de desaparición
           # ya se confirmó, para distinguir una reaparición de una incorporación nueva.
           for vehicle_id, record in list(recently_missing.items()):
