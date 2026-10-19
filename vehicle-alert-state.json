@@ -38768,152 +38768,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:1560fb4b970a57d7e2ceb8ae": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T08:45+02:00",
-      "direction": "",
-      "eventId": "missing:1560fb4b970a57d7e2ceb8ae",
-      "firstMissingAt": "2026-10-19T08:41:04+02:00",
-      "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "line": "A2336",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T08:45:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1512"
-    },
-    "missing:38ef0fc29f044dd4fe1eb73f": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-19T08:45+02:00",
-      "direction": "",
-      "eventId": "missing:38ef0fc29f044dd4fe1eb73f",
-      "firstMissingAt": "2026-10-19T08:41:04+02:00",
-      "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "line": "A3933",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T08:45:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3380"
-    },
-    "missing:3cf088961c244923ab8f0a5d": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T08:45+02:00",
-      "direction": "",
-      "eventId": "missing:3cf088961c244923ab8f0a5d",
-      "firstMissingAt": "2026-10-19T08:41:04+02:00",
-      "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "line": "A2164",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T08:45:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2135"
-    },
-    "missing:8e28d311f47abb77dacb4848": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T08:45+02:00",
-      "direction": "",
-      "eventId": "missing:8e28d311f47abb77dacb4848",
-      "firstMissingAt": "2026-10-19T08:41:04+02:00",
-      "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "line": "A2318",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T08:45:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7809"
-    },
-    "missing:d4385104e832665e259635d2": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T08:45+02:00",
-      "direction": "",
-      "eventId": "missing:d4385104e832665e259635d2",
-      "firstMissingAt": "2026-10-19T08:41:04+02:00",
-      "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "line": "A2163",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T08:45:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2106"
-    },
-    "missing:f24645959fd1bcdd4fe16719": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T08:45+02:00",
-      "direction": "",
-      "eventId": "missing:f24645959fd1bcdd4fe16719",
-      "firstMissingAt": "2026-10-19T08:41:04+02:00",
-      "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "line": "A2318",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T08:45:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7836"
-    },
-    "route_after_gap:19b78b227f34ca3bdd03b478": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "BERMEO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T08:45+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:19b78b227f34ca3bdd03b478",
-      "line": "A3515",
-      "queuedAt": "2026-10-19T08:45:07+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "8641"
-    },
-    "vehicle_returned:1cd772334d82d457e1f30876": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T08:45+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:1cd772334d82d457e1f30876",
-      "lastKnown": {
-        "destination": "EHU/UPV",
-        "direction": "",
-        "id": "8651",
-        "line": "A3525"
-      },
-      "line": "A3514",
-      "queuedAt": "2026-10-19T08:45:07+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "8651"
-    },
-    "vehicle_returned:448547ca7faff8d78352a665": {
-      "destination": "GETXO",
-      "detectedAt": "2026-10-19T08:45+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:448547ca7faff8d78352a665",
-      "lastKnown": {
-        "destination": "EHU/UPV",
-        "direction": "",
-        "id": "1732",
-        "line": "A2326"
-      },
-      "line": "A3411",
-      "queuedAt": "2026-10-19T08:45:07+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "1732"
-    },
-    "vehicle_returned:d62de8e875b46770535adcbc": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T08:45+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:d62de8e875b46770535adcbc",
-      "lastKnown": {
-        "destination": "EHU/UPV",
-        "direction": "",
-        "id": "2133",
-        "line": "A2166"
-      },
-      "line": "A2166",
-      "queuedAt": "2026-10-19T08:45:07+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "2133"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1762": {
@@ -39023,7 +38878,7 @@
   },
   "pendingVehicles": {
     "1512": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:1560fb4b970a57d7e2ceb8ae",
       "firstMissingAt": "2026-10-19T08:41:04+02:00",
@@ -39034,7 +38889,7 @@
         "line": "A2336"
       },
       "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "1516": {
@@ -39186,7 +39041,7 @@
       "requiredMissing": 2
     },
     "2106": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:d4385104e832665e259635d2",
       "firstMissingAt": "2026-10-19T08:41:04+02:00",
@@ -39197,7 +39052,7 @@
         "line": "A2163"
       },
       "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2115": {
@@ -39231,7 +39086,7 @@
       "requiredMissing": 2
     },
     "2135": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:3cf088961c244923ab8f0a5d",
       "firstMissingAt": "2026-10-19T08:41:04+02:00",
@@ -39242,7 +39097,7 @@
         "line": "A2164"
       },
       "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3308": {
@@ -39376,7 +39231,7 @@
       "requiredMissing": 2
     },
     "3380": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:38ef0fc29f044dd4fe1eb73f",
       "firstMissingAt": "2026-10-19T08:41:04+02:00",
@@ -39387,7 +39242,7 @@
         "line": "A3933"
       },
       "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3386": {
@@ -39538,7 +39393,7 @@
       "requiredMissing": 2
     },
     "7809": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:8e28d311f47abb77dacb4848",
       "firstMissingAt": "2026-10-19T08:41:04+02:00",
@@ -39549,7 +39404,7 @@
         "line": "A2318"
       },
       "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7810": {
@@ -39627,7 +39482,7 @@
       "requiredMissing": 2
     },
     "7836": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:f24645959fd1bcdd4fe16719",
       "firstMissingAt": "2026-10-19T08:41:04+02:00",
@@ -39638,7 +39493,7 @@
         "line": "A2318"
       },
       "lastSeenAt": "2026-10-19T08:37:34+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7865": {
