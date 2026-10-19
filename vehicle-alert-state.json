@@ -38440,39 +38440,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:49e13ffd7b71d819187cf4eb": {
-      "destination": "OROZKO",
-      "detectedAt": "2026-10-19T09:59+02:00",
-      "direction": "",
-      "eventId": "missing:49e13ffd7b71d819187cf4eb",
-      "firstMissingAt": "2026-10-19T09:55:06+02:00",
-      "lastSeenAt": "2026-10-19T09:51:20+02:00",
-      "line": "A3613",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T09:59:06+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3360"
-    },
-    "route_after_gap:8608583b70dadc32501cd868": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO (Aut.)",
-          "old": "GALDAKAO (Aut.)"
-        }
-      ],
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-19T09:59+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:8608583b70dadc32501cd868",
-      "line": "A3930",
-      "queuedAt": "2026-10-19T09:59:06+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3363"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1671": {
@@ -39021,7 +38989,7 @@
       "requiredMissing": 2
     },
     "3360": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:49e13ffd7b71d819187cf4eb",
       "firstMissingAt": "2026-10-19T09:55:06+02:00",
@@ -39032,7 +39000,7 @@
         "line": "A3613"
       },
       "lastSeenAt": "2026-10-19T09:51:20+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3361": {
