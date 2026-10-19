@@ -40273,84 +40273,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:06dc6bf1baa40061eedef3d8": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T09:25+02:00",
-      "direction": "",
-      "eventId": "missing:06dc6bf1baa40061eedef3d8",
-      "firstMissingAt": "2026-10-19T09:21:06+02:00",
-      "lastSeenAt": "2026-10-19T09:17:02+02:00",
-      "line": "A0651",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T09:25:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "5036"
-    },
-    "missing:a9a7bf17054a394f2cde8e1f": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T09:25+02:00",
-      "direction": "",
-      "eventId": "missing:a9a7bf17054a394f2cde8e1f",
-      "firstMissingAt": "2026-10-19T09:21:06+02:00",
-      "lastSeenAt": "2026-10-19T09:17:02+02:00",
-      "line": "A2610",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T09:25:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3386"
-    },
-    "route_after_gap:dbf7bd3777b0aa9dfc1b088b": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "SANTURTZI",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-19T09:25+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:dbf7bd3777b0aa9dfc1b088b",
-      "line": "A3115",
-      "queuedAt": "2026-10-19T09:25:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7844"
-    },
-    "vehicle_returned:9e11764390ce4c554084b90d": {
-      "destination": "BALMASEDA",
-      "detectedAt": "2026-10-19T09:25+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:9e11764390ce4c554084b90d",
-      "lastKnown": {
-        "destination": "EHU/UPV",
-        "direction": "",
-        "id": "5020",
-        "line": "A0654"
-      },
-      "line": "A0654",
-      "queuedAt": "2026-10-19T09:25:05+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "5020"
-    },
-    "vehicle_returned:aa57ddaf4784175279db2bb3": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T09:25+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:aa57ddaf4784175279db2bb3",
-      "lastKnown": {
-        "destination": "EHU/UPV",
-        "direction": "",
-        "id": "7846",
-        "line": "A2312"
-      },
-      "line": "A2312",
-      "queuedAt": "2026-10-19T09:25:05+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "7846"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "2120": {
@@ -41021,7 +40944,7 @@
       "requiredMissing": 2
     },
     "3386": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a9a7bf17054a394f2cde8e1f",
       "firstMissingAt": "2026-10-19T09:21:06+02:00",
@@ -41032,7 +40955,7 @@
         "line": "A2610"
       },
       "lastSeenAt": "2026-10-19T09:17:02+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3388": {
@@ -41065,7 +40988,7 @@
       "requiredMissing": 2
     },
     "5036": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:06dc6bf1baa40061eedef3d8",
       "firstMissingAt": "2026-10-19T09:21:06+02:00",
@@ -41076,7 +40999,7 @@
         "line": "A0651"
       },
       "lastSeenAt": "2026-10-19T09:17:02+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7763": {
