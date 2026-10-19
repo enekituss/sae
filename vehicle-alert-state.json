@@ -24145,21 +24145,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:03434d07e07f2d3116a2b974": {
-      "destination": "BASAURI",
-      "detectedAt": "2026-10-19T06:37+02:00",
-      "direction": "",
-      "eventId": "missing:03434d07e07f2d3116a2b974",
-      "firstMissingAt": "2026-10-19T06:33:07+02:00",
-      "lastSeenAt": "2026-10-19T06:30:00+02:00",
-      "line": "A3622",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T06:37:06+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3316"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1671": {
       "consecutiveChecks": 2,
@@ -24348,7 +24334,7 @@
       "requiredMissing": 2
     },
     "3316": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:03434d07e07f2d3116a2b974",
       "firstMissingAt": "2026-10-19T06:33:07+02:00",
@@ -24359,7 +24345,7 @@
         "line": "A3622"
       },
       "lastSeenAt": "2026-10-19T06:30:00+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3333": {
