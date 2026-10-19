@@ -55,8 +55,8 @@ jobs:
           PRIMARY_CHAT = (os.environ.get("BURGOS_TELEGRAM_CHAT_ID") or "").strip()
           STATE_PATH = "burgos-telegram-state.json"
 
-          if not TOKEN or not PRIMARY_CHAT:
-              print("ERROR: faltan BURGOS_TELEGRAM_BOT_TOKEN o BURGOS_TELEGRAM_CHAT_ID en Settings → Secrets and variables → Actions. Se cancela el monitor para no dar por correctas unas alertas que no se pueden enviar.")
+          if not TOKEN:
+              print("ERROR: falta BURGOS_TELEGRAM_BOT_TOKEN en Settings → Secrets and variables → Actions.")
               sys.exit(1)
 
           try:
@@ -197,8 +197,7 @@ jobs:
                   message += notice + "\n\n"
               message += "Configuración actual: " + mode_description(subscription) + "\n\nElige qué alertas quieres recibir con los botones del teclado."
               ids = tracked_vehicle_ids(subscription)
-              message += "\n\nCoches seguidos por ID (" + str(len(ids)) + "): " + (", ".join(ids[:20]) if ids else "ninguno") + ((" y " + str(len(ids)-20) + " más") if len(ids) > 20 else "") + "."              message += "\n\nComandos: /avisos o /menu abre las opciones; /coches muestra los IDs; /coche 123 añade y /quitar 123 elimina."
-              message += "\nPulsa «❎ Cerrar menú» para ocultar los botones."
+              message += "\n\nCoches seguidos por ID (" + str(len(ids)) + "): " + (", ".join(ids[:20]) if ids else "ninguno") + ((" y " + str(len(ids)-20) + " más") if len(ids) > 20 else "") + "."              message += "\n\nComandos: /avisos o /menu abre las opciones; /coches muestra los IDs; /coche 123 añade y /quitar 123 elimina."              message += "\nPulsa «❎ Cerrar menú» para ocultar los botones."
               if clean(subscription.get("mode")) == "off":
                   message += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro."
               message += "\n\nConfigura tus preferencias en el chat privado con @SAEBUR_bot. La falta de posición publicada no confirma por sí sola una baja administrativa."
@@ -249,15 +248,31 @@ jobs:
               print("Preferencias de Burgos cargadas desde telegram-data: " + str(len(pref_paths)))
           except Exception as exc:
               print("AVISO: no se pudieron leer preferencias de telegram-data de Burgos; se conserva el estado local: " + str(exc))
-          primary_chat_id = str(PRIMARY_CHAT)
+          saved_primary = clean(state.get("effectivePrimaryTelegramChatId"))
+          primary_chat_id = saved_primary or str(PRIMARY_CHAT)
+          if not primary_chat_id:
+              valid_subscribers = sorted(
+                  chat_id for chat_id, subscription in subscriptions.items()
+                  if isinstance(subscription, dict)
+                  and clean(subscription.get("mode")) not in ("off", "paused")
+                  and chat_id not in disabled_chats
+              )
+              if len(valid_subscribers) == 1:
+                  primary_chat_id = valid_subscribers[0]
+                  state["effectivePrimaryTelegramChatId"] = primary_chat_id
+                  dirty = True
+                  print("Se reutiliza la única suscripción privada activa de Burgos como destinatario.")
+              else:
+                  print("ERROR: falta BURGOS_TELEGRAM_CHAT_ID y no hay una única suscripción activa validada.")
+                  sys.exit(1)
           primary_chat_reactivated = False
           try:
               bot_info = telegram_api("getMe", {})
               bot_username = clean(bot_info.get("username")).lower()
               if bot_username != "saebur_bot":
                   raise RuntimeError("El token no corresponde al bot independiente @SAEBUR_bot (bot detectado: @" + (bot_username or "sin username") + "). No se modificará ningún webhook.")
-              primary_info = telegram_api("getChat", {"chat_id": PRIMARY_CHAT})
-              primary_chat_id = str(primary_info.get("id") or PRIMARY_CHAT)
+              primary_info = telegram_api("getChat", {"chat_id": primary_chat_id})
+              primary_chat_id = str(primary_info.get("id") or primary_chat_id)
               print("Bot de Burgos validado: @" + clean(bot_info.get("username")))
           except Exception as exc:
               print("ERROR de configuración de Telegram para Burgos: " + str(exc))
@@ -291,12 +306,19 @@ jobs:
                       for fallback_chat_id, fallback_subscription in fallback_candidates:
                           if fallback_chat_id == primary_chat_id or fallback_chat_id in disabled_chats:
                               continue
-                          if fallback_chat_id in primary_fallback_notices:
-                              continue
                           if not isinstance(fallback_subscription, dict):
                               continue
                           if clean(fallback_subscription.get("mode")) in ("off", "paused"):
                               continue
+                          # Una prueba anterior aceptada por Telegram confirma que este
+                          # destinatario es válido: se conserva para no repetir el fallo
+                          # del secreto que apunta a otro bot en cada ejecución.
+                          if fallback_chat_id in primary_fallback_notices:
+                              state["effectivePrimaryTelegramChatId"] = fallback_chat_id
+                              primary_chat_id = fallback_chat_id
+                              dirty = True
+                              print("Destinatario principal recuperado desde una suscripción privada ya validada.")
+                              break
                           try:
                               telegram_api("sendMessage", {
                                   "chat_id": fallback_chat_id,
@@ -305,8 +327,10 @@ jobs:
                               })
                               primary_fallback_notices.add(fallback_chat_id)
                               state["primaryFallbackNoticesSent"] = sorted(primary_fallback_notices)
+                              state["effectivePrimaryTelegramChatId"] = fallback_chat_id
+                              primary_chat_id = fallback_chat_id
                               dirty = True
-                              print("Prueba de envío entregada una sola vez a una suscripción activa alternativa.")
+                              print("Prueba de envío entregada; se guardará esta suscripción como destinatario principal validado.")
                               break
                           except Exception as fallback_error:
                               print("La suscripción alternativa no aceptó el mensaje de diagnóstico: " + str(fallback_error))
@@ -397,8 +421,7 @@ jobs:
                           subscription.update({"mode": "line", "awaitingVehicleId": False, "awaitingVehicleAction": ""})
                           dirty = True
                           send_menu(incoming_chat_id, subscription, "✅ Seleccionado: solo recibirás cambios confirmados de línea de autobuses que siguen activos.")                      elif raw_text in ("🟢 Nueva entrada (reaparición)", "🟢 Nueva entrada", "Nueva entrada"):
-                          subscription.update({"mode": "entry", "awaitingVehicleId": False, "awaitingVehicleAction": ""})
-                          dirty = True
+                          subscription.update({"mode": "entry", "awaitingVehicleId": False, "awaitingVehicleAction": ""})                          dirty = True
                           send_menu(incoming_chat_id, subscription, "✅ Seleccionado: recibirás avisos cuando un autobús desaparecido vuelva a aparecer en el feed.")
                       elif raw_text in ("➕ Añadir coche(s) por ID", "Añadir coche(s) por ID", "🚌 Seguir coche(s) por ID", "🚌 Seguir un coche por ID", "Seguir un coche por ID"):
                           if not subscription.get("awaitingVehicleId"):
@@ -597,8 +620,7 @@ jobs:
               )
               if isinstance(stop_value, dict):                  stop_name = stop_name or clean(
                       stop_value.get("name") or stop_value.get("stopName") or
-                      stop_value.get("stop_name") or stop_value.get("nombre") or
-                      stop_value.get("nombreParada")
+                      stop_value.get("stop_name") or stop_value.get("nombre") or                      stop_value.get("nombreParada")
                   )
                   stop_value = (
                       stop_value.get("id") or stop_value.get("stopId") or
@@ -797,7 +819,6 @@ jobs:
                       except Exception as exc:
                           detail = str(exc)
                           failures.append(proxy_name + ": " + detail[:160] + ((" intento " + str(attempt)) if attempt == 1 else ""))
-
               raise RuntimeError("sin acceso a resourceVehicles para línea " + line + ": " + " | ".join(failures[:9]))          def vehicle_fields_equal(a, b):
               return all(clean(a.get(field)) == clean(b.get(field)) for field in ("line", "destination", "direction"))
 
@@ -997,8 +1018,7 @@ jobs:
                   raw_baseline_lines = []
               baseline_lines = {clean(line) for line in raw_baseline_lines if clean(line) in burgos_lines}
 
-              source_changed = bool(state.get("monitorSource")) and state.get("monitorSource") != snapshot_source              if source_changed:
-                  confirmed = {}
+              source_changed = bool(state.get("monitorSource")) and state.get("monitorSource") != snapshot_source              if source_changed:                  confirmed = {}
                   pending_arrivals = {}
                   pending_missing = {}
                   pending_routes = {}
@@ -1198,7 +1218,6 @@ jobs:
                   for pending_vehicle_id in list(pending_arrivals):
                       if pending_vehicle_id not in current:                          pending_arrivals.pop(pending_vehicle_id, None)
                           dirty = True
-
               # Una desaparición en la red completa se confirma pronto (>=3 min y 2 lecturas).
               # Si el snapshot es parcial, solo observamos coches cuya última línea conocida
               # respondió correctamente y que no aparecen en ninguna línea que sí respondió.
@@ -1397,8 +1416,7 @@ jobs:
                           else:
                               lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)                      lines.append("Destino actual: " + destination)
                       lines.append("Sentido actual: " + direction)
-                  lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))
-              return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
+                  lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))              return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
 
           # Freeze the intended recipients per event so retrying a failed send cannot
           # unexpectedly broadcast an old alert to somebody who joined later.
@@ -1597,8 +1615,7 @@ jobs:
                           # Une la cola de alertas y el progreso de entrega para evitar                          # perder una alerta o volver a enviar una ya entregada.
                           older_outbox = older_state.get("outbox", {})
                           newer_outbox = newest_state.get("outbox", {})
-                          merged_outbox = {}
-                          if isinstance(older_outbox, dict):
+                          merged_outbox = {}                          if isinstance(older_outbox, dict):
                               for event_id, event in older_outbox.items():
                                   if isinstance(event, dict):
                                       merged_outbox[event_id] = dict(event)
