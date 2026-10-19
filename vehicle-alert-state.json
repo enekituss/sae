@@ -39788,139 +39788,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:1e5c29af10fc0bb32b1aa59c": {
-      "destination": "SANTURTZI",
-      "detectedAt": "2026-10-19T08:35+02:00",
-      "direction": "",
-      "eventId": "missing:1e5c29af10fc0bb32b1aa59c",
-      "firstMissingAt": "2026-10-19T08:31:05+02:00",
-      "lastSeenAt": "2026-10-19T08:27:26+02:00",
-      "line": "A2315",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T08:35:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "1716"
-    },
-    "missing:5930a42e4ef29dd54d05c677": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T08:35+02:00",
-      "direction": "",
-      "eventId": "missing:5930a42e4ef29dd54d05c677",
-      "firstMissingAt": "2026-10-19T08:31:05+02:00",
-      "lastSeenAt": "2026-10-19T08:27:26+02:00",
-      "line": "A2321",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T08:35:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7886"
-    },
-    "missing:7e819cdd0d587dcd4cfaf91a": {
-      "destination": "GALDAKAO (Aut.)",
-      "detectedAt": "2026-10-19T08:35+02:00",
-      "direction": "",
-      "eventId": "missing:7e819cdd0d587dcd4cfaf91a",
-      "firstMissingAt": "2026-10-19T08:31:05+02:00",
-      "lastSeenAt": "2026-10-19T08:27:26+02:00",
-      "line": "A3930",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T08:35:07+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3363"
-    },
-    "route:25c15d49cbd832c50ecdf8d9": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GORLIZ",
-          "old": "PLENTZIA (Metro)"
-        }
-      ],
-      "destination": "GORLIZ",
-      "detectedAt": "2026-10-19T08:35+02:00",
-      "direction": "",
-      "eventId": "route:25c15d49cbd832c50ecdf8d9",
-      "line": "A3499",
-      "queuedAt": "2026-10-19T08:35:07+02:00",
-      "type": "route_change",
-      "vehicleId": "1671"
-    },
-    "route:b098c6391cf83eec9545b465": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3537",
-          "old": "A3531"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "PLENTZIA",
-          "old": "MUNGIA"
-        }
-      ],
-      "destination": "PLENTZIA",
-      "detectedAt": "2026-10-19T08:35+02:00",
-      "direction": "",
-      "eventId": "route:b098c6391cf83eec9545b465",
-      "line": "A3537",
-      "queuedAt": "2026-10-19T08:35:07+02:00",
-      "type": "route_change",
-      "vehicleId": "2132"
-    },
-    "route:fcb6a7569b448f4fc781d8de": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "MUNGIA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T08:35+02:00",
-      "direction": "",
-      "eventId": "route:fcb6a7569b448f4fc781d8de",
-      "line": "A3517",
-      "queuedAt": "2026-10-19T08:35:07+02:00",
-      "type": "route_change",
-      "vehicleId": "2109"
-    },
-    "vehicle_returned:4c2a10fa4c94f009a54147c0": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T08:35+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:4c2a10fa4c94f009a54147c0",
-      "lastKnown": {
-        "destination": "EHU/UPV",
-        "direction": "",
-        "id": "7800",
-        "line": "A2318"
-      },
-      "line": "A2318",
-      "queuedAt": "2026-10-19T08:35:07+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "7800"
-    },
-    "vehicle_returned:d08449fbeebf3bf6a6275b45": {
-      "destination": "ZEANURI (Aut.)",
-      "detectedAt": "2026-10-19T08:35+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:d08449fbeebf3bf6a6275b45",
-      "lastKnown": {
-        "destination": "EIBAR (Aut.)",
-        "direction": "",
-        "id": "3334",
-        "line": "A3926"
-      },
-      "line": "A3927",
-      "queuedAt": "2026-10-19T08:35:07+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3334"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "3335": {
@@ -40034,7 +39902,7 @@
       "requiredMissing": 2
     },
     "1716": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:1e5c29af10fc0bb32b1aa59c",
       "firstMissingAt": "2026-10-19T08:31:05+02:00",
@@ -40045,7 +39913,7 @@
         "line": "A2315"
       },
       "lastSeenAt": "2026-10-19T08:27:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "1732": {
@@ -40256,7 +40124,7 @@
       "requiredMissing": 2
     },
     "3363": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:7e819cdd0d587dcd4cfaf91a",
       "firstMissingAt": "2026-10-19T08:31:05+02:00",
@@ -40267,7 +40135,7 @@
         "line": "A3930"
       },
       "lastSeenAt": "2026-10-19T08:27:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3367": {
@@ -40581,7 +40449,7 @@
       "requiredMissing": 2
     },
     "7886": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:5930a42e4ef29dd54d05c677",
       "firstMissingAt": "2026-10-19T08:31:05+02:00",
@@ -40592,7 +40460,7 @@
         "line": "A2321"
       },
       "lastSeenAt": "2026-10-19T08:27:26+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7887": {
