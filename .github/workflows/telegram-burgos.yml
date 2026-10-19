@@ -248,6 +248,7 @@ jobs:
           except Exception as exc:
               print("AVISO: no se pudieron leer preferencias de telegram-data de Burgos; se conserva el estado local: " + str(exc))
           primary_chat_id = str(PRIMARY_CHAT)
+          primary_chat_reactivated = False
           try:
               bot_info = telegram_api("getMe", {})
               bot_username = clean(bot_info.get("username")).lower()
@@ -260,7 +261,26 @@ jobs:
               print("ERROR de configuración de Telegram para Burgos: " + str(exc))
               sys.exit(1)
 
-          if primary_chat_id not in subscriptions and primary_chat_id not in disabled_chats:
+          # Si el destinatario principal fue apartado por un rechazo anterior, no se
+          # deja bloqueado para siempre: se prueba un único envío real. Solo si
+          # Telegram acepta el mensaje se elimina el bloqueo y se recuperan sus avisos.
+          if primary_chat_id in disabled_chats:
+              try:
+                  telegram_api("sendMessage", {
+                      "chat_id": primary_chat_id,
+                      "text": "✅ SAE Spotter · Autobuses de Burgos\n\nHe comprobado que el bot vuelve a poder enviarte mensajes y he reactivado tus avisos. A partir de ahora recibirás alertas cuando se detecten cambios reales en autobuses.",
+                      "disable_web_page_preview": True
+                  })
+                  disabled_chats.discard(primary_chat_id)
+                  invalid_chat_notices.discard(primary_chat_id)
+                  primary_chat_reactivated = True
+                  if primary_chat_id not in subscriptions:
+                      subscriptions[primary_chat_id] = {"mode": "all", "vehicleId": "", "vehicleIds": [], "awaitingVehicleId": False}
+                  dirty = True
+                  print("El destinatario principal ha superado la prueba de envío; se han reactivado sus alertas.")
+              except Exception as exc:
+                  print("El destinatario principal continúa rechazado por Telegram; se mantiene desactivado: " + str(exc))
+          elif primary_chat_id not in subscriptions:
               subscriptions[primary_chat_id] = {"mode": "all", "vehicleId": "", "vehicleIds": [], "awaitingVehicleId": False}
               dirty = True
 
@@ -1447,6 +1467,10 @@ jobs:
                               raw_disabled = source_state.get("disabledTelegramChats", [])
                               if isinstance(raw_disabled, list):
                                   disabled_union.update(clean(value) for value in raw_disabled if clean(value))
+                          # Un envío de reactivación aceptado por Telegram prevalece sobre
+                          # la marca antigua de destinatario desactivado al conciliar conflictos.
+                          if primary_chat_reactivated:
+                              disabled_union.discard(primary_chat_id)
                           for disabled_chat in disabled_union:
                               combined_subs.pop(disabled_chat, None)
                           merged_state["telegramSubscriptions"] = combined_subs
