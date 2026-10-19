@@ -37323,97 +37323,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:095d865ba422352a5a831b7d": {
-      "destination": "Metro BOLUETA",
-      "detectedAt": "2026-10-19T07:37+02:00",
-      "direction": "",
-      "eventId": "missing:095d865ba422352a5a831b7d",
-      "firstMissingAt": "2026-10-19T07:33:05+02:00",
-      "lastSeenAt": "2026-10-19T07:29:40+02:00",
-      "line": "A3932",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T07:37:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3316"
-    },
-    "route_after_gap:23a9486e95f89531e012a37a": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "AIREPORTUA"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T07:37+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:23a9486e95f89531e012a37a",
-      "line": "A3247",
-      "queuedAt": "2026-10-19T07:37:03+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2078"
-    },
-    "route_after_gap:30b477584cbba686f8536157": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALLARTA",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "GALLARTA",
-      "detectedAt": "2026-10-19T07:37+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:30b477584cbba686f8536157",
-      "line": "A3333",
-      "queuedAt": "2026-10-19T07:37:03+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7856"
-    },
-    "route_after_gap:75ef6651af5bfdd2535a57b3": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3135",
-          "old": "A3335"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CABIECES",
-          "old": "SESTAO"
-        }
-      ],
-      "destination": "CABIECES",
-      "detectedAt": "2026-10-19T07:37+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:75ef6651af5bfdd2535a57b3",
-      "line": "A3135",
-      "queuedAt": "2026-10-19T07:37:03+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7857"
-    },
-    "vehicle_returned:0d757453ff97f0127fe6e232": {
-      "destination": "PLENTZIA (Metro)",
-      "detectedAt": "2026-10-19T07:37+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:0d757453ff97f0127fe6e232",
-      "lastKnown": {
-        "destination": "GORLIZ",
-        "direction": "",
-        "id": "1680",
-        "line": "A3499"
-      },
-      "line": "A3499",
-      "queuedAt": "2026-10-19T07:37:03+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "1680"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1516": {
       "consecutiveChecks": 2,
@@ -37693,7 +37603,7 @@
       "requiredMissing": 2
     },
     "3316": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:095d865ba422352a5a831b7d",
       "firstMissingAt": "2026-10-19T07:33:05+02:00",
@@ -37704,7 +37614,7 @@
         "line": "A3932"
       },
       "lastSeenAt": "2026-10-19T07:29:40+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3328": {
