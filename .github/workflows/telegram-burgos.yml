@@ -5,14 +5,17 @@ on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
-  # No lanzar el monitor por cada commit; el cron y el Worker dedicado lo programan.
+  # Ejecutar una vez al modificar el propio monitor para validar la reparación.
+  push:
+    paths:
+      - ".github/workflows/telegram-burgos.yml"
 
 permissions:
   contents: write
 
 concurrency:
-  # Grupo nuevo para sacar el monitor de ejecuciones pendientes antiguas.
-  group: alertas-telegram-burgos-v2
+  # Grupo renovado para que las ejecuciones antiguas atascadas no bloqueen la reparación.
+  group: alertas-telegram-burgos-v3
   cancel-in-progress: false
 
 jobs:
