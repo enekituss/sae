@@ -9,7 +9,9 @@
   ];
   // Worker dedicado a Burgos: viene configurado por defecto en el proyecto.
   const DEFAULT_WORKER_URL = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev";
+  const WORKER_API_VERSION = "sae-three-resources-per-line-v1";
   const WORKER_STORAGE_KEY = "saeBurgosDedicatedWorkerUrl";
+  const WORKER_CONFIG_VERSION_KEY = "saeBurgosDedicatedWorkerApiVersion";
   const ALL_LINES = [
     ...Array.from({length: 23}, (_, i) => String(i + 1).padStart(2, "0")),
     "73", "87", "88", "89", "C1", "C2"
@@ -444,9 +446,14 @@
 
   function getWorkerBaseUrl() {
     try {
-      // Una URL guardada permite sustituirla en el futuro; si no hay ninguna,
-      // utiliza automáticamente el Worker de Burgos incluido en este proyecto.
-      return normalizeWorkerBase(localStorage.getItem(WORKER_STORAGE_KEY) || DEFAULT_WORKER_URL);
+      // Solo se acepta una URL alternativa si fue verificada contra la versión
+      // específica del Worker de Burgos. Una URL antigua o de Bizkaibus se ignora.
+      const saved = String(localStorage.getItem(WORKER_STORAGE_KEY) || "").trim();
+      const version = String(localStorage.getItem(WORKER_CONFIG_VERSION_KEY) || "").trim();
+      if (saved && version === WORKER_API_VERSION) {
+        return normalizeWorkerBase(saved) || DEFAULT_WORKER_URL;
+      }
+      return DEFAULT_WORKER_URL;
     } catch {
       return DEFAULT_WORKER_URL;
     }
@@ -541,36 +548,93 @@
   }
 
   async function fetchWorkerSnapshot(workerBase) {
-    // Una sola petición al Worker evita saturarlo con 29 llamadas paralelas.
-    // El Worker consulta las líneas de forma limitada y comunica cuáles fallan.
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
-    try {
-      const response = await fetch(workerBase + "/api/burgos/vehicles", {
-        method: "GET",
-        cache: "no-store",
-        headers: { "Accept": "application/json" },
-        signal: controller.signal
-      });
-      const text = await response.text();
-      let payload;
-      try {
-        payload = JSON.parse(text);
-      } catch {
-        throw new Error("El Worker no devolvió JSON.");
-      }
-      if (!response.ok) {
-        throw new Error(payload?.error || ("Worker HTTP " + response.status));
-      }
-      if (!Array.isArray(payload?.vehicles)) {
-        throw new Error("El Worker no devolvió la lista de autobuses.");
-      }
-      return payload;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  }
+    // El Worker independiente de Burgos requiere una línea por petición.
+    // Se limita la concurrencia para no saturar ni al Worker ni al SAE municipal.
+    const results = new Array(ALL_LINES.length);
+    let cursor = 0;
+    const concurrency = Math.min(MAX_CONCURRENT_LINES, ALL_LINES.length);
 
+    await Promise.all(Array.from({ length: concurrency }, async () => {
+      while (true) {
+        const index = cursor++;
+        if (index >= ALL_LINES.length) return;
+        const line = ALL_LINES[index];
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        try {
+          const endpoint = workerBase + "/api/burgos/vehicles?line=" + encodeURIComponent(line);
+          const response = await fetch(endpoint, {
+            method: "GET",
+            cache: "no-store",
+            headers: { "Accept": "application/json" },
+            signal: controller.signal
+          });
+          const body = await response.text();
+          let payload;
+          try {
+            payload = JSON.parse(body);
+          } catch {
+            throw new Error("el Worker no devolvió JSON");
+          }
+          if (!response.ok || payload?.ok === false) {
+            throw new Error(payload?.error || ("Worker HTTP " + response.status));
+          }
+          if (!Array.isArray(payload?.vehicles)) {
+            throw new Error("el Worker no devolvió la lista de autobuses");
+          }
+          results[index] = { line, payload };
+        } catch (error) {
+          const message = error?.name === "AbortError"
+            ? "tiempo de espera agotado"
+            : String(error?.message || error);
+          results[index] = { line, error: message };
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+    }));
+
+    const vehicles = [];
+    const failedLines = [];
+    const warnings = [];
+    let lineCount = 0;
+    for (const result of results) {
+      if (!result || result.error) {
+        const line = result?.line || "desconocida";
+        failedLines.push(line);
+        warnings.push({ line, error: result?.error || "sin respuesta" });
+        continue;
+      }
+      lineCount++;
+      for (const vehicle of result.payload.vehicles) {
+        vehicles.push({
+          ...vehicle,
+          lineId: result.line,
+          line: result.line
+        });
+      }
+    }
+
+    if (lineCount === 0) {
+      const detail = warnings.slice(0, 3)
+        .map(item => item.line + ": " + item.error)
+        .join("; ");
+      throw new Error("No se ha podido consultar ninguna línea del Worker de Burgos." +
+        (detail ? " " + detail : ""));
+    }
+
+    return {
+      ok: failedLines.length === 0,
+      vehicles,
+      failedLines,
+      warnings,
+      lineCount,
+      totalLines: ALL_LINES.length,
+      partial: failedLines.length > 0,
+      fetchedAt: new Date().toISOString()
+    };
+  }
   async function fetchLine(line) {
     const payload = await fetchVehicleJson(buildVehicleUrl(line));
     const vehicles = payload.map(bus => normalizeVehicle(bus, line)).filter(Boolean);
@@ -848,16 +912,20 @@
       }
       if (!healthResponse.ok) throw new Error("El Worker respondió HTTP " + healthResponse.status + " en /health.");
       const health = await healthResponse.json();
-      if (health?.ok !== true) throw new Error("La URL no parece corresponder al Worker de SAE Spotter.");
+      if (health?.ok !== true || health?.apiVersion !== WORKER_API_VERSION ||
+          !String(health?.service || "").toLowerCase().includes("burgos")) {
+        throw new Error("La URL no corresponde al Worker independiente actualizado de Burgos. No uses el Worker de Bizkaibus.");
+      }
       localStorage.setItem(WORKER_STORAGE_KEY, base);
-      setStatus("Worker verificado · consultando autobuses…", "");
+      localStorage.setItem(WORKER_CONFIG_VERSION_KEY, WORKER_API_VERSION);
+      setStatus("Worker de Burgos verificado · consultando autobuses…", "");
       await load();
     } catch (error) {
       setStatus(error?.message || "No se ha podido guardar la conexión.", "error");
     }
   });
   $("clearWorkerUrl").addEventListener("click", async () => {
-    try { localStorage.removeItem(WORKER_STORAGE_KEY); } catch {}
+    try { localStorage.removeItem(WORKER_STORAGE_KEY); localStorage.removeItem(WORKER_CONFIG_VERSION_KEY); } catch {}
     $("workerUrlInput").value = DEFAULT_WORKER_URL;
     setStatus("URL predeterminada del Worker de Burgos restaurada.", "");
     await load();
