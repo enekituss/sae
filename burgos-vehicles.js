@@ -18,7 +18,7 @@
   ];
   const REFRESH_MS = 60000;
   const REQUEST_TIMEOUT_MS = 8000;
-  const MAX_CONCURRENT_LINES = 8;
+  const MAX_CONCURRENT_LINES = 5;
   const $ = id => document.getElementById(id);
 
   let lineSnapshots = new Map();
@@ -1108,19 +1108,24 @@
   async function enrichAllLinesWithLive(workerBase) {
     if (liveEnrichmentRunning || !workerBase) return;
     liveEnrichmentRunning = true;
-    const lines = ALL_LINES.filter(line => lineSnapshots.has(line));
+    // El enriquecimiento solo hace falta para líneas con autobuses actuales.
+    // Saltamos líneas vacías o que fallaron en la consulta principal para reducir carga al SAE.
+    const lines = ALL_LINES.filter(line => {
+      const vehicles = lineSnapshots.get(line);
+      return lineSnapshots.has(line) && !staleLines.has(line) &&
+        Array.isArray(vehicles) && vehicles.length > 0;
+    });
     let cursor = 0;
     let completed = 0;
     let successful = 0;
     let failed = 0;
 
     if (lines.length) {
-      setStatus("Autobuses cargados · enlazando destinos y próximas paradas (0/" +
-        lines.length + " líneas)…", "");
+      setStatus("Autobuses cargados · enlazando destinos y próximas paradas en " + lines.length + " líneas con coches (0 completadas)…", "");
     }
 
     try {
-      await Promise.all(Array.from({ length: 3 }, async () => {
+      await Promise.all(Array.from({ length: 2 }, async () => {
         while (true) {
           const index = cursor++;
           if (index >= lines.length) return;
@@ -1128,7 +1133,13 @@
           try {
             const payload = await fetchLiveLineDetails(workerBase, line);
             mergeLiveLineDetails(line, payload);
-            successful++;
+            if (payload.partial) {
+              failed++;
+              console.warn("SAE Burgos: datos parciales de la línea " + line + ":",
+                Array.isArray(payload.warnings) ? payload.warnings.join(" · ") : "faltan datos de recorrido o estimaciones");
+            } else {
+              successful++;
+            }
           } catch (error) {
             failed++;
             console.warn("SAE Burgos: no se pudieron enlazar destino/próxima parada de la línea " +
@@ -1147,12 +1158,13 @@
       liveEnrichmentRunning = false;
       const vehicleCount = [...lineSnapshots.values()].reduce((total, list) => total + list.length, 0);
       if (successful) {
-        setStatus("Datos en directo · " + vehicleCount + " autobuses. Destinos/próximas paradas enlazados en " +
-          successful + "/" + lines.length + " líneas" + (failed ? " (" + failed + " con error)" : ""),
+        setStatus("Conexión de autobuses activa · " + vehicleCount + " autobuses. Destinos/próximas paradas completos en " +
+          successful + "/" + lines.length + " líneas con coches" +
+          (failed ? "; " + failed + " consultas incompletas o fallidas" : ""),
           failed ? "error" : "ok");
       } else if (lines.length) {
-        setStatus("Los autobuses están cargados, pero no se han podido obtener destinos/próximas paradas. " +
-          "Revisa la versión del Worker de Burgos.", "error");
+        setStatus("Conexión de autobuses activa · " + vehicleCount + " autobuses cargados. El SAE municipal no ha devuelto destinos y próximas paradas completos en esta pasada; se conserva la lista y se reintentará en el siguiente refresco.",
+          "error");
       }
     }
   }
