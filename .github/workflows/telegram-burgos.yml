@@ -197,7 +197,9 @@ jobs:
                   message += notice + "\n\n"
               message += "Configuración actual: " + mode_description(subscription) + "\n\nElige qué alertas quieres recibir con los botones del teclado."
               ids = tracked_vehicle_ids(subscription)
-              message += "\n\nCoches seguidos por ID (" + str(len(ids)) + "): " + (", ".join(ids[:20]) if ids else "ninguno") + ((" y " + str(len(ids)-20) + " más") if len(ids) > 20 else "") + "."\n              message += "\n\nComandos: /avisos o /menu abre las opciones; /coches muestra los IDs; /coche 123 añade y /quitar 123 elimina."\n              message += "\nPulsa «❎ Cerrar menú» para ocultar los botones."
+              message += "\n\nCoches seguidos por ID (" + str(len(ids)) + "): " + (", ".join(ids[:20]) if ids else "ninguno") + ((" y " + str(len(ids)-20) + " más") if len(ids) > 20 else "") + "."
+              message += "\n\nComandos: /avisos o /menu abre las opciones; /coches muestra los IDs; /coche 123 añade y /quitar 123 elimina."
+              message += "\nPulsa «❎ Cerrar menú» para ocultar los botones."
               if clean(subscription.get("mode")) == "off":
                   message += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro."
               message += "\n\nConfigura tus preferencias en el chat privado con @SAEBUR_bot. La falta de posición publicada no confirma por sí sola una baja administrativa."
@@ -620,9 +622,11 @@ jobs:
                   vehicle.get("nombreParada") or vehicle.get("paradaNombre") or
                   vehicle.get("nodeName") or vehicle.get("nodoNombre")
               )
-              if isinstance(stop_value, dict):\n                  stop_name = stop_name or clean(
+              if isinstance(stop_value, dict):
+                  stop_name = stop_name or clean(
                       stop_value.get("name") or stop_value.get("stopName") or
-                      stop_value.get("stop_name") or stop_value.get("nombre") or\n                      stop_value.get("nombreParada")
+                      stop_value.get("stop_name") or stop_value.get("nombre") or
+                      stop_value.get("nombreParada")
                   )
                   stop_value = (
                       stop_value.get("id") or stop_value.get("stopId") or
@@ -1020,7 +1024,9 @@ jobs:
                   raw_baseline_lines = []
               baseline_lines = {clean(line) for line in raw_baseline_lines if clean(line) in burgos_lines}
 
-              source_changed = bool(state.get("monitorSource")) and state.get("monitorSource") != snapshot_source\n              if source_changed:\n                  confirmed = {}
+              source_changed = bool(state.get("monitorSource")) and state.get("monitorSource") != snapshot_source
+              if source_changed:
+                  confirmed = {}
                   pending_arrivals = {}
                   pending_missing = {}
                   pending_routes = {}
@@ -1416,9 +1422,11 @@ jobs:
                               lines.append("Última línea antes de desaparecer: " + old_value)
                               lines.append("Nueva línea al reaparecer: " + new_value)
                           else:
-                              lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)\n                      lines.append("Destino actual: " + destination)
+                              lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)
+                      lines.append("Destino actual: " + destination)
                       lines.append("Sentido actual: " + direction)
-                  lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))\n              return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
+                  lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))
+              return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
 
           # Freeze the intended recipients per event so retrying a failed send cannot
           # unexpectedly broadcast an old alert to somebody who joined later.
@@ -1614,10 +1622,12 @@ jobs:
                           except (TypeError, ValueError):
                               pass
 
-                          # Une la cola de alertas y el progreso de entrega para evitar\n                          # perder una alerta o volver a enviar una ya entregada.
+                          # Une la cola de alertas y el progreso de entrega para evitar
+                          # perder una alerta o volver a enviar una ya entregada.
                           older_outbox = older_state.get("outbox", {})
                           newer_outbox = newest_state.get("outbox", {})
-                          merged_outbox = {}\n                          if isinstance(older_outbox, dict):
+                          merged_outbox = {}
+                          if isinstance(older_outbox, dict):
                               for event_id, event in older_outbox.items():
                                   if isinstance(event, dict):
                                       merged_outbox[event_id] = dict(event)
