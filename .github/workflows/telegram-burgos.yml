@@ -316,19 +316,22 @@ jobs:
               subscriptions[primary_chat_id] = {"mode": "all", "vehicleId": "", "vehicleIds": [], "awaitingVehicleId": False}
               dirty = True
 
-          # Las preferencias se procesan antes de consultar los datos para que el menú responda lo antes posible.
+          # Burgos ya no debe depender del Worker compartido con Bizkaibus.
+          # Si quedó instalado el webhook antiguo en bizkaibus-sae-dispatcher, Telegram
+          # entrega allí los mensajes y GitHub Actions no los puede procesar. Lo retiramos
+          # conservando actualizaciones pendientes y pasamos a polling con getUpdates.
           update_offset = max(0, int(state.get("telegramUpdateOffset", 0) or 0))
           try:
               webhook_info = telegram_api("getWebhookInfo", {})
-              if clean(webhook_info.get("url")):
-                  print("Webhook de @SAEBUR_bot activo; Cloudflare procesa el menú. Se omite getUpdates.")
-                  updates = []
-              else:
-                  updates = telegram_api("getUpdates", {
-                      "offset": update_offset,
-                      "timeout": 0,
-                      "allowed_updates": ["message"]
-                  })
+              webhook_url = clean(webhook_info.get("url"))
+              if webhook_url:
+                  print("Webhook antiguo de @SAEBUR_bot detectado; se elimina para que el monitor independiente de Burgos procese los mensajes.")
+                  telegram_api("deleteWebhook", {"drop_pending_updates": False})
+              updates = telegram_api("getUpdates", {
+                  "offset": update_offset,
+                  "timeout": 0,
+                  "allowed_updates": ["message"]
+              })
           except Exception as exc:
               print("AVISO: no se pudieron consultar los mensajes de Telegram: " + str(exc))
               updates = []
