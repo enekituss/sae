@@ -9,7 +9,7 @@
   ];
   // Worker dedicado a Burgos: viene configurado por defecto en el proyecto.
   const DEFAULT_WORKER_URL = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev";
-  const WORKER_API_VERSION = "sae-three-resources-per-line-v5";
+  const WORKER_API_VERSION = "sae-three-resources-per-line-v6";
   const WORKER_STORAGE_KEY = "saeBurgosDedicatedWorkerUrl";
   const WORKER_CONFIG_VERSION_KEY = "saeBurgosDedicatedWorkerApiVersion";
   const ALL_LINES = [
@@ -80,6 +80,38 @@
     if (value <= 15) return "Llegada inminente";
     if (value < 60) return "menos de 1 min";
     return "≈ " + Math.round(value / 60) + " min";
+  }
+
+  function formatScheduledStopTime(value) {
+    const raw = String(value ?? "").trim();
+    const match = raw.match(/^(\d{1,3}):([0-5]\d)(?::[0-5]\d)?$/);
+    if (!match) return raw || "—";
+    const hours = Number(match[1]);
+    const clock = String(hours % 24).padStart(2, "0") + ":" + match[2];
+    return hours >= 24 ? clock + " (+1 día)" : clock;
+  }
+
+  function gtfsTimeToSeconds(value) {
+    const raw = String(value ?? "").trim();
+    const match = raw.match(/^(\d{1,3}):([0-5]\d)(?::([0-5]\d))?$/);
+    if (!match) return null;
+    return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3] || 0);
+  }
+
+  function scheduledTimeDistance(trip, stopIndex, observation) {
+    const item = Array.isArray(trip?.stops) ? trip.stops[stopIndex] : null;
+    const values = [gtfsTimeToSeconds(item?.[1]), gtfsTimeToSeconds(item?.[2])]
+      .filter(value => value !== null);
+    if (!values.length) return Infinity;
+    const now = new Date();
+    const eta = nonNegativeNumber(observation?.seconds) ?? 0;
+    const expected = (now.getHours() * 3600 + now.getMinutes() * 60 +
+      now.getSeconds() + eta) % 86400;
+    return Math.min(...values.map(value => {
+      const clock = value % 86400;
+      const delta = Math.abs(clock - expected);
+      return Math.min(delta, 86400 - delta);
+    }));
   }
 
   function normalizeWords(value) {
@@ -184,47 +216,115 @@
     if (!gtfsData || !Array.isArray(gtfsData.stops)) return null;
     const lat = Number(observation.stopLat);
     const lon = Number(observation.stopLon);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    const hasCoordinates = Number.isFinite(lat) && Number.isFinite(lon);
     const line = normalizeLineKey(observation.line);
     if (!line) return null;
 
-    const nearby = [];
-    const latCell = Math.floor(lat / GEO_CELL_DEGREES);
-    const lonCell = Math.floor(lon / GEO_CELL_DEGREES);
-    for (let dLat = -1; dLat <= 1; dLat++) {
-      for (let dLon = -1; dLon <= 1; dLon++) {
-        const cellKey = (latCell + dLat) + "|" + (lonCell + dLon);
-        const cellStops = gtfsData.stopsByGeoCell?.get(cellKey) || [];
-        for (const stop of cellStops) {
-          const stopLat = Number(stop.lat);
-          const stopLon = Number(stop.lon);
-          const distance = distanceMeters({ lat, lon }, { lat: stopLat, lon: stopLon });
-          if (distance <= 280) nearby.push({ stop, distance });
+    // Prioridad: coordenadas del SAE, ID de parada compatible y, como respaldo,
+    // nombre normalizado. Así la falta de coordenadas no inutiliza el itinerario.
+    const stopCandidates = new Map();
+    const addStop = (stop, distance, matchType) => {
+      if (!stop?.id) return;
+      const id = String(stop.id);
+      const previous = stopCandidates.get(id);
+      const priority = { id: 0, coordinates: 1, name: 2 };
+      const candidate = { stop, distance, matchType };
+      if (!previous || priority[matchType] < priority[previous.matchType] ||
+          (matchType === previous.matchType && distance < previous.distance)) {
+        stopCandidates.set(id, candidate);
+      }
+    };
+
+    if (hasCoordinates) {
+      const latCell = Math.floor(lat / GEO_CELL_DEGREES);
+      const lonCell = Math.floor(lon / GEO_CELL_DEGREES);
+      for (let dLat = -1; dLat <= 1; dLat++) {
+        for (let dLon = -1; dLon <= 1; dLon++) {
+          const cellKey = (latCell + dLat) + "|" + (lonCell + dLon);
+          const cellStops = gtfsData.stopsByGeoCell?.get(cellKey) || [];
+          for (const stop of cellStops) {
+            const stopLat = Number(stop.lat);
+            const stopLon = Number(stop.lon);
+            const distance = distanceMeters({ lat, lon }, { lat: stopLat, lon: stopLon });
+            if (distance <= 280) addStop(stop, distance, "coordinates");
+          }
         }
       }
     }
-    nearby.sort((a, b) => a.distance - b.distance);
+
+    const observedStopId = String(observation.stopId ?? "").trim();
+    const observedStopName = normalizeWords(observation.stopName).join(" ");
+    if (observedStopId) {
+      const direct = gtfsData.stopById.get(observedStopId) ||
+        gtfsData.stops.find(stop => String(stop.code ?? "").trim() === observedStopId);
+      const directName = normalizeWords(direct?.name).join(" ");
+      if (direct && (!observedStopName || !directName || directName === observedStopName)) {
+        addStop(direct, -1, "id");
+      }
+    }
+
+    if (observedStopName) {
+      // El nombre solo se usa para las paradas que coinciden exactamente tras
+      // quitar acentos y puntuación; no se inventa una parada por semejanza parcial.
+      for (const stop of gtfsData.stops) {
+        if (normalizeWords(stop.name).join(" ") !== observedStopName) continue;
+        const stopLat = Number(stop.lat);
+        const stopLon = Number(stop.lon);
+        const distance = hasCoordinates && Number.isFinite(stopLat) && Number.isFinite(stopLon)
+          ? distanceMeters({ lat, lon }, { lat: stopLat, lon: stopLon })
+          : 0;
+        addStop(stop, distance, "name");
+      }
+    }
+
+    if (!stopCandidates.size) return null;
+    const nearby = [...stopCandidates.values()].sort((a, b) =>
+      ({ id: 0, coordinates: 1, name: 2 }[a.matchType] -
+       { id: 0, coordinates: 1, name: 2 }[b.matchType]) ||
+      a.distance - b.distance
+    );
 
     const candidates = [];
-    for (const item of nearby.slice(0, 8)) {
+    for (const item of nearby.slice(0, 12)) {
       const rows = gtfsData.tripsByLineStop.get(line + "|" + String(item.stop.id)) || [];
       for (const row of rows) {
         candidates.push({
           ...row,
           matchedStop: item.stop,
           stopDistance: item.distance,
-          score: destinationScore(observation.destination, row.trip.headsign)
+          matchType: item.matchType,
+          score: destinationScore(observation.destination, row.trip.headsign),
+          timeDistance: scheduledTimeDistance(row.trip, row.stopIndex, observation)
         });
       }
     }
     if (!candidates.length) return null;
-    candidates.sort((a, b) => b.score - a.score || a.stopDistance - b.stopDistance);
+    candidates.sort((a, b) =>
+      b.score - a.score ||
+      a.stopDistance - b.stopDistance ||
+      a.timeDistance - b.timeDistance
+    );
 
     if (candidates[0].score === 0) {
       const possibleDestinations = new Set(candidates.map(candidate =>
         normalizeWords(candidate.trip.headsign).join(" ")
       ));
-      if (possibleDestinations.size > 1) return null;
+      if (possibleDestinations.size > 1) {
+        // Si el texto de destino del SAE no coincide con los rótulos GTFS,
+        // solo elegimos un sentido cuando el horario aporta una ventaja clara.
+        const byTime = candidates.filter(candidate => Number.isFinite(candidate.timeDistance))
+          .sort((a, b) => a.timeDistance - b.timeDistance || a.stopDistance - b.stopDistance);
+        const bestByTime = byTime[0];
+        const otherDirection = bestByTime && byTime.find(candidate =>
+          normalizeWords(candidate.trip.headsign).join(" ") !==
+          normalizeWords(bestByTime.trip.headsign).join(" ")
+        );
+        if (!bestByTime || bestByTime.timeDistance > 45 * 60 ||
+            (otherDirection && otherDirection.timeDistance - bestByTime.timeDistance < 5 * 60)) {
+          return null;
+        }
+        return bestByTime;
+      }
     }
     return candidates[0];
   }
@@ -242,14 +342,21 @@
     }
     const tripStops = Array.isArray(match.trip.stops) ? match.trip.stops : [];
     const remaining = tripStops.slice(match.stopIndex);
-    if (!remaining.length) {
+    if (remaining.length < 2) {
       itineraryByVehicle.set(key, null);
       return null;
     }
     const stops = remaining.map(item => {
       const id = String(item?.[0] ?? "").trim();
       const stop = gtfsData.stopById.get(id);
-      return { id, name: String(stop?.name || ("Parada " + id)).trim() };
+      return {
+        id,
+        name: String(stop?.name || ("Parada " + id)).trim(),
+        arrivalTime: String(item?.[1] ?? "").trim(),
+        departureTime: String(item?.[2] ?? "").trim(),
+        sequence: String(item?.[3] ?? "").trim(),
+        timepoint: String(item?.[4] ?? "").trim()
+      };
     }).filter(stop => stop.id && stop.name);
     if (stops.length < 2) {
       itineraryByVehicle.set(key, null);
@@ -259,7 +366,8 @@
       destination: String(match.trip.headsign || observation.destination || "").trim(),
       stops,
       totalStops: stops.length,
-      source: "GTFS de Burgos; secuencia orientativa desde la próxima parada estimada"
+      matchedStopId: String(match.matchedStop?.id || ""),
+      source: "GTFS de Burgos; secuencia desde la próxima parada estimada"
     };
     itineraryByVehicle.set(key, itinerary);
     return itinerary;
@@ -323,14 +431,24 @@
     const content = $("itineraryContent");
     content.innerHTML =
       '<ol class="itinerary-list">' +
-      itinerary.stops.map((stop, index) =>
-        '<li' + (index === 0 ? ' class="itinerary-next"' : '') + '>' +
+      itinerary.stops.map((stop, index) => {
+        const arrival = formatScheduledStopTime(stop.arrivalTime || stop.departureTime);
+        const departure = formatScheduledStopTime(stop.departureTime || stop.arrivalTime);
+        const timeDetail = arrival !== "—" || departure !== "—"
+          ? '<span class="itinerary-stop-times">Llegada prevista: ' + escapeHTML(arrival) +
+            ' · Salida prevista: ' + escapeHTML(departure) +
+            (stop.timepoint === "0" ? ' · hora aproximada en GTFS' : '') + '</span>'
+          : '<span class="itinerary-stop-times">Horario no publicado para esta parada</span>';
+        return '<li' + (index === 0 ? ' class="itinerary-next"' : '') + '>' +
           '<span class="itinerary-sequence">' + (index + 1) + '</span>' +
-          '<span class="itinerary-stop-name">' + escapeHTML(stop.name) + '</span>' +
+          '<span class="itinerary-stop-content">' +
+            '<span class="itinerary-stop-name">' + escapeHTML(stop.name) + '</span>' +
+            timeDetail +
+          '</span>' +
           (index === 0 ? '<span class="itinerary-next-badge">Próxima estimada</span>' : '') +
-        '</li>'
-      ).join("") +
-      '</ol><p class="itinerary-note">Recorrido de referencia del GTFS municipal. Solo la próxima parada se basa en la estimación en directo; las siguientes indican la secuencia programada.</p>';
+        '</li>';
+      }).join("") +
+      '</ol><p class="itinerary-note">Horarios de paso programados del GTFS municipal. La etiqueta de próxima parada procede de la estimación del SAE; las horas mostradas son las previstas, no predicciones en tiempo real.</p>';
   }
 
   function restoreNextStopCache() {
