@@ -206,7 +206,7 @@ function extractRouteNodeDetails(payload) {
       value.paradaNombre !== undefined;
     if (context || (hasCoordinates && hasStopName)) {
       const id = stopIdFrom(value, true);
-      if (/^\\d{1,12}$/.test(id)) {
+      if (/^\d{1,12}$/.test(id)) {
         const name = String(value.name ?? value.stopName ?? value.stop_name ??
           value.nombre ?? value.nombreNodo ?? value.nombreParada ??
           value.paradaNombre ?? value.description ?? value.descripcion ?? "").trim();
@@ -584,8 +584,8 @@ export default {
       return jsonResponse(request, {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
-        apiVersion: "sae-three-resources-per-line-v5",
-        buildId: "burgos-live-v5-2026-10-19",
+        apiVersion: "sae-three-resources-per-line-v6",
+        buildId: "burgos-live-v6-2026-10-19",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(env?.BURGOS_GITHUB_TOKEN), cadence: "*/2 * * * *" },
