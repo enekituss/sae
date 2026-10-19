@@ -286,7 +286,7 @@
     // If the live request is already in flight, wait for that same request.
     // On later visits the cached stop data lets us skip the long wait entirely.
     if (!observation) {
-      await refreshNextStopData(getWorkerBaseUrl());
+      await refreshNextStopData(getWorkerBaseUrl(), null, "", [], vehicle.line);
       observation = nextStopByVehicle.get(key);
     }
     if (!observation) {
@@ -363,33 +363,77 @@
     }
   }
 
-  async function refreshNextStopData(workerBase) {
+  async function refreshNextStopData(
+    workerBase,
+    sourceObservations = null,
+    sourceFetchedAt = "",
+    failedLines = [],
+    onlyLine = ""
+  ) {
     if (!workerBase) return null;
     if (nextStopPromise) return nextStopPromise;
 
     nextStopQueryRunning = true;
     const promise = (async () => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 55000);
       try {
-        const response = await fetch(workerBase + "/api/burgos/live", {
-          method: "GET",
-          cache: "no-store",
-          headers: { "Accept": "application/json" },
-          signal: controller.signal
-        });
-        const text = await response.text();
-        let payload;
-        try { payload = JSON.parse(text); }
-        catch { throw new Error("La API de estimaciones no devolvió JSON."); }
-        if (!response.ok) throw new Error(payload?.error || ("API de próximas paradas HTTP " + response.status));
-        if (!Array.isArray(payload?.observations)) {
-          throw new Error(payload?.error || "La API no devuelve estimaciones por parada.");
+        let observations = sourceObservations;
+        let fetchedAt = sourceFetchedAt;
+        const replaceLines = new Set();
+
+        if (onlyLine) {
+          replaceLines.add(normalizeLineKey(onlyLine));
+        } else if (Array.isArray(observations)) {
+          const failed = new Set(failedLines.map(normalizeLineKey));
+          for (const line of ALL_LINES) {
+            if (!failed.has(normalizeLineKey(line))) {
+              replaceLines.add(normalizeLineKey(line));
+            }
+          }
+        } else {
+          return nextStopByVehicle;
         }
 
-        const next = new Map();
-        for (const observation of payload.observations) {
-          const key = vehicleStopKey(observation.vehicleId, observation.line);
+        // The vehicle endpoint already includes the line's estimations. Only make
+        // another request if a user opens an itinerary without cached stop data.
+        if (!Array.isArray(observations)) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
+          try {
+            const endpoint = workerBase + "/api/burgos/vehicles?line=" +
+              encodeURIComponent(onlyLine);
+            const response = await fetch(endpoint, {
+              method: "GET",
+              cache: "no-store",
+              headers: { "Accept": "application/json" },
+              signal: controller.signal
+            });
+            const text = await response.text();
+            let payload;
+            try { payload = JSON.parse(text); }
+            catch { throw new Error("La API de Burgos no devolvió JSON."); }
+            if (!response.ok || payload?.ok === false) {
+              throw new Error(payload?.error || ("API de próximas paradas HTTP " + response.status));
+            }
+            if (!Array.isArray(payload?.observations)) {
+              throw new Error("La API de Burgos no devuelve estimaciones para esa línea.");
+            }
+            observations = payload.observations;
+            fetchedAt = payload.fetchedAt || "";
+          } finally {
+            clearTimeout(timeoutId);
+          }
+        }
+
+        // Preserve cached stops for lines that failed, but replace every line
+        // successfully checked in this snapshot (or just the requested popup line).
+        const next = new Map([...nextStopByVehicle.entries()].filter(([, current]) =>
+          !replaceLines.has(normalizeLineKey(current.line))
+        ));
+
+        for (const observation of observations) {
+          const observationLine = String(observation.line ?? onlyLine ?? "").trim();
+          if (onlyLine && normalizeLineKey(observationLine) !== normalizeLineKey(onlyLine)) continue;
+          const key = vehicleStopKey(observation.vehicleId, observationLine);
           if (!key) continue;
           const stopId = String(observation.stopId ?? "").trim();
           const stopName = String(observation.stopName ?? "").trim();
@@ -400,7 +444,7 @@
             seconds: nonNegativeNumber(observation.seconds),
             meters: nonNegativeNumber(observation.meters),
             destination: String(observation.destination ?? "").trim(),
-            line: String(observation.line ?? "").trim(),
+            line: observationLine,
             vehicleId: String(observation.vehicleId ?? "").trim(),
             stopLat: observation.stopLat === null || observation.stopLat === undefined ? null : Number(observation.stopLat),
             stopLon: observation.stopLon === null || observation.stopLon === undefined ? null : Number(observation.stopLon)
@@ -410,20 +454,17 @@
         }
 
         nextStopByVehicle = next;
-        saveNextStopCache(payload.fetchedAt);
+        saveNextStopCache(fetchedAt);
         itineraryByVehicle.clear();
         console.info("SAE Burgos: próxima parada localizada para", next.size,
           "combinaciones vehículo/línea;",
-          "estimaciones recibidas:", payload.observations.length,
-          "paradas consultadas:", payload.stopCount,
-          "consulta parcial:", Boolean(payload.partial));
+          "estimaciones recibidas:", observations.length,
+          "líneas conservadas por fallos:", failedLines.length);
         render();
         return next;
       } catch (error) {
         console.warn("No se pudieron actualizar las próximas paradas de Burgos:", error?.message || String(error));
         return nextStopByVehicle;
-      } finally {
-        clearTimeout(timeoutId);
       }
     })();
 
@@ -596,6 +637,7 @@
     }));
 
     const vehicles = [];
+    const observations = [];
     const failedLines = [];
     const warnings = [];
     let lineCount = 0;
@@ -614,6 +656,11 @@
           line: result.line
         });
       }
+      if (Array.isArray(result.payload.observations)) {
+        for (const observation of result.payload.observations) {
+          observations.push({ ...observation, line: result.line });
+        }
+      }
     }
 
     if (lineCount === 0) {
@@ -627,6 +674,7 @@
     return {
       ok: failedLines.length === 0,
       vehicles,
+      observations,
       failedLines,
       warnings,
       lineCount,
@@ -826,7 +874,7 @@
         render();
         // Preload the timetable in parallel; itinerary matching itself is deferred until a popup opens.
         loadGtfsForItinerary();
-        refreshNextStopData(workerBase);
+        refreshNextStopData(workerBase, snapshot.observations, snapshot.fetchedAt, snapshot.failedLines);
       } else {
         const results = new Array(ALL_LINES.length);
         let cursor = 0;
