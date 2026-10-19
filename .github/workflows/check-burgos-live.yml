@@ -6,6 +6,7 @@ on:
       - "burgos.css"
       - "burgos.js"
       - "burgos-vehicles.js"
+      - "burgos-modelos.json"
       - "scripts/update_burgos_gtfs.py"
       - "cloudflare-worker/src/index.js"
       - "cloudflare-worker-burgos/src/index.js"
@@ -21,6 +22,9 @@ jobs:
         run: node --check burgos.js
       - name: Comprobar JavaScript de la vista activa de Burgos
         run: node --check burgos-vehicles.js
+      - name: Validar base de modelos de autobuses de Burgos
+        run: |
+          node -e 'const d=require("./burgos-modelos.json"); const m=d.models; if (!m || !Object.keys(m).length || Object.values(m).some(v => typeof v !== "string" || !v.trim())) throw new Error("Base de modelos inválida"); console.log("Base de modelos válida:", Object.keys(m).length, "coches");'
       - name: Comprobar JavaScript del proxy Cloudflare
         run: node --check cloudflare-worker/src/index.js
       - name: Comprobar JavaScript del Worker independiente de Burgos
