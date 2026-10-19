@@ -726,6 +726,16 @@
     throw new Error(failures.join(" · ") || "No hay respuesta de los proxies.");
   }
 
+  function destinationText(value) {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "string" || typeof value === "number") return String(value).trim();
+    if (typeof value === "object") {
+      return String(value.destinationName ?? value.destinationText ?? value.name ?? value.nombre ??
+        value.description ?? value.descripcion ?? value.headsign ?? value.label ?? value.text ?? "").trim();
+    }
+    return "";
+  }
+
   function normalizeVehicle(bus, line) {
     const rawId = bus.id ?? bus.vehicleId ?? bus.vehicle_id ?? bus.vehicle ??
       bus.vehiculo ?? bus.vehicleNumber ?? bus.number ?? bus.fleetNumber ?? bus.calca;
@@ -735,7 +745,12 @@
       ...bus,
       id,
       line: line,
-      destination: String(bus.destination ?? bus.destino ?? bus.headsign ?? bus.destinationName ?? bus.destiny ?? "").trim(),
+      destination: destinationText(bus.destination ?? bus.destino ?? bus.headsign ??
+        bus.destinationName ?? bus.destinationText ?? bus.destiny ?? bus.destinoNombre ??
+        bus.nombreDestino ?? bus.destinationLabel ?? bus.destinationDescription ?? ""),
+      destinationId: String(bus.destinationId ?? bus.destination_id ?? bus.destinoId ??
+        bus.destino_id ?? bus.idDestino ?? bus.id_destino ?? bus.destId ??
+        bus.dest_id ?? bus.destinationCode ?? bus.codigoDestino ?? bus.codDestino ?? "").trim(),
       direction: String(bus.direction ?? bus.sentido ?? bus.direccion ?? "").trim(),
       model: String(bus.model ?? bus.modelo ?? bus.vehicleModel ?? "").trim(),
       registration: String(bus.matricula ?? bus.registration ?? bus.plate ?? bus.licensePlate ?? "").trim(),
@@ -1036,8 +1051,15 @@
         stopName: stopName || (stopId ? "Parada " + stopId : ""),
         seconds: nonNegativeNumber(observation.seconds),
         meters: nonNegativeNumber(observation.meters),
-        destination: String(observation.destination ?? "").trim(),
-        direction: String(observation.direction ?? "").trim(),
+        destination: destinationText(observation.destination ?? observation.destinationName ??
+          observation.destinationText ?? observation.destino ?? observation.destinoNombre ??
+          observation.nombreDestino ?? observation.destinationLabel ?? observation.destinationDescription ?? ""),
+        destinationId: String(observation.destinationId ?? observation.destination_id ??
+          observation.destinoId ?? observation.destino_id ?? observation.idDestino ??
+          observation.id_destino ?? observation.destId ?? observation.dest_id ??
+          observation.destinationCode ?? observation.codigoDestino ?? observation.codDestino ?? "").trim(),
+        direction: String(observation.direction ?? observation.directionName ??
+          observation.sentido ?? observation.direccion ?? "").trim(),
         line,
         vehicleId: id,
         stopLat: observation.stopLat === null || observation.stopLat === undefined ? null : Number(observation.stopLat),
@@ -1052,6 +1074,7 @@
       const detail = detailById.get(String(vehicle.id));
       const observation = bestByVehicle.get(String(vehicle.id));
       const destination = observation?.destination || detail?.destination || vehicle.destination || "";
+      const destinationId = observation?.destinationId || detail?.destinationId || vehicle.destinationId || "";
       const direction = observation?.direction || detail?.direction || vehicle.direction || "";
       return normalizeVehicle({
         ...(detail || {}),
@@ -1059,6 +1082,7 @@
         id: vehicle.id,
         line,
         destination,
+        destinationId,
         direction,
         nextStop: observation?.stopId || detail?.nextStop || vehicle.nextStop || "",
         nextStopName: observation?.stopName || detail?.nextStopName || vehicle.nextStopName || ""
