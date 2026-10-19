@@ -9,7 +9,7 @@
   ];
   // Worker dedicado a Burgos: viene configurado por defecto en el proyecto.
   const DEFAULT_WORKER_URL = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev";
-  const WORKER_API_VERSION = "sae-three-resources-per-line-v2";
+  const WORKER_API_VERSION = "sae-three-resources-per-line-v3";
   const WORKER_STORAGE_KEY = "saeBurgosDedicatedWorkerUrl";
   const WORKER_CONFIG_VERSION_KEY = "saeBurgosDedicatedWorkerApiVersion";
   const ALL_LINES = [
@@ -26,6 +26,7 @@
   const expandedLines = new Set();
   let lastSuccessfulUpdate = null;
   let updateRunning = false;
+  let lineFetchProgress = { completed: 0, total: 0, successful: 0, failed: 0 };
   let lastQueryHadSuccess = false;
   let nextStopByVehicle = new Map();
   let nextStopQueryRunning = false;
@@ -399,7 +400,7 @@
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 15000);
           try {
-            const endpoint = workerBase + "/api/burgos/vehicles?line=" +
+            const endpoint = workerBase + "/api/burgos/live?line="
               encodeURIComponent(onlyLine);
             const response = await fetch(endpoint, {
               method: "GET",
@@ -619,11 +620,13 @@
     };
   }
 
-  async function fetchWorkerSnapshot(workerBase) {
-    // El Worker independiente de Burgos requiere una línea por petición.
-    // Se limita la concurrencia para no saturar ni al Worker ni al SAE municipal.
+  async function fetchWorkerSnapshot(workerBase, onLineResult = null) {
+    // Una petición por línea, respetando los identificadores 01…23, 73, 87…89, C1 y C2.
     const results = new Array(ALL_LINES.length);
     let cursor = 0;
+    let completed = 0;
+    let successful = 0;
+    let failed = 0;
     const concurrency = Math.min(MAX_CONCURRENT_LINES, ALL_LINES.length);
 
     await Promise.all(Array.from({ length: concurrency }, async () => {
@@ -632,7 +635,9 @@
         if (index >= ALL_LINES.length) return;
         const line = ALL_LINES[index];
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        // resourceVehicles solo consulta un recurso; se permite margen para probar
+        // las direcciones alternativas del Ayuntamiento sin dejar el panel bloqueado.
+        const timeoutId = setTimeout(() => controller.abort(), 22000);
 
         try {
           const endpoint = workerBase + "/api/burgos/vehicles?line=" + encodeURIComponent(line);
@@ -644,11 +649,8 @@
           });
           const body = await response.text();
           let payload;
-          try {
-            payload = JSON.parse(body);
-          } catch {
-            throw new Error("el Worker no devolvió JSON");
-          }
+          try { payload = JSON.parse(body); }
+          catch { throw new Error("el Worker no devolvió JSON"); }
           if (!response.ok || payload?.ok === false) {
             throw new Error(payload?.error || ("Worker HTTP " + response.status));
           }
@@ -656,13 +658,22 @@
             throw new Error("el Worker no devolvió la lista de autobuses");
           }
           results[index] = { line, payload };
+          successful++;
         } catch (error) {
           const message = error?.name === "AbortError"
-            ? "tiempo de espera agotado"
+            ? "tiempo de espera agotado (22 s)"
             : String(error?.message || error);
           results[index] = { line, error: message };
+          failed++;
         } finally {
           clearTimeout(timeoutId);
+        }
+
+        completed++;
+        lineFetchProgress = { completed, total: ALL_LINES.length, successful, failed };
+        if (typeof onLineResult === "function") {
+          try { onLineResult(results[index], lineFetchProgress); }
+          catch (error) { console.warn("No se pudo representar el resultado de línea", line, error); }
         }
       }
     }));
@@ -681,11 +692,7 @@
       }
       lineCount++;
       for (const vehicle of result.payload.vehicles) {
-        vehicles.push({
-          ...vehicle,
-          lineId: result.line,
-          line: result.line
-        });
+        vehicles.push({ ...vehicle, lineId: result.line, line: result.line });
       }
       if (Array.isArray(result.payload.observations)) {
         for (const observation of result.payload.observations) {
@@ -768,6 +775,10 @@
       let message;
       if (query) {
         message = "No hay líneas ni autobuses activos que coincidan con la búsqueda.";
+      } else if (updateRunning && lineFetchProgress.total > 0 &&
+          lineFetchProgress.completed < lineFetchProgress.total) {
+        message = "Consultando líneas del SAE municipal (" + lineFetchProgress.completed +
+          "/" + lineFetchProgress.total + "). Los autobuses aparecerán conforme respondan las líneas.";
       } else if (!lastQueryHadSuccess) {
         message = getWorkerBaseUrl()
           ? "No se ha podido consultar ISAENEXT a través del Worker configurado."
@@ -853,6 +864,7 @@
   async function load() {
     if (updateRunning) return;
     updateRunning = true;
+    lineFetchProgress = { completed: 0, total: ALL_LINES.length, successful: 0, failed: 0 };
     $("refresh").disabled = true;
     $("refresh").innerHTML = '<span aria-hidden="true">↻</span> Consultando';
     setStatus(getWorkerBaseUrl()
@@ -865,7 +877,27 @@
       let successfulCount = 0;
 
       if (workerBase) {
-        const snapshot = await fetchWorkerSnapshot(workerBase);
+        const snapshot = await fetchWorkerSnapshot(workerBase, (result, progress) => {
+          const line = result.line;
+          if (result.error) {
+            if (lineSnapshots.has(line)) staleLines.add(line);
+          } else {
+            const vehiclesForLine = result.payload.vehicles
+              .map(bus => normalizeVehicle(bus, line))
+              .filter(Boolean);
+            lineSnapshots.set(line, vehiclesForLine);
+            staleLines.delete(line);
+            lastQueryHadSuccess = true;
+            lastSuccessfulUpdate = new Date();
+            $("lastUpdated").textContent = "Consultadas " + progress.completed +
+              "/" + progress.total + " líneas · " + formatTime(lastSuccessfulUpdate.toISOString());
+            render();
+          }
+          setStatus("Consultando líneas de Burgos: " + progress.completed + "/" +
+            progress.total + " · " + progress.successful + " correctas" +
+            (progress.failed ? " · " + progress.failed + " con error" : "") +
+            ". Los resultados se muestran conforme llegan.", progress.failed ? "error" : "");
+        });
         const failedLines = new Set((Array.isArray(snapshot.failedLines) ? snapshot.failedLines : [])
           .map(line => String(line).trim().toUpperCase()));
         const rows = Array.isArray(snapshot.vehicles) ? snapshot.vehicles : [];
@@ -906,7 +938,7 @@
         render();
         // Preload the timetable in parallel; itinerary matching itself is deferred until a popup opens.
         loadGtfsForItinerary();
-        refreshNextStopData(workerBase, snapshot.observations, snapshot.fetchedAt, snapshot.failedLines);
+        // Las estimaciones se consultan por /api/burgos/live cuando se abre el itinerario.
       } else {
         const results = new Array(ALL_LINES.length);
         let cursor = 0;
@@ -953,8 +985,10 @@
       }
     } catch (error) {
       console.error("No se pudieron consultar los autobuses de Burgos:", error);
+      lineFetchProgress = { completed: ALL_LINES.length, total: ALL_LINES.length, successful: 0, failed: ALL_LINES.length };
+      if (!lineSnapshots.size) lastQueryHadSuccess = false;
       setStatus(error?.message || "Error al consultar la fuente de autobuses de Burgos.", "error");
-      if (!lineSnapshots.size) render();
+      render();
     } finally {
       updateRunning = false;
       $("refresh").disabled = false;
