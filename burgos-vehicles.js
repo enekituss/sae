@@ -9,7 +9,7 @@
   ];
   // Worker dedicado a Burgos: viene configurado por defecto en el proyecto.
   const DEFAULT_WORKER_URL = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev";
-  const WORKER_API_VERSION = "sae-three-resources-per-line-v1";
+  const WORKER_API_VERSION = "sae-three-resources-per-line-v2";
   const WORKER_STORAGE_KEY = "saeBurgosDedicatedWorkerUrl";
   const WORKER_CONFIG_VERSION_KEY = "saeBurgosDedicatedWorkerApiVersion";
   const ALL_LINES = [
@@ -500,6 +500,37 @@
     }
   }
 
+  async function verifyBurgosWorker(workerBase) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(workerBase + "/health", {
+        method: "GET",
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+        signal: controller.signal
+      });
+      let health;
+      try { health = await response.json(); }
+      catch { throw new Error("El Worker de Burgos no devolvió un estado JSON válido."); }
+      if (!response.ok || health?.ok !== true) {
+        throw new Error(health?.error || ("El Worker de Burgos respondió HTTP " + response.status + "."));
+      }
+      if (health?.apiVersion !== WORKER_API_VERSION ||
+          !String(health?.service || "").toLowerCase().includes("burgos")) {
+        throw new Error("El Worker de Burgos aún no tiene desplegada la corrección para consultar todas las líneas. Revisa el despliegue de Cloudflare.");
+      }
+      return health;
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        throw new Error("El Worker de Burgos no respondió dentro del tiempo esperado.");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
   function escapeHTML(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -829,6 +860,7 @@
       : "Sin Worker configurado · probando conexiones de respaldo…", "");
     try {
       const workerBase = getWorkerBaseUrl();
+      if (workerBase) await verifyBurgosWorker(workerBase);
       let nextStaleLines = new Set();
       let successfulCount = 0;
 
@@ -921,7 +953,7 @@
       }
     } catch (error) {
       console.error("No se pudieron consultar los autobuses de Burgos:", error);
-      setStatus("Error al consultar la fuente de autobuses de Burgos.", "error");
+      setStatus(error?.message || "Error al consultar la fuente de autobuses de Burgos.", "error");
       if (!lineSnapshots.size) render();
     } finally {
       updateRunning = false;
