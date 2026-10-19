@@ -12947,100 +12947,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:1664dc2747af9013306f98e6": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T06:13+02:00",
-      "direction": "",
-      "eventId": "entered:1664dc2747af9013306f98e6",
-      "firstObservedAt": "2026-10-19T06:11:06+02:00",
-      "line": "A3514",
-      "queuedAt": "2026-10-19T06:13:08+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "8660"
-    },
-    "entered:290bfdb3e7b324b6500cbebb": {
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-19T06:13+02:00",
-      "direction": "",
-      "eventId": "entered:290bfdb3e7b324b6500cbebb",
-      "firstObservedAt": "2026-10-19T06:11:06+02:00",
-      "line": "A3336",
-      "queuedAt": "2026-10-19T06:13:08+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "7827"
-    },
-    "entered:75828f5b60654d8d8dabcdd8": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-19T06:13+02:00",
-      "direction": "",
-      "eventId": "entered:75828f5b60654d8d8dabcdd8",
-      "firstObservedAt": "2026-10-19T06:11:06+02:00",
-      "line": "A3518",
-      "queuedAt": "2026-10-19T06:13:08+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "2095"
-    },
-    "entered:a4ecfac1ffab2d64a48367fb": {
-      "destination": "LARRABETZU",
-      "detectedAt": "2026-10-19T06:13+02:00",
-      "direction": "",
-      "eventId": "entered:a4ecfac1ffab2d64a48367fb",
-      "firstObservedAt": "2026-10-19T06:11:06+02:00",
-      "line": "A2151",
-      "queuedAt": "2026-10-19T06:13:08+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "2132"
-    },
-    "entered:f922ab06d3f482c32df95a48": {
-      "destination": "PLENTZIA (Metro)",
-      "detectedAt": "2026-10-19T06:13+02:00",
-      "direction": "",
-      "eventId": "entered:f922ab06d3f482c32df95a48",
-      "firstObservedAt": "2026-10-19T06:11:06+02:00",
-      "line": "A3499",
-      "queuedAt": "2026-10-19T06:13:08+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "1680"
-    },
-    "missing:203240484d83fa96d10315e2": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T06:13+02:00",
-      "direction": "",
-      "eventId": "missing:203240484d83fa96d10315e2",
-      "firstMissingAt": "2026-10-19T06:09:02+02:00",
-      "lastSeenAt": "2026-10-19T06:05:43+02:00",
-      "line": "A3917",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T06:13:08+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3333"
-    },
-    "route_after_gap:a1bb77235d5b17df7c2347fd": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3912",
-          "old": "A3622"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "EIBAR",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "EIBAR",
-      "detectedAt": "2026-10-19T06:13+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:a1bb77235d5b17df7c2347fd",
-      "line": "A3912",
-      "queuedAt": "2026-10-19T06:13:08+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3338"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2093": {
       "consecutiveChecks": 1,
@@ -13148,7 +13055,7 @@
       "requiredMissing": 2
     },
     "3333": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:203240484d83fa96d10315e2",
       "firstMissingAt": "2026-10-19T06:09:02+02:00",
@@ -13159,7 +13066,7 @@
         "line": "A3917"
       },
       "lastSeenAt": "2026-10-19T06:05:43+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7778": {
