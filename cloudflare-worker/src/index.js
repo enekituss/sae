@@ -428,13 +428,14 @@ const TELEGRAM_BOTS = {
     title: "🚌 SAE Spotter · Autobuses de Burgos"
   }
 };
-const TELEGRAM_BUTTONS = [
-  "🔔 Todos los avisos",
-  "⚠️ Solo fuera de servicio",
-  "🔄 Solo cambios de línea",
-  "🟢 Nueva entrada (reaparición)",
-  "🚌 Seguir coche(s) por ID",
-  "⏸️ Pausar avisos"
+const TELEGRAM_KEYBOARD_ROWS = [
+  ["🔔 Todos los avisos"],
+  ["⚠️ Solo fuera de servicio"],
+  ["🔄 Solo cambios de línea"],
+  ["🟢 Nueva entrada (reaparición)"],
+  ["📋 Ver coches seguidos", "➕ Añadir coche(s) por ID"],
+  ["➖ Quitar coche(s) por ID"],
+  ["⏸️ Pausar avisos", "❎ Cerrar menú"]
 ];
 
 function utf8ToBase64(value) {
@@ -507,9 +508,74 @@ async function writeRepositoryFile(path, content, message, refBranch, env) {
 }
 
 function defaultTelegramSubscription() {
-  return { mode: "all", vehicleId: "", vehicleIds: [], awaitingVehicleId: false };
+  return {
+    mode: "all",
+    vehicleId: "",
+    vehicleIds: [],
+    awaitingVehicleId: false,
+    awaitingVehicleAction: ""
+  };
 }
 
+function parseTelegramIds(text) {
+  return [...new Set(String(text || "").replace(/[,;]/g, " ").split(/\s+/)
+    .map(value => value.trim()).filter(value => /^\d{1,12}$/.test(value)))];
+}
+
+function beginTelegramVehicleEdit(subscription, action) {
+  if (!subscription.awaitingVehicleId) {
+    subscription.modeBeforeVehicleEdit = String(subscription.mode || "all");
+  }
+  subscription.mode = "vehicle";
+  subscription.awaitingVehicleId = true;
+  subscription.awaitingVehicleAction = action === "remove" ? "remove" : "add";
+}
+
+function cancelTelegramVehicleEdit(subscription) {
+  if (subscription.modeBeforeVehicleEdit) {
+    subscription.mode = String(subscription.modeBeforeVehicleEdit);
+  } else if (subscription.mode === "vehicle" && !normalizeTrackedIds(subscription).length) {
+    subscription.mode = "all";
+  }
+  delete subscription.modeBeforeVehicleEdit;
+  subscription.awaitingVehicleId = false;
+  subscription.awaitingVehicleAction = "";
+}
+
+function applyTelegramVehicleIds(subscription, ids, action) {
+  const existing = normalizeTrackedIds(subscription);
+  const requested = [...new Set(ids)];
+  if (action === "remove") {
+    const removed = requested.filter(id => existing.includes(id));
+    const notFound = requested.filter(id => !existing.includes(id));
+    const remaining = existing.filter(id => !requested.includes(id));
+    storeTrackedIds(subscription, remaining);
+    subscription.mode = "vehicle";
+    subscription.awaitingVehicleId = false;
+    subscription.awaitingVehicleAction = "";
+    delete subscription.modeBeforeVehicleEdit;
+    const pieces = [];
+    if (removed.length) pieces.push("🗑️ Eliminado(s): " + removed.join(", ") + ".");
+    if (notFound.length) pieces.push("ℹ️ No estaban en tu lista: " + notFound.join(", ") + ".");
+    pieces.push(remaining.length
+      ? "📋 Sigues estos coches: " + remaining.join(", ") + "."
+      : "📋 La lista está vacía; en modo de seguimiento por ID no recibirás avisos hasta añadir alguno o elegir otro filtro.");
+    return pieces.join("\n");
+  }
+
+  const added = requested.filter(id => !existing.includes(id));
+  const merged = existing.concat(added);
+  storeTrackedIds(subscription, merged);
+  subscription.mode = "vehicle";
+  subscription.awaitingVehicleId = false;
+  subscription.awaitingVehicleAction = "";
+  delete subscription.modeBeforeVehicleEdit;
+  let notice = added.length
+    ? "✅ Añadido(s) al seguimiento: " + added.join(", ") + "."
+    : "✅ Esos coches ya estaban en tu lista.";
+  notice += "\n📋 Coches seguidos: " + (merged.length ? merged.join(", ") : "ninguno") + ".";
+  return notice;
+}
 function normalizeTrackedIds(subscription) {
   const raw = Array.isArray(subscription.vehicleIds) ? subscription.vehicleIds : [];
   const legacy = String(subscription.vehicleId || "").trim();
@@ -547,7 +613,7 @@ function telegramModeDescription(subscription) {
 
 function telegramKeyboard(city) {
   return {
-    keyboard: TELEGRAM_BUTTONS.map(label => [{ text: label }]),
+    keyboard: TELEGRAM_KEYBOARD_ROWS.map(row => row.map(text => ({ text }))),
     resize_keyboard: true,
     is_persistent: true,
     one_time_keyboard: false,
@@ -555,6 +621,19 @@ function telegramKeyboard(city) {
   };
 }
 
+function telegramTrackedListMessage(city, subscription) {
+  const ids = normalizeTrackedIds(subscription);
+  const title = TELEGRAM_BOTS[city].title;
+  const shown = ids.slice(0, 180);
+  let message = title + "\n\n📋 Coches seguidos por ID (" + ids.length + "):\n";
+  message += shown.length ? shown.join(", ") : "No sigues ningún coche todavía.";
+  if (ids.length > shown.length) message += "\n… y " + (ids.length - shown.length) + " más.";
+  message += "\n\nAñadir: pulsa «➕ Añadir coche(s) por ID» o escribe /coche 123.";
+  message += "\nEliminar: pulsa «➖ Quitar coche(s) por ID» o escribe /quitar 123.";
+  message += "\nVer opciones: /avisos. Ocultar teclado: pulsa «❎ Cerrar menú».";
+  message += "\nModo actual: " + telegramModeDescription(subscription) + ".";
+  return message;
+}
 async function callTelegramApi(token, method, payload) {
   const response = await fetch("https://api.telegram.org/bot" + token + "/" + method, {
     method: "POST",
@@ -603,11 +682,15 @@ async function saveTelegramSubscription(city, chatId, subscription, env) {
 
 async function sendTelegramMenu(token, city, chatId, subscription, notice = "") {
   const title = TELEGRAM_BOTS[city].title;
+  const ids = normalizeTrackedIds(subscription);
   let message = title + "\n\n";
   if (notice) message += notice + "\n\n";
-  message += "Configuración actual: " + telegramModeDescription(subscription) + "\n\nElige qué alertas quieres recibir con los botones del teclado.";
+  message += "Configuración actual: " + telegramModeDescription(subscription) + "\n\nElige qué alertas quieres recibir:";
   if (String(subscription.mode || "all") === "vehicle") {
-    message += "\n\nEscribe uno o varios ID numéricos separados por espacios o comas. Repite «Seguir coche(s) por ID» para añadir más.";
+    message += "\n\nCoches seguidos: " + (ids.length ? ids.join(", ") : "ninguno") + ".";
+  } else if (ids.length) {
+    message += "\n\nCoches guardados para seguimiento por ID (" + ids.length + "): " +
+      ids.slice(0, 20).join(", ") + (ids.length > 20 ? " y " + (ids.length - 20) + " más" : "") + ".";
   }
   if (String(subscription.mode || "all") === "off") {
     message += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro.";
@@ -617,6 +700,8 @@ async function sendTelegramMenu(token, city, chatId, subscription, notice = "") 
   } else {
     message += "\n\nLa ausencia de posición publicada no confirma por sí sola una baja administrativa.";
   }
+  message += "\n\nComandos: /avisos o /menu muestra este menú; /coches lista los IDs; /coche 123 añade un ID; /quitar 123 lo elimina.";
+  message += "\nPulsa «❎ Cerrar menú» para ocultar los botones.";
   message += "\n\n⚡ Las preferencias se guardan al momento. Los avisos se ajustan en la siguiente comprobación de autobuses.";
   await callTelegramApi(token, "sendMessage", {
     chat_id: chatId,
@@ -625,7 +710,6 @@ async function sendTelegramMenu(token, city, chatId, subscription, notice = "") 
     disable_web_page_preview: true
   });
 }
-
 function telegramWebhookText(value) {
   return String(value || "").trim();
 }
@@ -659,99 +743,103 @@ async function processTelegramWebhook(request, env, city) {
   }
 
   try {
-    const subscription = await loadTelegramSubscription(city, chatId, env);
+    const subscription = {
+      ...defaultTelegramSubscription(),
+      ...(await loadTelegramSubscription(city, chatId, env))
+    };
     const command = rawText.split(/\s+/)[0].split("@")[0].toLowerCase();
     let notice = "";
     let reply = "menu";
     let save = false;
     let handled = true;
 
-    if (["/start", "/help", "/menu", "/menú", "menu", "menú", "/config", "/misavisos", "/estado"].includes(command)) {
+    if (["/start", "/help", "/menu", "/menú", "/avisos", "/opciones", "menu", "menú"].includes(command)) {
+      cancelTelegramVehicleEdit(subscription);
       notice = "Bot conectado. Tus preferencias son independientes de las de los demás usuarios.";
       save = true;
+    } else if (["/coches", "/miscoches", "/miscoches"].includes(command) ||
+               ["📋 Ver coches seguidos", "Ver coches seguidos"].includes(rawText)) {
+      if (subscription.awaitingVehicleId) cancelTelegramVehicleEdit(subscription);
+      reply = "trackedList";
+      save = true;
+    } else if (["❎ Cerrar menú", "Cerrar menú", "Ocultar menú"].includes(rawText)) {
+      cancelTelegramVehicleEdit(subscription);
+      reply = "closeMenu";
+      save = true;
+    } else if (["➕ Añadir coche(s) por ID", "Añadir coche(s) por ID",
+                "🚌 Seguir coche(s) por ID", "🚌 Seguir un coche por ID", "Seguir un coche por ID"].includes(rawText)) {
+      beginTelegramVehicleEdit(subscription, "add");
+      save = true;
+      reply = "vehiclePrompt";
+    } else if (["➖ Quitar coche(s) por ID", "Quitar coche(s) por ID"].includes(rawText)) {
+      beginTelegramVehicleEdit(subscription, "remove");
+      save = true;
+      reply = "removePrompt";
     } else if (["/stop", "/pausar"].includes(command) || ["⏸️ Pausar avisos", "Pausar avisos"].includes(rawText)) {
+      cancelTelegramVehicleEdit(subscription);
       subscription.mode = "off";
       subscription.awaitingVehicleId = false;
+      subscription.awaitingVehicleAction = "";
       notice = "⏸️ Avisos pausados. No se enviarán más alertas hasta que los reactives.";
       save = true;
     } else if (["🔔 Todos los avisos", "Todos los avisos"].includes(rawText)) {
+      cancelTelegramVehicleEdit(subscription);
       subscription.mode = "all";
-      subscription.awaitingVehicleId = false;
       notice = "✅ Seleccionado: recibirás todos los avisos.";
       save = true;
-    } else if (["⚠️ Solo fuera de servicio", "⚠️ Solo fuera de servicio (sin posición reciente)", "⚠️ Solo sin posición reciente", "Solo sin posición reciente"].includes(rawText)) {
+    } else if (["⚠️ Solo fuera de servicio", "⚠️ Solo fuera de servicio (sin posición reciente)",
+                "⚠️ Solo sin posición reciente", "Solo sin posición reciente"].includes(rawText)) {
+      cancelTelegramVehicleEdit(subscription);
       subscription.mode = "missing";
-      subscription.awaitingVehicleId = false;
       notice = city === "burgos"
         ? "✅ Seleccionado: solo recibirás avisos de coches que dejan de aparecer del servicio publicado tras las comprobaciones de confirmación."
         : "✅ Seleccionado: solo recibirás salidas de servicio confirmadas.";
       save = true;
     } else if (["🔄 Solo cambios de línea", "Solo cambios de línea"].includes(rawText)) {
+      cancelTelegramVehicleEdit(subscription);
       subscription.mode = "line";
-      subscription.awaitingVehicleId = false;
       notice = city === "burgos"
         ? "✅ Seleccionado: solo recibirás cambios confirmados de línea de autobuses que siguen activos."
         : "✅ Seleccionado: recibirás solo cambios de línea de vehículos que siguen activos.";
       save = true;
     } else if (["🟢 Nueva entrada (reaparición)", "🟢 Nueva entrada", "Nueva entrada"].includes(rawText)) {
+      cancelTelegramVehicleEdit(subscription);
       subscription.mode = "entry";
-      subscription.awaitingVehicleId = false;
       notice = city === "burgos"
         ? "✅ Seleccionado: recibirás avisos cuando un autobús desaparecido vuelva a aparecer en el feed."
         : "✅ Seleccionado: recibirás solo reapariciones de coches que habían desaparecido.";
       save = true;
-    } else if (["🚌 Seguir coche(s) por ID", "🚌 Seguir un coche por ID", "Seguir un coche por ID"].includes(rawText)) {
-      subscription.mode = "vehicle";
-      subscription.awaitingVehicleId = true;
-      save = true;
-      reply = "vehiclePrompt";
     } else if (["/cancel", "/cancelar"].includes(command)) {
-      subscription.awaitingVehicleId = false;
-      if (!normalizeTrackedIds(subscription).length) subscription.mode = "all";
+      cancelTelegramVehicleEdit(subscription);
       notice = "Operación cancelada.";
       save = true;
-    } else if (["/id", "/coche"].includes(command)) {
-      const parts = rawText.split(/\s+/).slice(1).join(" ").replace(/[,;]/g, " ").split(/\s+/).filter(Boolean);
-      const validIds = parts.filter(value => /^\d{1,12}$/.test(value));
-      if (validIds.length) {
-        const ids = normalizeTrackedIds(subscription);
-        const added = [];
-        for (const id of validIds) {
-          if (!ids.includes(id)) {
-            ids.push(id);
-            added.push(id);
-          }
-        }
-        storeTrackedIds(subscription, ids);
-        subscription.mode = "vehicle";
-        subscription.awaitingVehicleId = false;
-        notice = added.length ? "✅ Añadido(s) al seguimiento: " + added.join(", ") + "." : "✅ Esos coches ya estaban en tu lista.";
+    } else if (["/coche", "/id"].includes(command)) {
+      const requestedIds = parseTelegramIds(rawText.split(/\s+/).slice(1).join(" "));
+      if (requestedIds.length) {
+        notice = applyTelegramVehicleIds(subscription, requestedIds, "add");
         save = true;
       } else {
-        subscription.mode = "vehicle";
-        subscription.awaitingVehicleId = true;
+        beginTelegramVehicleEdit(subscription, "add");
         save = true;
         reply = "vehiclePrompt";
       }
-    } else if (subscription.awaitingVehicleId) {
-      const validIds = rawText.replace(/[,;]/g, " ").split(/\s+/).filter(value => /^\d{1,12}$/.test(value));
-      if (validIds.length) {
-        const ids = normalizeTrackedIds(subscription);
-        const added = [];
-        for (const id of validIds) {
-          if (!ids.includes(id)) {
-            ids.push(id);
-            added.push(id);
-          }
-        }
-        storeTrackedIds(subscription, ids);
-        subscription.mode = "vehicle";
-        subscription.awaitingVehicleId = false;
-        notice = added.length ? "✅ Añadido(s) al seguimiento: " + added.join(", ") + "." : "✅ Esos coches ya estaban en tu lista.";
-        notice += " Puedes añadir más con «Seguir coche(s) por ID».";
+    } else if (["/quitar", "/eliminar", "/borrar"].includes(command)) {
+      const requestedIds = parseTelegramIds(rawText.split(/\s+/).slice(1).join(" "));
+      if (requestedIds.length) {
+        notice = applyTelegramVehicleIds(subscription, requestedIds, "remove");
         save = true;
       } else {
-        reply = "invalidVehicleId";
+        beginTelegramVehicleEdit(subscription, "remove");
+        save = true;
+        reply = "removePrompt";
+      }
+    } else if (subscription.awaitingVehicleId) {
+      const requestedIds = parseTelegramIds(rawText);
+      if (requestedIds.length) {
+        notice = applyTelegramVehicleIds(subscription, requestedIds, subscription.awaitingVehicleAction || "add");
+        save = true;
+      } else {
+        reply = subscription.awaitingVehicleAction === "remove" ? "invalidRemoveIds" : "invalidVehicleId";
       }
     } else {
       handled = false;
@@ -760,18 +848,36 @@ async function processTelegramWebhook(request, env, city) {
     if (!handled) return new Response("ok", { status: 200 });
     if (save) await saveTelegramSubscription(city, chatId, subscription, env);
 
-    if (reply === "vehiclePrompt") {
+    if (reply === "closeMenu") {
       await callTelegramApi(token, "sendMessage", {
         chat_id: chatId,
-        text: city === "burgos"
-          ? "🚌 Escribe el ID numérico del autobús que quieres seguir. Puedes añadir más de uno repitiendo esta opción. Puedes cancelar con /cancelar."
-          : "🚌 Escribe uno o varios ID numéricos separados por espacios o comas. Repite esta opción para añadir más coches.\n\nPuedes cancelar con /cancelar.",
+        text: "✅ Menú ocultado. Para volver a mostrar las opciones, escribe /avisos o /menu.",
+        reply_markup: { remove_keyboard: true }
+      });
+    } else if (reply === "trackedList") {
+      await callTelegramApi(token, "sendMessage", {
+        chat_id: chatId,
+        text: telegramTrackedListMessage(city, subscription),
+        reply_markup: telegramKeyboard(city),
+        disable_web_page_preview: true
+      });
+    } else if (reply === "vehiclePrompt" || reply === "removePrompt") {
+      const remove = reply === "removePrompt";
+      const ids = normalizeTrackedIds(subscription);
+      await callTelegramApi(token, "sendMessage", {
+        chat_id: chatId,
+        text: remove
+          ? "➖ Escribe el ID o los ID que quieres dejar de seguir, separados por espacios o comas.\n\nAhora sigues: " + (ids.length ? ids.join(", ") : "ningún coche") + ".\n\nPuedes cancelar con /cancelar."
+          : "➕ Escribe el ID o los ID de los autobuses que quieres añadir, separados por espacios o comas.\n\nYa guardados: " + (ids.length ? ids.join(", ") : "ninguno") + ".\n\nPuedes cancelar con /cancelar.",
         reply_markup: telegramKeyboard(city)
       });
-    } else if (reply === "invalidVehicleId") {
+    } else if (reply === "invalidVehicleId" || reply === "invalidRemoveIds") {
       await callTelegramApi(token, "sendMessage", {
         chat_id: chatId,
-        text: "El ID debe ser numérico. Envía uno o varios ID separados por espacios o comas, o escribe /cancelar."
+        text: reply === "invalidRemoveIds"
+          ? "No he reconocido IDs numéricos. Escribe los IDs que quieras quitar separados por espacios o comas, o usa /cancelar."
+          : "No he reconocido IDs numéricos. Escribe los IDs que quieras añadir separados por espacios o comas, o usa /cancelar.",
+        reply_markup: telegramKeyboard(city)
       });
     } else {
       await sendTelegramMenu(token, city, chatId, subscription, notice);
@@ -785,10 +891,8 @@ async function processTelegramWebhook(request, env, city) {
         text: "⚠️ No he podido guardar tu configuración. Comprueba que el secreto GITHUB_TOKEN del Worker permite Contents: Read and write."
       });
     } catch {
-      // Telegram reintentará el webhook si no recibe un 2xx.
       return new Response("Temporary failure", { status: 500 });
     }
-    // Return 200 after a readable error to avoid repeated error messages for one update.
     return new Response("ok", { status: 200 });
   }
 }
