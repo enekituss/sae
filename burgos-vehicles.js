@@ -20,7 +20,7 @@
 
   function normalizeFleetVehicleId(value) {
     const id = String(value ?? "").trim();
-    return /^\\d+$/.test(id) ? String(Number(id)) : id.toUpperCase();
+    return /^\d+$/.test(id) ? String(Number(id)) : id.toUpperCase();
   }
 
   function getFleetModel(vehicleId) {
