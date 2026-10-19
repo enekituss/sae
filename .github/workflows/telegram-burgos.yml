@@ -796,15 +796,19 @@ jobs:
                           first_change_dt = parse_time(pending.get("firstDetectedAt"))
                           elapsed_change = (datetime.now(timezone.utc) - first_change_dt.astimezone(timezone.utc)).total_seconds() if first_change_dt else 0
                           if pending["checks"] >= 2 and elapsed_change >= 120:
+                              # El aviso usa la primera observación estable en la nueva
+                              # línea, para que "primera parada registrada" no se sustituya
+                              # por una parada posterior durante la confirmación.
+                              event_vehicle = pending.get("new") if isinstance(pending.get("new"), dict) else vehicle
                               queue_event({
                                   "type": "route_change",
                                   "vehicleId": vehicle_id,
-                                  "line": vehicle.get("line", ""),
-                                  "destination": vehicle.get("destination", ""),
-                                  "direction": vehicle.get("direction", ""),
+                                  "line": event_vehicle.get("line", ""),
+                                  "destination": event_vehicle.get("destination", ""),
+                                  "direction": event_vehicle.get("direction", ""),
                                   "old": old,
-                                  "new": vehicle,
-                                  "changed": changed_fields(old, vehicle)
+                                  "new": event_vehicle,
+                                  "changed": changed_fields(old, event_vehicle)
                               })
                               confirmed[vehicle_id] = vehicle
                               pending_routes.pop(vehicle_id, None)
@@ -849,15 +853,18 @@ jobs:
                               first_missing_dt = parse_time(gap_record.get("firstMissingAt"))
                               recent_gap = bool(first_missing_dt and (datetime.now(timezone.utc) - first_missing_dt.astimezone(timezone.utc)).total_seconds() <= 15 * 60)
                               if changes and recent_gap:
+                                  # candidate["vehicle"] guarda la primera observación
+                                  # de la reaparición y, con ella, su primera parada.
+                                  event_vehicle = candidate.get("vehicle") if isinstance(candidate.get("vehicle"), dict) else vehicle
                                   queue_event({
                                       "type": "route_change_after_gap",
                                       "vehicleId": vehicle_id,
-                                      "line": vehicle.get("line", ""),
-                                      "destination": vehicle.get("destination", ""),
-                                      "direction": vehicle.get("direction", ""),
+                                      "line": event_vehicle.get("line", ""),
+                                      "destination": event_vehicle.get("destination", ""),
+                                      "direction": event_vehicle.get("direction", ""),
                                       "old": previous_vehicle,
-                                      "new": vehicle,
-                                      "changed": changes
+                                      "new": event_vehicle,
+                                      "changed": changed_fields(previous_vehicle, event_vehicle)
                                   })
                               else:
                                   queue_event({
