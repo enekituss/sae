@@ -85,31 +85,52 @@ jobs:
               print("FALLO: no se pudo comprobar el estado del webhook: " + str(exc))
 
           worker_base = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev"
+          # Primero prueba la lista ligera, cuyo origen es resourceVehicles.
           try:
-              request = urllib.request.Request(worker_base + "/health", headers={"User-Agent": "SAE-Burgos-Diagnostics/1.0"})
-              with urllib.request.urlopen(request, timeout=10) as response:
-                  health = json.loads(response.read().decode("utf-8"))
-              scheduler = health.get("telegramScheduler") or {}
-              print("OK: Worker independiente de Burgos responde en /health.")
-              print("Versión API del Worker: " + str(health.get("apiVersion") or "sin marca de versión"))
-              print("Endpoints publicados: " + ", ".join(health.get("endpoints") or []))
-              print("Programador BURGOS_GITHUB_TOKEN configurado: " + str(bool(scheduler.get("configured"))))
-              print("Fuente declarada por el Worker: " + str(health.get("source") or "No indicada"))
-              if not scheduler.get("configured"):
-                  failures.append("Falta BURGOS_GITHUB_TOKEN en el Worker burgos-sae-spotter.")
-          except Exception as exc:
-              failures.append("Health del Worker de Burgos: " + str(exc))
-              print("FALLO: Worker de Burgos: " + str(exc))
-
-          worker_base = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev"
-          try:
-              url = worker_base + "/api/burgos/vehicles?" + urllib.parse.urlencode({
+              vehicle_url = worker_base + "/api/burgos/vehicles?" + urllib.parse.urlencode({
                   "line": "01",
                   "fresh": "1",
-                  "_t": "diagnostic"
+                  "_t": "diagnostic-vehicles"
               })
               request = urllib.request.Request(
-                  url,
+                  vehicle_url,
+                  headers={
+                      "Accept": "application/json",
+                      "Cache-Control": "no-cache",
+                      "User-Agent": "SAE-Burgos-Diagnostics/1.0"
+                  }
+              )
+              with urllib.request.urlopen(request, timeout=45) as response:
+                  vehicles_payload = json.loads(response.read().decode("utf-8"))
+              if vehicles_payload.get("ok") is not True or not isinstance(vehicles_payload.get("vehicles"), list):
+                  raise RuntimeError(str(vehicles_payload.get("error") or "respuesta sin lista de autobuses"))
+              vehicle_source = str(vehicles_payload.get("sourceType") or "")
+              if "resourceVehicles" not in vehicle_source:
+                  raise RuntimeError("el endpoint de lista no confirma resourceVehicles")
+              print("OK: la lista ligera consulta resourceVehicles por línea.")
+              print("Autobuses de línea 01: " + str(len(vehicles_payload["vehicles"])) + ".")
+          except urllib.error.HTTPError as exc:
+              try:
+                  body = json.loads(exc.read().decode("utf-8", errors="replace"))
+                  detail = str(body.get("error") or body.get("message") or "")[:500]
+              except Exception:
+                  detail = ""
+              message = "HTTP " + str(exc.code) + (": " + detail if detail else "")
+              failures.append("Lista de autobuses (line=01): " + message)
+              print("FALLO: lista de autobuses: " + message)
+          except Exception as exc:
+              failures.append("Lista de autobuses (line=01): " + str(exc))
+              print("FALLO: lista de autobuses: " + str(exc))
+
+          # El endpoint /live es el que consulta los tres recursos municipales.
+          try:
+              live_url = worker_base + "/api/burgos/live?" + urllib.parse.urlencode({
+                  "line": "01",
+                  "fresh": "1",
+                  "_t": "diagnostic-live"
+              })
+              request = urllib.request.Request(
+                  live_url,
                   headers={
                       "Accept": "application/json",
                       "Cache-Control": "no-cache",
@@ -117,19 +138,21 @@ jobs:
                   }
               )
               with urllib.request.urlopen(request, timeout=60) as response:
-                  payload = json.loads(response.read().decode("utf-8"))
-              if payload.get("ok") is not True or not isinstance(payload.get("vehicles"), list):
-                  raise RuntimeError(str(payload.get("error") or "respuesta sin lista de autobuses"))
-              source_type = str(payload.get("sourceType") or "")
+                  live_payload = json.loads(response.read().decode("utf-8"))
+              if live_payload.get("ok") is not True or not isinstance(live_payload.get("vehicles"), list):
+                  raise RuntimeError(str(live_payload.get("error") or "respuesta sin lista de autobuses"))
+              if not isinstance(live_payload.get("observations"), list):
+                  raise RuntimeError("respuesta sin lista de estimaciones")
+              source_type = str(live_payload.get("sourceType") or "")
               required_resources = ("resourceRoutes", "resourceVehicles", "resourceEstimations")
               missing_resources = [resource for resource in required_resources if resource not in source_type]
               if missing_resources:
-                  raise RuntimeError("el Worker no confirma los tres recursos: " + ", ".join(missing_resources))
-              print("OK: Worker de Burgos consultó los tres recursos oficiales para line=01.")
-              print("Paradas identificadas en resourceRoutes: " + str(payload.get("routeStopCount") or 0))
-              print("Filas publicadas por resourceVehicles: " + str(payload.get("vehicleRowCount") or 0))
-              print("Observaciones de resourceEstimations: " + str(payload.get("estimationCount") or 0))
-              print("Autobuses resultantes: " + str(len(payload["vehicles"])) + ".")
+                  raise RuntimeError("el endpoint /live no confirma los tres recursos: " + ", ".join(missing_resources))
+              print("OK: Worker consultó los tres recursos oficiales para line=01.")
+              print("Paradas de resourceRoutes: " + str(live_payload.get("routeStopCount") or 0))
+              print("Filas de resourceVehicles: " + str(live_payload.get("vehicleRowCount") or 0))
+              print("Observaciones de resourceEstimations: " + str(live_payload.get("estimationCount") or 0))
+              print("Autobuses combinados en /live: " + str(len(live_payload["vehicles"])) + ".")
           except urllib.error.HTTPError as exc:
               try:
                   body = json.loads(exc.read().decode("utf-8", errors="replace"))
