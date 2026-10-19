@@ -184,6 +184,55 @@ function extractRouteStopIds(payload) {
   return ids;
 }
 
+
+function extractRouteNodeDetails(payload) {
+  const nodes = new Map();
+  const stopCollectionKey = /(?:stops?|paradas?|nodes?|nodos?|routepoints?|route_nodes?|route_stops?|waypoints?|itinerary|itinerario|puntos?)/i;
+
+  function visit(value, key = "", inStopCollection = false, depth = 0) {
+    if (depth > 14 || value === null || value === undefined || typeof value !== "object") return;
+    const context = inStopCollection || stopCollectionKey.test(key);
+
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item, "", context, depth + 1);
+      return;
+    }
+
+    const hasCoordinates = (value.lat !== undefined || value.latitude !== undefined) &&
+      (value.lng !== undefined || value.lon !== undefined || value.longitude !== undefined);
+    const hasStopName = value.name !== undefined || value.stopName !== undefined ||
+      value.stop_name !== undefined || value.nombre !== undefined ||
+      value.nombreNodo !== undefined || value.nombreParada !== undefined ||
+      value.paradaNombre !== undefined;
+    if (context || (hasCoordinates && hasStopName)) {
+      const id = stopIdFrom(value, true);
+      if (/^\\d{1,12}$/.test(id)) {
+        const name = String(value.name ?? value.stopName ?? value.stop_name ??
+          value.nombre ?? value.nombreNodo ?? value.nombreParada ??
+          value.paradaNombre ?? value.description ?? value.descripcion ?? "").trim();
+        const latValue = Number(value.lat ?? value.latitude);
+        const lonValue = Number(value.lng ?? value.lon ?? value.longitude);
+        const previous = nodes.get(id) || { __stopId: id, num: id };
+        nodes.set(id, {
+          ...previous,
+          __stopId: id,
+          num: id,
+          name: name || previous.name || "",
+          lat: Number.isFinite(latValue) ? latValue : previous.lat,
+          lng: Number.isFinite(lonValue) ? lonValue : previous.lng
+        });
+      }
+    }
+
+    for (const [field, child] of Object.entries(value)) {
+      visit(child, field, context, depth + 1);
+    }
+  }
+
+  visit(payload);
+  return nodes;
+}
+
 function arrayFromResource(payload, resourceName) {
   if (Array.isArray(payload)) return payload;
   if (!payload || typeof payload !== "object") {
@@ -262,9 +311,12 @@ function extractLineEstimations(line, nodes, payload) {
           seconds: Number.isFinite(seconds) ? seconds : null,
           meters: Number.isFinite(meters) ? meters : null,
           stopId: stopId || "",
-          stopName: String(stop?.name ?? stop?.stop_name ?? stop?.nombre ?? "").trim(),
-          stopLat: Number(stop?.lat ?? stop?.latitude),
-          stopLon: Number(stop?.lng ?? stop?.lon ?? stop?.longitude),
+          stopName: String(result.stopName ?? result.stop_name ?? result.nombre ?? result.nombreNodo ??
+            result.nombreParada ?? result.paradaNombre ?? result.name ?? stop?.name ??
+            stop?.stop_name ?? stop?.nombre ?? "").trim(),
+          stopLat: Number(result.lat ?? result.latitude ?? stop?.lat ?? stop?.latitude),
+          stopLon: Number(result.lng ?? result.lon ?? result.longitude ??
+            stop?.lng ?? stop?.lon ?? stop?.longitude),
           vehicleLat: Number.isFinite(lat) && lat >= 42 && lat <= 43 ? lat : null,
           vehicleLon: Number.isFinite(lon) && lon >= -4 && lon <= -3 ? lon : null
         });
@@ -375,7 +427,9 @@ async function fetchVehiclesForLine(line) {
     throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
   }
 
-  const routeNodes = nodeIds.map(id => ({ num: id, __stopId: id }));
+  // Conserva los metadatos del recorrido para enlazar el ID de parada con su nombre y coordenadas.
+  const routeNodeDetails = extractRouteNodeDetails(routePayload);
+  const routeNodes = nodeIds.map(id => routeNodeDetails.get(id) || ({ num: id, __stopId: id }));
   const vehicleRows = extractVehicleRows(vehicleResult.data, line);
   const observations = extractLineEstimations(line, routeNodes, estimationResult.data);
   const byId = new Map();
@@ -530,7 +584,7 @@ export default {
       return jsonResponse(request, {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
-        apiVersion: "sae-three-resources-per-line-v3",
+        apiVersion: "sae-three-resources-per-line-v4",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(env?.BURGOS_GITHUB_TOKEN), cadence: "*/2 * * * *" },
