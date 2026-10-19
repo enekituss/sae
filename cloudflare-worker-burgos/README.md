@@ -17,12 +17,14 @@ El secreto `BURGOS_GITHUB_TOKEN` permite al cron lanzar el workflow de alertas c
 
 Abre la URL `workers.dev` asignada por Cloudflare:
 
-- `/health`: debe devolver JSON con `"ok": true`, `apiVersion: "sae-three-resources-per-line-v3"` y `telegramScheduler.configured: true`. Si no devuelve `apiVersion: "sae-three-resources-per-line-v3"`, Cloudflare todavía no tiene desplegada la corrección de extracción de paradas necesaria para consultar todas las líneas; despliega la última versión del directorio `cloudflare-worker-burgos`.
+- `/health`: debe devolver JSON con `"ok": true`, `apiVersion: "sae-three-resources-per-line-v4"` y `telegramScheduler.configured: true`. Si no devuelve `apiVersion: "sae-three-resources-per-line-v4"`, Cloudflare todavía no tiene desplegada la corrección de extracción de paradas necesaria para consultar todas las líneas; despliega la última versión del directorio `cloudflare-worker-burgos`.
 - `/api/burgos/vehicles?line=01&fresh=1`: devuelve la lista de autobuses de `resourceVehicles` de la línea 01 sin esperar al trazado ni a las estimaciones.
 - `/api/burgos/live?line=01&fresh=1`: consulta los tres recursos de esa línea y devuelve las observaciones de estimación para próximas paradas/itinerario.
 - Para consultar toda la red, pide cada línea por separado (`01`–`23`, `73`, `87`–`89`, `C1`, `C2`). No se agrega toda la red dentro de una única invocación del Worker para respetar sus límites de subpeticiones.
 
 La URL del Worker se introduce en SAE Spotter → Burgos → **Configurar conexión**. Pega la URL base, sin añadir rutas.
+
+La vista primero carga la lista ligera de coches y después consulta `/api/burgos/live?line=XX` de forma independiente por línea. En esa segunda respuesta, enlaza el ID del coche + línea con cada estimación y el ID de la parada con su nombre/coordenadas del recorrido; esto alimenta el destino, la próxima parada y la llegada/distancia estimadas sin bloquear el listado inicial.
 
 El monitor utiliza el endpoint oficial `https://movilidad.aytoburgos.es/es/rutas-en-directo` y consulta por cada línea los tres recursos: `resourceRoutes` (recorrido/IDs de parada), `resourceVehicles` (coches publicados) y `resourceEstimations` (destino y próxima parada). Para `resourceRoutes` y `resourceVehicles` incluye tanto `_as_asac_isaenext_IsaenextWebPortlet_line` como `_as_asac_isaenext_IsaenextWebPortlet_label`; para `resourceEstimations` añade `line`, `tipo=1` y los IDs de parada del recorrido. Compara los IDs, la línea, el destino y el sentido entre snapshots completos. Si falla una línea, conserva el estado anterior y no genera alertas falsas. Solo se permite CORS para `https://enekituss.github.io`.
 
