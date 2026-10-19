@@ -589,7 +589,7 @@ async function fetchLiveSnapshot() {
 }
 
 async function dispatchBurgosTelegramWorkflow(env) {
-  const token = String(env?.BURGOS_GITHUB_TOKEN || "").trim();
+  const token = String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim();
   if (!token) {
     console.warn("Falta BURGOS_GITHUB_TOKEN: Telegram Burgos queda con el respaldo programado de GitHub Actions.");
     return;
@@ -680,7 +680,7 @@ export default {
         buildId: "burgos-live-v6.7-2026-10-19",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
-        telegramScheduler: { configured: Boolean(env?.BURGOS_GITHUB_TOKEN), cadence: "*/2 * * * *" },
+        telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },
         endpoints: ["/api/burgos/vehicles?line=01&fresh=1", "/api/burgos/live?line=01&fresh=1"]
       });
     }
