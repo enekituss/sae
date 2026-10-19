@@ -585,7 +585,7 @@ jobs:
                               time.sleep(wait_seconds)
                   raise RuntimeError("fallo tras 2 intentos: " + str(last_error))
 
-              with ThreadPoolExecutor(max_workers=4) as executor:
+              with ThreadPoolExecutor(max_workers=8) as executor:
                   futures = {executor.submit(fetch_worker_line, line): line for line in burgos_lines}
                   for future in as_completed(futures):
                       line = futures[future]
