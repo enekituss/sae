@@ -53,8 +53,8 @@ jobs:
           STATE_PATH = "burgos-telegram-state.json"
 
           if not TOKEN or not PRIMARY_CHAT:
-              print("AVISO: configura BURGOS_TELEGRAM_BOT_TOKEN y BURGOS_TELEGRAM_CHAT_ID en Settings → Secrets and variables → Actions. No se ha ejecutado el bot.")
-              sys.exit(0)
+              print("ERROR: faltan BURGOS_TELEGRAM_BOT_TOKEN o BURGOS_TELEGRAM_CHAT_ID en Settings → Secrets and variables → Actions. Se cancela el monitor para no dar por correctas unas alertas que no se pueden enviar.")
+              sys.exit(1)
 
           try:
               with open(STATE_PATH, encoding="utf-8") as handle:
@@ -683,6 +683,17 @@ jobs:
                               })
                           confirmed[vehicle_id] = vehicle
                           pending_arrivals.pop(vehicle_id, None)
+                          dirty = True
+
+              # Una alta pendiente solo se confirma si el coche sigue presente.
+              # Si desaparece antes de acumular dos lecturas válidas, se descarta
+              # el candidato para no anunciar una aparición fugaz mucho más tarde.
+              # Solo se hace esta limpieza con un snapshot completo: si alguna línea
+              # falla, el coche podría haberse movido a esa línea no consultada.
+              if snapshot_complete:
+                  for pending_vehicle_id in list(pending_arrivals):
+                      if pending_vehicle_id not in current:
+                          pending_arrivals.pop(pending_vehicle_id, None)
                           dirty = True
 
               # Solo una pasada completa de las 29 líneas permite incrementar
