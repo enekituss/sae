@@ -40210,68 +40210,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:b930c7569eccea3f5a21ec9e": {
-      "destination": "GALLARTA",
-      "detectedAt": "2026-10-19T11:07+02:00",
-      "direction": "",
-      "eventId": "missing:b930c7569eccea3f5a21ec9e",
-      "firstMissingAt": "2026-10-19T11:03:07+02:00",
-      "lastSeenAt": "2026-10-19T10:59:28+02:00",
-      "line": "A3333",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T11:07:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7829"
-    },
-    "missing:deaa9b779e8378479f4f9c06": {
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-19T11:07+02:00",
-      "direction": "",
-      "eventId": "missing:deaa9b779e8378479f4f9c06",
-      "firstMissingAt": "2026-10-19T11:03:07+02:00",
-      "lastSeenAt": "2026-10-19T10:59:28+02:00",
-      "line": "A3927",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T11:07:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3334"
-    },
-    "route_after_gap:e53252e6438f59699428f762": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "CRUCES/GURUTZETA",
-          "old": "VALLE DE TRAPAGA"
-        }
-      ],
-      "destination": "CRUCES/GURUTZETA",
-      "detectedAt": "2026-10-19T11:07+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:e53252e6438f59699428f762",
-      "line": "A3141",
-      "queuedAt": "2026-10-19T11:07:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7852"
-    },
-    "vehicle_returned:bf65b3f8474be4fc8363a698": {
-      "destination": "ONDARROA",
-      "detectedAt": "2026-10-19T11:07+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:bf65b3f8474be4fc8363a698",
-      "lastKnown": {
-        "destination": "ONDARROA",
-        "direction": "",
-        "id": "8661",
-        "line": "A3916"
-      },
-      "line": "A3916",
-      "queuedAt": "2026-10-19T11:07:05+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "8661"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "5017": {
       "consecutiveChecks": 2,
@@ -40636,7 +40575,7 @@
       "requiredMissing": 2
     },
     "3334": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:deaa9b779e8378479f4f9c06",
       "firstMissingAt": "2026-10-19T11:03:07+02:00",
@@ -40647,7 +40586,7 @@
         "line": "A3927"
       },
       "lastSeenAt": "2026-10-19T10:59:28+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3352": {
@@ -40785,7 +40724,7 @@
       "requiredMissing": 2
     },
     "7829": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:b930c7569eccea3f5a21ec9e",
       "firstMissingAt": "2026-10-19T11:03:07+02:00",
@@ -40796,7 +40735,7 @@
         "line": "A3333"
       },
       "lastSeenAt": "2026-10-19T10:59:28+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7846": {
