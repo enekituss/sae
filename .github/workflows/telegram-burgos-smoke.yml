@@ -160,11 +160,11 @@ jobs:
               except Exception:
                   detail = ""
               message = "HTTP " + str(exc.code) + (": " + detail if detail else "")
-              failures.append("SAE oficial de Burgos (line=01, tres recursos): " + message)
-              print("FALLO: consulta del SAE por línea: " + message)
+              print("AVISO: enriquecimiento /live no disponible ahora: " + message +
+                  ". Las alertas básicas pueden funcionar con resourceVehicles.")
           except Exception as exc:
-              failures.append("SAE oficial de Burgos (line=01, tres recursos): " + str(exc))
-              print("FALLO: consulta del SAE por línea: " + str(exc))
+              print("AVISO: enriquecimiento /live no disponible ahora: " + str(exc) +
+                  ". Las alertas básicas pueden funcionar con resourceVehicles.")
 
           if failures:
               print("\nRESULTADO: todavía no está listo el circuito completo.")
