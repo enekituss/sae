@@ -644,116 +644,160 @@ jobs:
               return clean(value)
 
           def fetch_direct_line(line):
-              # Respaldo independiente del Worker: consulta el recurso ISAENEXT
-              # directamente desde el runner de GitHub con formDate y _t, como
-              # hace la web de Burgos. Se prueba el portal oficial y su espejo antiguo.
+              # Respaldo independiente: primero intenta los endpoints directos,
+              # después replica los tres proxies públicos usados por el HTML Bus Burgos.
               portlet_id = "as_asac_isaenext_IsaenextWebPortlet"
               prefix = "_" + portlet_id + "_"
               sources = [
-                  # Prioridad: misma ruta que usa el cliente web actual de SAE Spotter.
-                  "https://movilidad.aytoburgos.es/es/rutas-en-directo",
-                  "https://movilidad.aytoburgos.es/rutas-en-directo/-/isaenext/filter/23",
                   "https://movilidad.aytoburgos.es/rutas-en-directo",
+                  "https://movilidad.aytoburgos.es/es/rutas-en-directo",
+                  "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
                   "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
               ]
               failures = []
               timed_out_hosts = set()
+              timestamp = str(int(time.time() * 1000))
+              params = {
+                  "p_p_id": portlet_id,
+                  "p_p_lifecycle": "2",
+                  "p_p_state": "normal",
+                  "p_p_mode": "view",
+                  "p_p_resource_id": "resourceVehicles",
+                  "p_p_cacheability": "cacheLevelPage",
+                  prefix + "formDate": timestamp,
+                  prefix + "line": line,
+                  prefix + "label": line,
+                  "_t": timestamp
+              }
 
+              def parse_line_payload(payload, source_label):
+                  if isinstance(payload, list):
+                      rows = payload
+                  elif isinstance(payload, dict):
+                      rows = None
+                      for key in ("vehicles", "vehicleList", "resourceVehicles", "data", "result", "rows", "items", "list"):
+                          if isinstance(payload.get(key), list):
+                              rows = payload[key]
+                              break
+                      if rows is None:
+                          candidates = [value for value in payload.values() if isinstance(value, list)]
+                          if len(candidates) == 1:
+                              rows = candidates[0]
+                      if rows is None:
+                          detail = clean(payload.get("error") or payload.get("message") or payload.get("detail"))
+                          if detail:
+                              raise RuntimeError(source_label + " rechazó la petición: " + detail[:180])
+                  else:
+                      rows = None
+                  if not isinstance(rows, list):
+                      raise RuntimeError(source_label + " no devolvió una lista JSON de resourceVehicles")
+
+                  line_current = {}
+                  for raw_vehicle in rows:
+                      if not isinstance(raw_vehicle, dict):
+                          continue
+                      vehicle_id = clean(
+                          raw_vehicle.get("id") or raw_vehicle.get("vehicleId") or
+                          raw_vehicle.get("vehicle_id") or raw_vehicle.get("vehicle") or
+                          raw_vehicle.get("idVehicle") or raw_vehicle.get("numeroCoche") or
+                          raw_vehicle.get("numVehiculo")
+                      )
+                      if not vehicle_id or vehicle_id == "0":
+                          continue
+                      normalized_raw = {
+                          **raw_vehicle,
+                          "id": vehicle_id,
+                          "lineId": line,
+                          "line": line,
+                          "destination": direct_destination(
+                              raw_vehicle.get("destination") or raw_vehicle.get("destino") or
+                              raw_vehicle.get("destinationName") or raw_vehicle.get("destinationText") or
+                              raw_vehicle.get("headsign") or raw_vehicle.get("destiny") or
+                              raw_vehicle.get("destinoNombre") or raw_vehicle.get("nombreDestino")
+                          ),
+                          "direction": direct_destination(
+                              raw_vehicle.get("direction") or raw_vehicle.get("sentido") or raw_vehicle.get("direccion")
+                          )
+                      }
+                      vehicle = normalise_vehicle(normalized_raw)
+                      if not vehicle:
+                          continue
+                      vehicle["line"] = line
+                      line_current[vehicle["id"]] = vehicle
+
+                  print(
+                      "Recuperada línea " + line + " mediante " + source_label +
+                      " (" + str(len(line_current)) + " autobuses)."
+                  )
+                  return line, line_current
+
+              def make_url(base):
+                  url = base + "?" + urllib.parse.urlencode(params)
+                  return url
+
+              # Prueba directa el portal, conservando las rutas alternativas oficiales.
               for base in sources:
                   host = urllib.parse.urlparse(base).netloc
                   if host in timed_out_hosts:
                       continue
-                  timestamp = str(int(time.time() * 1000))
-                  params = {
-                      "p_p_id": portlet_id,
-                      "p_p_lifecycle": "2",
-                      "p_p_state": "normal",
-                      "p_p_mode": "view",
-                      "p_p_resource_id": "resourceVehicles",
-                      "p_p_cacheability": "cacheLevelPage",
-                      prefix + "formDate": timestamp,
-                      prefix + "line": line,
-                      prefix + "label": line,
-                      "_t": timestamp
-                  }
-                  url = base + "?" + urllib.parse.urlencode(params)
                   request = urllib.request.Request(
-                      url,
+                      make_url(base),
                       headers={
                           "Accept": "application/json, text/plain, */*",
                           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
-                          "Referer": "https://movilidad.aytoburgos.es/es/rutas-en-directo",
-                          "Cache-Control": "no-cache"
+                          "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo",
+                          "Cache-Control": "no-cache",
+                          "X-Requested-With": "XMLHttpRequest"
                       }
                   )
                   try:
-                      with urllib.request.urlopen(request, timeout=10) as response:
+                      with urllib.request.urlopen(request, timeout=6) as response:
                           payload = json.loads(response.read().decode("utf-8"))
-                      if isinstance(payload, list):
-                          rows = payload
-                      elif isinstance(payload, dict):
-                          rows = None
-                          for key in ("vehicles", "vehicleList", "resourceVehicles", "data", "result", "rows", "items", "list"):
-                              if isinstance(payload.get(key), list):
-                                  rows = payload[key]
-                                  break
-                          if rows is None:
-                              candidates = [value for value in payload.values() if isinstance(value, list)]
-                              if len(candidates) == 1:
-                                  rows = candidates[0]
-                      else:
-                          rows = None
-                      if not isinstance(rows, list):
-                          raise RuntimeError("resourceVehicles devolvió un JSON sin lista de vehículos")
-
-                      line_current = {}
-                      for raw_vehicle in rows:
-                          if not isinstance(raw_vehicle, dict):
-                              continue
-                          vehicle_id = clean(
-                              raw_vehicle.get("id") or raw_vehicle.get("vehicleId") or
-                              raw_vehicle.get("vehicle_id") or raw_vehicle.get("vehicle") or
-                              raw_vehicle.get("idVehicle") or raw_vehicle.get("numeroCoche") or
-                              raw_vehicle.get("numVehiculo")
-                          )
-                          if not vehicle_id or vehicle_id == "0":
-                              continue
-                          normalized_raw = {
-                              **raw_vehicle,
-                              "id": vehicle_id,
-                              "lineId": line,
-                              "line": line,
-                              "destination": direct_destination(
-                                  raw_vehicle.get("destination") or raw_vehicle.get("destino") or
-                                  raw_vehicle.get("destinationName") or raw_vehicle.get("destinationText") or
-                                  raw_vehicle.get("headsign") or raw_vehicle.get("destiny") or
-                                  raw_vehicle.get("destinoNombre") or raw_vehicle.get("nombreDestino")
-                              ),
-                              "direction": direct_destination(
-                                  raw_vehicle.get("direction") or raw_vehicle.get("sentido") or raw_vehicle.get("direccion")
-                              )
-                          }
-                          vehicle = normalise_vehicle(normalized_raw)
-                          if not vehicle:
-                              continue
-                          vehicle["line"] = line
-                          line_current[vehicle["id"]] = vehicle
-
-                      print(
-                          "Recuperada línea " + line + " mediante consulta directa a ISAENEXT en " +
-                          host + " (" + str(len(line_current)) + " autobuses)."
-                      )
-                      return line, line_current
+                      return parse_line_payload(payload, host + " (directo)")
                   except urllib.error.HTTPError as exc:
                       failures.append(host + " HTTP " + str(exc.code))
                   except Exception as exc:
                       detail = str(exc)
-                      failures.append(host + ": " + detail[:200])
+                      failures.append(host + ": " + detail[:150])
                       if "timeout" in detail.lower() or "timed out" in detail.lower() or "aborted" in detail.lower():
                           timed_out_hosts.add(host)
 
-              raise RuntimeError("respaldo directo municipal falló: " + " | ".join(failures[:4]))
+              # Repite el patrón exacto de Bus Burgos: proxy + URL oficial codificada.
+              # Se usa la ruta legacy porque es la base que empleaba el HTML que funcionaba.
+              proxy_target = make_url("https://www.aytoburgos.es/web/movilidad/rutas-en-directo")
+              encoded_target = urllib.parse.quote(proxy_target, safe="")
+              proxies = [
+                  ("corsproxy.io", "https://corsproxy.io/?" + encoded_target),
+                  ("AllOrigins", "https://api.allorigins.win/raw?url=" + encoded_target),
+                  ("CodeTabs", "https://api.codetabs.com/v1/proxy?quest=" + encoded_target)
+              ]
+              for proxy_name, proxy_url in proxies:
+                  for attempt in range(1, 3):
+                      request = urllib.request.Request(
+                          proxy_url,
+                          headers={
+                              "Accept": "application/json, text/plain, */*",
+                              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
+                              "Cache-Control": "no-cache"
+                          }
+                      )
+                      try:
+                          with urllib.request.urlopen(request, timeout=8) as response:
+                              body = response.read().decode("utf-8", errors="replace")
+                          if body.startswith("URL_DECODED:"):
+                              try:
+                                  body = urllib.parse.unquote(body[len("URL_DECODED:"):])
+                              except Exception:
+                                  pass
+                          payload = json.loads(body)
+                          return parse_line_payload(payload, proxy_name)
+                      except urllib.error.HTTPError as exc:
+                          failures.append(proxy_name + " HTTP " + str(exc.code) + ((" intento " + str(attempt)) if attempt == 1 else ""))
+                      except Exception as exc:
+                          detail = str(exc)
+                          failures.append(proxy_name + ": " + detail[:160] + ((" intento " + str(attempt)) if attempt == 1 else ""))
 
+              raise RuntimeError("sin acceso a resourceVehicles para línea " + line + ": " + " | ".join(failures[:9]))
           def vehicle_fields_equal(a, b):
               return all(clean(a.get(field)) == clean(b.get(field)) for field in ("line", "destination", "direction"))
 
