@@ -517,9 +517,13 @@
       if (!response.ok || health?.ok !== true) {
         throw new Error(health?.error || ("El Worker de Burgos respondió HTTP " + response.status + "."));
       }
-      if (health?.apiVersion !== WORKER_API_VERSION ||
+      const supportedVersions = [
+        "sae-three-resources-per-line-v3",
+        "sae-three-resources-per-line-v4"
+      ];
+      if (!supportedVersions.includes(String(health?.apiVersion || "")) ||
           !String(health?.service || "").toLowerCase().includes("burgos")) {
-        throw new Error("El Worker de Burgos aún no tiene desplegada la corrección para consultar todas las líneas. Revisa el despliegue de Cloudflare.");
+        throw new Error("El Worker de Burgos necesita una versión compatible. Revisa el despliegue de cloudflare-worker-burgos; no se ha utilizado el Worker de Bizkaibus.");
       }
       return health;
     } catch (error) {
