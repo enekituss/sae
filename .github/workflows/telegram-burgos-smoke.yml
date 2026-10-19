@@ -2,11 +2,7 @@ name: Diagnóstico Telegram · Autobuses de Burgos
 # Reprueba el endpoint de ISAENEXT y el estado actual de secretos de Cloudflare.
 
 on:
-  push:
-    paths:
-      - ".github/workflows/telegram-burgos-smoke.yml"
-      - ".github/workflows/telegram-burgos.yml"
-      - "cloudflare-worker-burgos/src/index.js"
+  # Diagnóstico bajo demanda: no crear una ejecución extra por cada cambio de código.
   workflow_dispatch:
 
 permissions:
