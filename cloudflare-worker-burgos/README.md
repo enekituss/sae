@@ -17,7 +17,9 @@ El secreto `BURGOS_GITHUB_TOKEN` permite al cron lanzar el workflow de alertas c
 
 Abre la URL `workers.dev` asignada por Cloudflare:
 
-- `/health`: debe devolver JSON con `"ok": true`, `apiVersion: "sae-three-resources-per-line-v6"` y `telegramScheduler.configured: true`. Si no devuelve `apiVersion: "sae-three-resources-per-line-v6"`, Cloudflare todavía no tiene desplegada la corrección de extracción de paradas necesaria para consultar todas las líneas; despliega la última versión del directorio `cloudflare-worker-burgos`.
+- `/health`: debe devolver JSON con `"ok": true`, `apiVersion: "sae-three-resources-per-line-v6"` y `buildId: "burgos-live-v6.1-2026-10-19"`. La API permanece en v6 para conservar compatibilidad, así que hay que comprobar también `buildId`: si aparece `burgos-live-v6-2026-10-19`, Cloudflare sigue usando el código anterior y no tiene activado el respaldo de caché ni el tratamiento parcial de las estimaciones.
+- Para desplegarlo manualmente, abre **Workers & Pages → `burgos-sae-spotter` → Edit code/Deployments** y despliega la última versión de `main`. Si usas despliegue mediante Wrangler, entra en el directorio raíz `cloudflare-worker-burgos` y ejecuta `npx wrangler deploy`. Después, vuelve a abrir `/health` y confirma que el `buildId` sea `burgos-live-v6.1-2026-10-19`.
+- Para que el Worker dispare las alertas cada 2 minutos, `telegramScheduler.configured` debe ser `true`. Si es `false`, falta el secreto `BURGOS_GITHUB_TOKEN` en **Settings → Variables and Secrets** del Worker; las comprobaciones de respaldo de GitHub Actions siguen programadas cada 5 minutos.
 - `/api/burgos/vehicles?line=01&fresh=1`: devuelve la lista de autobuses de `resourceVehicles` de la línea 01 sin esperar al trazado ni a las estimaciones.
 - `/api/burgos/live?line=01&fresh=1`: consulta los tres recursos de esa línea y devuelve las observaciones de estimación para próximas paradas/itinerario.
 - Para consultar toda la red, pide cada línea por separado (`01`–`23`, `73`, `87`–`89`, `C1`, `C2`). No se agrega toda la red dentro de una única invocación del Worker para respetar sus límites de subpeticiones.
