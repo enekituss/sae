@@ -24021,108 +24021,7 @@
       ]
     }
   },
-  "outbox": {
-    "entered:1b060d8d082640200c4772f4": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T06:35+02:00",
-      "direction": "",
-      "eventId": "entered:1b060d8d082640200c4772f4",
-      "firstObservedAt": "2026-10-19T06:33:07+02:00",
-      "line": "A3528",
-      "queuedAt": "2026-10-19T06:35:31+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "2135"
-    },
-    "entered:7604853f4583b525ed924d32": {
-      "destination": "BASAURI",
-      "detectedAt": "2026-10-19T06:35+02:00",
-      "direction": "",
-      "eventId": "entered:7604853f4583b525ed924d32",
-      "firstObservedAt": "2026-10-19T06:33:07+02:00",
-      "line": "A3642",
-      "queuedAt": "2026-10-19T06:35:31+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "3355"
-    },
-    "entered:8a77cbcdb6ce1059c380e728": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T06:35+02:00",
-      "direction": "",
-      "eventId": "entered:8a77cbcdb6ce1059c380e728",
-      "firstObservedAt": "2026-10-19T06:33:07+02:00",
-      "line": "A2610",
-      "queuedAt": "2026-10-19T06:35:31+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "3339"
-    },
-    "entered:f30eaab8cb02a68d7a2d3a82": {
-      "destination": "MUSKIZ",
-      "detectedAt": "2026-10-19T06:35+02:00",
-      "direction": "",
-      "eventId": "entered:f30eaab8cb02a68d7a2d3a82",
-      "firstObservedAt": "2026-10-19T06:33:07+02:00",
-      "line": "A3335",
-      "queuedAt": "2026-10-19T06:35:31+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "7867"
-    },
-    "entered:f921952f8780fa11d83eb5f0": {
-      "destination": "DURANGO",
-      "detectedAt": "2026-10-19T06:35+02:00",
-      "direction": "",
-      "eventId": "entered:f921952f8780fa11d83eb5f0",
-      "firstObservedAt": "2026-10-19T06:33:07+02:00",
-      "line": "A3933",
-      "queuedAt": "2026-10-19T06:35:31+02:00",
-      "type": "vehicle_entered",
-      "vehicleId": "3328"
-    },
-    "missing:22eb3117cb6f7429d14c5e51": {
-      "destination": "ZEANURI (Aut.)",
-      "detectedAt": "2026-10-19T06:35+02:00",
-      "direction": "",
-      "eventId": "missing:22eb3117cb6f7429d14c5e51",
-      "firstMissingAt": "2026-10-19T06:31:06+02:00",
-      "lastSeenAt": "2026-10-19T06:27:41+02:00",
-      "line": "A3927",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T06:35:31+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3333"
-    },
-    "vehicle_returned:b59569643e0c07ec587aafb1": {
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T06:35+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:b59569643e0c07ec587aafb1",
-      "lastKnown": {
-        "destination": "BILBAO",
-        "direction": "",
-        "id": "8659",
-        "line": "A3523"
-      },
-      "line": "A3523",
-      "queuedAt": "2026-10-19T06:35:31+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "8659"
-    },
-    "vehicle_returned:b71c5967ddfd66789a4c32a0": {
-      "destination": "ARTZINIEGA",
-      "detectedAt": "2026-10-19T06:35+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:b71c5967ddfd66789a4c32a0",
-      "lastKnown": {
-        "destination": "ARTZINIEGA",
-        "direction": "",
-        "id": "5038",
-        "line": "A3342"
-      },
-      "line": "A3342",
-      "queuedAt": "2026-10-19T06:35:31+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "5038"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1671": {
       "consecutiveChecks": 1,
@@ -24310,7 +24209,7 @@
       "requiredMissing": 2
     },
     "3333": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:22eb3117cb6f7429d14c5e51",
       "firstMissingAt": "2026-10-19T06:31:06+02:00",
@@ -24321,7 +24220,7 @@
         "line": "A3927"
       },
       "lastSeenAt": "2026-10-19T06:27:41+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7832": {
