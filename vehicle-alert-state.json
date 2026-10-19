@@ -40034,47 +40034,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:17a50f55bbc4edf4a6793a1d": {
-      "destination": "TEKNO. PARKEA",
-      "detectedAt": "2026-10-19T09:35+02:00",
-      "direction": "",
-      "eventId": "missing:17a50f55bbc4edf4a6793a1d",
-      "firstMissingAt": "2026-10-19T09:31:05+02:00",
-      "lastSeenAt": "2026-10-19T09:27:53+02:00",
-      "line": "A3250",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T09:35:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2097"
-    },
-    "missing:588ad6cfc9efb33f08a0330e": {
-      "destination": "ARRIGORRIAGA",
-      "detectedAt": "2026-10-19T09:35+02:00",
-      "direction": "",
-      "eventId": "missing:588ad6cfc9efb33f08a0330e",
-      "firstMissingAt": "2026-10-19T09:31:05+02:00",
-      "lastSeenAt": "2026-10-19T09:27:53+02:00",
-      "line": "A3641",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T09:35:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3365"
-    },
-    "missing:7b4739d330ba0ecfa4b39616": {
-      "destination": "EIBAR",
-      "detectedAt": "2026-10-19T09:35+02:00",
-      "direction": "",
-      "eventId": "missing:7b4739d330ba0ecfa4b39616",
-      "firstMissingAt": "2026-10-19T09:31:05+02:00",
-      "lastSeenAt": "2026-10-19T09:27:53+02:00",
-      "line": "A3912",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T09:35:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3385"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1112": {
       "consecutiveChecks": 2,
@@ -40482,7 +40442,7 @@
       "requiredMissing": 2
     },
     "2097": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:17a50f55bbc4edf4a6793a1d",
       "firstMissingAt": "2026-10-19T09:31:05+02:00",
@@ -40493,7 +40453,7 @@
         "line": "A3250"
       },
       "lastSeenAt": "2026-10-19T09:27:53+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2099": {
@@ -40676,7 +40636,7 @@
       "requiredMissing": 2
     },
     "3365": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:588ad6cfc9efb33f08a0330e",
       "firstMissingAt": "2026-10-19T09:31:05+02:00",
@@ -40687,7 +40647,7 @@
         "line": "A3641"
       },
       "lastSeenAt": "2026-10-19T09:27:53+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3377": {
@@ -40751,7 +40711,7 @@
       "requiredMissing": 2
     },
     "3385": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:7b4739d330ba0ecfa4b39616",
       "firstMissingAt": "2026-10-19T09:31:05+02:00",
@@ -40762,7 +40722,7 @@
         "line": "A3912"
       },
       "lastSeenAt": "2026-10-19T09:27:53+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3386": {
