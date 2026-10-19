@@ -28,6 +28,9 @@ jobs:
         with:
           persist-credentials: true
 
+      - name: Descargar preferencias de Telegram
+        run: git fetch origin telegram-data:refs/remotes/origin/telegram-data
+
       - name: Detectar cambios y enviar avisos a Telegram
         env:
           BURGOS_TELEGRAM_BOT_TOKEN: ${{ secrets.BURGOS_TELEGRAM_BOT_TOKEN }}
@@ -139,8 +142,9 @@ jobs:
                       [{"text": "⚠️ Solo fuera de servicio"}],
                       [{"text": "🔄 Solo cambios de línea"}],
                       [{"text": "🟢 Nueva entrada (reaparición)"}],
-                      [{"text": "🚌 Seguir coche(s) por ID"}],
-                      [{"text": "⏸️ Pausar avisos"}]
+                      [{"text": "📋 Ver coches seguidos"}, {"text": "➕ Añadir coche(s) por ID"}],
+                      [{"text": "➖ Quitar coche(s) por ID"}],
+                      [{"text": "⏸️ Pausar avisos"}, {"text": "❎ Cerrar menú"}]
                   ],
                   "resize_keyboard": True,
                   "is_persistent": True,
@@ -192,8 +196,10 @@ jobs:
               if notice:
                   message += notice + "\n\n"
               message += "Configuración actual: " + mode_description(subscription) + "\n\nElige qué alertas quieres recibir con los botones del teclado."
-              if clean(subscription.get("mode")) == "vehicle":
-                  message += "\n\nEscribe un ID numérico cuando te lo pida el bot. Puedes añadir más coches repitiendo «Seguir coche(s) por ID»."
+              ids = tracked_vehicle_ids(subscription)
+              message += "\n\nCoches seguidos por ID (" + str(len(ids)) + "): " + (", ".join(ids[:20]) if ids else "ninguno") + ((" y " + str(len(ids)-20) + " más") if len(ids) > 20 else "") + "."
+              message += "\n\nComandos: /avisos o /menu abre las opciones; /coches muestra los IDs; /coche 123 añade y /quitar 123 elimina."
+              message += "\nPulsa «❎ Cerrar menú» para ocultar los botones."
               if clean(subscription.get("mode")) == "off":
                   message += "\n\nPara reactivar los avisos, pulsa «Todos los avisos» o elige otro filtro."
               message += "\n\nConfigura tus preferencias en el chat privado con @SAEBUR_bot. La falta de posición publicada no confirma por sí sola una baja administrativa."
@@ -209,6 +215,27 @@ jobs:
           subscriptions = state.get("telegramSubscriptions", {})
           if not isinstance(subscriptions, dict):
               subscriptions = {}
+          try:
+              pref_paths = subprocess.run(
+                  ["git", "ls-tree", "-r", "--name-only", "refs/remotes/origin/telegram-data", "telegram-preferences/burgos"],
+                  capture_output=True, text=True, check=True
+              ).stdout.splitlines()
+              for pref_path in pref_paths:
+                  if not pref_path.endswith(".json"):
+                      continue
+                  pref_chat_id = os.path.basename(pref_path)[:-5]
+                  if not pref_chat_id:
+                      continue
+                  raw_pref = subprocess.run(
+                      ["git", "show", "refs/remotes/origin/telegram-data:" + pref_path],
+                      capture_output=True, text=True, check=True
+                  ).stdout
+                  preference = json.loads(raw_pref)
+                  if isinstance(preference, dict):
+                      subscriptions[pref_chat_id] = preference
+              print("Preferencias de Burgos cargadas desde telegram-data: " + str(len(pref_paths)))
+          except Exception as exc:
+              print("AVISO: no se pudieron leer preferencias de telegram-data de Burgos; se conserva el estado local: " + str(exc))
           primary_chat_id = str(PRIMARY_CHAT)
           try:
               bot_info = telegram_api("getMe", {})
@@ -230,15 +257,15 @@ jobs:
           try:
               webhook_info = telegram_api("getWebhookInfo", {})
               if clean(webhook_info.get("url")):
-                  # Solo se ha validado @SAEBUR_bot antes de llegar aquí: no tocar otros bots.
-                  telegram_api("deleteWebhook", {"drop_pending_updates": False})
-                  print("Webhook anterior retirado de @SAEBUR_bot; se usará sondeo independiente desde GitHub Actions.")
-              update_offset = max(0, int(state.get("telegramUpdateOffset", 0) or 0))
-              updates = telegram_api("getUpdates", {
-                  "offset": update_offset,
-                  "timeout": 0,
-                  "allowed_updates": ["message"]
-              })
+                  print("Webhook de @SAEBUR_bot activo; Cloudflare procesa el menú. Se omite getUpdates.")
+                  updates = []
+              else:
+                  update_offset = max(0, int(state.get("telegramUpdateOffset", 0) or 0))
+                  updates = telegram_api("getUpdates", {
+                      "offset": update_offset,
+                      "timeout": 0,
+                      "allowed_updates": ["message"]
+                  })
           except Exception as exc:
               print("AVISO: no se pudieron consultar los mensajes de Telegram: " + str(exc))
               updates = []
