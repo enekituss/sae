@@ -413,7 +413,8 @@ jobs:
               burgos_lines = [f"{number:02d}" for number in range(1, 24)] + ["73", "87", "88", "89", "C1", "C2"]
 
               def fetch_worker_line(line):
-                  url = worker_base + "/api/burgos/vehicles?" + urllib.parse.urlencode({
+                  # /vehicles es deliberadamente ligero; /live combina el recorrido, la flota y las estimaciones.
+              url = worker_base + "/api/burgos/live?" + urllib.parse.urlencode({
                       "line": line,
                       "fresh": "1",
                       "_t": str(int(time.time() * 1000))
