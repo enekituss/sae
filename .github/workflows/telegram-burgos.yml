@@ -625,7 +625,8 @@ jobs:
                   print(
                       "AVISO: snapshot parcial; líneas con respuesta válida: " +
                       ", ".join(line for line in burgos_lines if line in successful_lines) +
-                      ". No se evaluarán desapariciones en esta pasada. Fallos: " +
+                      ". Las posibles salidas solo se evaluarán para coches cuya última línea conocida " +
+                      "haya respondido correctamente; los demás quedan en espera. Fallos: " +
                       ", ".join(line for line in burgos_lines if line in failed_lines)
                   )
           else:
@@ -828,9 +829,12 @@ jobs:
                           pending_arrivals.pop(pending_vehicle_id, None)
                           dirty = True
 
-              # Solo una pasada completa de las 29 líneas permite incrementar
-              # los contadores de ausencia: un fallo parcial no significa baja.
-              if snapshot_complete:
+              # Una desaparición en la red completa se confirma pronto (>=3 min y 2 lecturas).
+              # Si el snapshot es parcial, solo observamos coches cuya última línea conocida
+              # respondió correctamente y que no aparecen en ninguna línea que sí respondió.
+              # Como podrían haberse movido a una línea caída, la alerta parcial exige >=10 min
+              # y 4 comprobaciones válidas, y se identifica al usuario como posible salida del feed.
+              if snapshot_ok:
                   feed_allows_missing = bool(current) or bool(empty_state.get("confirmed"))
                   for vehicle_id, old_vehicle in list(confirmed.items()):
                       if vehicle_id in current:
@@ -841,18 +845,33 @@ jobs:
                       if vehicle_id in pending_routes:
                           pending_routes.pop(vehicle_id, None)
                           dirty = True
-                      if not feed_allows_missing:
+                      old_line = clean(old_vehicle.get("line"))
+                      line_verified = snapshot_complete or old_line in successful_lines
+                      if not line_verified or not feed_allows_missing:
                           continue
+
                       candidate = pending_missing.get(vehicle_id)
                       if candidate:
                           candidate["checks"] = int(candidate.get("checks") or 1) + 1
+                          if not snapshot_complete:
+                              candidate["partialChecks"] = int(candidate.get("partialChecks") or 0) + 1
+                          candidate["lastVerifiedLine"] = old_line
                       else:
-                          candidate = {"vehicle": old_vehicle, "checks": 1, "firstMissingAt": now}
+                          candidate = {
+                              "vehicle": old_vehicle,
+                              "checks": 1,
+                              "partialChecks": 0 if snapshot_complete else 1,
+                              "firstMissingAt": now,
+                              "lastVerifiedLine": old_line
+                          }
                           pending_missing[vehicle_id] = candidate
                       dirty = True
                       first_missing_dt = parse_time(candidate.get("firstMissingAt"))
                       elapsed_missing = (datetime.now(timezone.utc) - first_missing_dt.astimezone(timezone.utc)).total_seconds() if first_missing_dt else 0
-                      if candidate["checks"] >= 2 and elapsed_missing >= 180:
+                      partial_checks = int(candidate.get("partialChecks") or 0)
+                      required_checks = 4 if partial_checks else 2
+                      required_elapsed = 600 if partial_checks else 180
+                      if candidate["checks"] >= required_checks and elapsed_missing >= required_elapsed:
                           queue_event({
                               "type": "vehicle_missing",
                               "vehicleId": vehicle_id,
@@ -860,7 +879,10 @@ jobs:
                               "destination": old_vehicle.get("destination", ""),
                               "direction": old_vehicle.get("direction", ""),
                               "lastSeenAt": candidate.get("firstMissingAt", now),
-                              "missingChecks": candidate["checks"]
+                              "missingChecks": candidate["checks"],
+                              "partialChecks": partial_checks,
+                              "partialSnapshot": not snapshot_complete,
+                              "lastVerifiedLine": old_line
                           })
                           recently_missing[vehicle_id] = {
                               "vehicle": old_vehicle,
@@ -928,8 +950,16 @@ jobs:
                       "Último destino publicado: " + destination,
                       "Último sentido publicado: " + direction,
                       "Primera ausencia observada: " + local_time(event.get("lastSeenAt")),
-                      "Confirmación: el coche ha faltado en varias consultas completas del servicio municipal.",
-                      "Importante: no aparecer en el feed no confirma por sí solo una baja administrativa ni que esté físicamente fuera de servicio.",
+                      (
+                          "Confirmación: el coche ha faltado en varias consultas completas del servicio municipal."
+                          if not event.get("partialSnapshot") else
+                          "Aviso con lectura parcial: la última línea conocida respondió correctamente y el coche no apareció en las líneas consultadas durante varias comprobaciones."
+                      ),
+                      (
+                          "Importante: no aparecer en el feed no confirma por sí solo una baja administrativa ni que esté físicamente fuera de servicio."
+                          if not event.get("partialSnapshot") else
+                          "Precaución: alguna otra línea no respondió; el coche podría haberse movido a una de ellas. Es una posible salida del feed, no una baja administrativa confirmada."
+                      ),
                       "Hora del aviso: " + local_time(event.get("detectedAt"))
                   ]
               elif event_type == "vehicle_entered":
