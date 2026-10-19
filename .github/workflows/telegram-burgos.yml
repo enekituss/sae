@@ -949,19 +949,14 @@ jobs:
                       "Última línea publicada: " + line,
                       "Último destino publicado: " + destination,
                       "Último sentido publicado: " + direction,
-                      "Primera ausencia observada: " + local_time(event.get("lastSeenAt")),
-                      (
-                          "Confirmación: el coche ha faltado en varias consultas completas del servicio municipal."
-                          if not event.get("partialSnapshot") else
-                          "Aviso con lectura parcial: la última línea conocida respondió correctamente y el coche no apareció en las líneas consultadas durante varias comprobaciones."
-                      ),
-                      (
-                          "Importante: no aparecer en el feed no confirma por sí solo una baja administrativa ni que esté físicamente fuera de servicio."
-                          if not event.get("partialSnapshot") else
-                          "Precaución: alguna otra línea no respondió; el coche podría haberse movido a una de ellas. Es una posible salida del feed, no una baja administrativa confirmada."
-                      ),
-                      "Hora del aviso: " + local_time(event.get("detectedAt"))
+                      "Primera ausencia observada: " + local_time(event.get("lastSeenAt"))
                   ]
+                  # En una lectura parcial no mostramos advertencias que el usuario
+                  # ha pedido ocultar; tampoco afirmamos que hubo consultas completas.
+                  if not event.get("partialSnapshot"):
+                      lines.append("Confirmación: el coche ha faltado en varias consultas completas del servicio municipal.")
+                      lines.append("Importante: no aparecer en el feed no confirma por sí solo una baja administrativa ni que esté físicamente fuera de servicio.")
+                  lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))
               elif event_type == "vehicle_entered":
                   lines = [
                       "🟢 AUTOBÚS DETECTADO ENTRANDO EN SERVICIO",
@@ -1005,6 +1000,7 @@ jobs:
                       else:
                           lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)
                   lines.append("Destino actual: " + destination)
+                  lines.append("Sentido actual: " + direction)
                   lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))
               return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
 
