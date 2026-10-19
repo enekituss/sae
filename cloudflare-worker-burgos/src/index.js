@@ -90,15 +90,23 @@ function normalizeLineCode(value) {
   return token;
 }
 
-async function requestIsaenext(resource, extra = {}) {
+async function requestIsaenext(resource, extra = {}, options = {}) {
   const sources = [
     BURGOS_SOURCE,
     "https://movilidad.aytoburgos.es/rutas-en-directo",
     "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
   ];
+  // Los recursos complementarios del itinerario deben fallar rápido para
+  // devolver a tiempo la lista principal de coches, aunque el portal municipal vaya lento.
+  const timeoutValue = Number(options.timeoutMs);
+  const timeoutMs = Number.isFinite(timeoutValue) && timeoutValue > 0
+    ? Math.min(timeoutValue, 6000) : 6000;
+  const sourceValue = Number(options.maxSources);
+  const maxSources = Number.isFinite(sourceValue) && sourceValue > 0
+    ? Math.min(Math.floor(sourceValue), sources.length) : sources.length;
   const errors = [];
 
-  for (const base of sources) {
+  for (const base of sources.slice(0, maxSources)) {
     const url = new URL(base);
     url.searchParams.set("p_p_id", PORTLET_ID);
     url.searchParams.set("p_p_lifecycle", "2");
@@ -118,7 +126,7 @@ async function requestIsaenext(resource, extra = {}) {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
           "Referer": BURGOS_SOURCE
         },
-        signal: AbortSignal.timeout(6000)
+        signal: AbortSignal.timeout(timeoutMs)
       });
       const body = await response.text();
       if (!response.ok) {
@@ -452,7 +460,10 @@ async function fetchVehiclesForLine(line) {
   // El trazado es complementario. Si falla, se devuelve la lista de coches
   // con una advertencia y sin inventar próximas paradas.
   try {
-    const routeResult = await requestIsaenext("resourceRoutes", lineParams);
+    const routeResult = await requestIsaenext("resourceRoutes", lineParams, {
+      timeoutMs: 2500,
+      maxSources: 2
+    });
     routePayload = routeResult.data;
     if (!routePayload || (Array.isArray(routePayload) && routePayload.length === 0)) {
       throw new Error("resourceRoutes no devolvió el recorrido de la línea " + line + ".");
@@ -481,6 +492,9 @@ async function fetchVehiclesForLine(line) {
         [PORTLET_PREFIX + "line"]: line,
         [PORTLET_PREFIX + "tipo"]: "1",
         [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
+      }, {
+        timeoutMs: 2500,
+        maxSources: 2
       });
       if (!Array.isArray(estimationResult.data)) {
         throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
@@ -623,7 +637,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.1-2026-10-19",
+        buildId: "burgos-live-v6.2-2026-10-19",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(env?.BURGOS_GITHUB_TOKEN), cadence: "*/2 * * * *" },
