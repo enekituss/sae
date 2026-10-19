@@ -405,16 +405,16 @@ jobs:
           snapshot_source = ""
           source_errors = []
 
-          # Fuente prioritaria: por cada línea, el Worker de Burgos consulta
-          # resourceRoutes, resourceVehicles y resourceEstimations en el SAE municipal.
-          # Cada línea es una petición separada al Worker para respetar sus límites de subpeticiones.
+          # Detector básico: snapshot de cada línea desde resourceVehicles.
+          # No depende de resourceRoutes ni de resourceEstimations para confirmar presencia;
+          # el enriquecimiento del recorrido se mantiene en el endpoint /api/burgos/live.
           try:
               worker_base = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev"
               burgos_lines = [f"{number:02d}" for number in range(1, 24)] + ["73", "87", "88", "89", "C1", "C2"]
 
               def fetch_worker_line(line):
                   # /vehicles es deliberadamente ligero; /live combina el recorrido, la flota y las estimaciones.
-                  url = worker_base + "/api/burgos/live?" + urllib.parse.urlencode({
+                  url = worker_base + "/api/burgos/vehicles?" + urllib.parse.urlencode({
                       "line": line,
                       "fresh": "1",
                       "_t": str(int(time.time() * 1000))
@@ -438,9 +438,8 @@ jobs:
                   if payload.get("partial"):
                       raise RuntimeError("la respuesta de la línea fue parcial")
                   source_type = clean(payload.get("sourceType"))
-                  required_resources = ("resourceRoutes", "resourceVehicles", "resourceEstimations")
-                  if not all(resource in source_type for resource in required_resources):
-                      raise RuntimeError("la respuesta no confirma que se consultaron los tres recursos del SAE")
+                  if "resourceVehicles" not in source_type:
+                      raise RuntimeError("la respuesta no confirma resourceVehicles")
                   line_current = {}
                   for raw_vehicle in rows:
                       if not isinstance(raw_vehicle, dict):
@@ -487,12 +486,12 @@ jobs:
 
               current = candidate_current
               snapshot_ok = True
-              snapshot_source = "isaenext_three_resources_per_line"
+              snapshot_source = "isaenext_resourceVehicles_per_line"
               print(
                   "Snapshot completo del SAE oficial: " + str(len(current)) +
                   " autobuses identificados en " + str(len(line_rows)) +
                   "/" + str(len(burgos_lines)) + " líneas. "
-                  "Recursos consultados por línea: resourceRoutes, resourceVehicles y resourceEstimations."
+                  "Fuente del snapshot: resourceVehicles por línea; las estimaciones del recorrido son un enriquecimiento separado."
               )
           except Exception as exc:
               source_errors.append("SAE oficial de Burgos por línea: " + str(exc))
