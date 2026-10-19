@@ -439,7 +439,7 @@ async function fetchVehicleListForLine(line) {
   try {
     const routeResult = await requestIsaenext("resourceRoutes", lineParams, {
       timeoutMs: 4000,
-      maxSources: 2
+      maxSources: 4
     });
     const routePayload = routeResult.data;
     let nodeIds = extractRouteStopIds(routePayload);
@@ -454,7 +454,7 @@ async function fetchVehicleListForLine(line) {
       [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
     }, {
       timeoutMs: 6000,
-      maxSources: 2
+      maxSources: 4
     });
     if (!Array.isArray(estimationResult.data)) {
       throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
