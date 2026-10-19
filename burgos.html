@@ -48,7 +48,9 @@
     .itinerary-list li.itinerary-next { border-color: #f0c77f; background: #fff7e8; }
     .itinerary-sequence { display: inline-grid; place-items: center; flex: 0 0 25px; width: 25px; height: 25px; border-radius: 8px; background: #f0f3f5; color: #52616d; font-size: 10px; font-weight: 850; }
     .itinerary-next .itinerary-sequence { background: #f6dca9; color: #754600; }
-    .itinerary-stop-name { min-width: 0; flex: 1; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+    .itinerary-stop-content { min-width: 0; flex: 1; display: block; }
+    .itinerary-stop-name { display: block; min-width: 0; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+    .itinerary-stop-times { display: block; margin-top: 3px; color: var(--muted, #697783); font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
     .itinerary-next-badge { color: #854b00; font-size: 10px; font-weight: 850; white-space: nowrap; }
     .itinerary-note { margin: 13px 2px 0; color: var(--muted, #697783); font-size: 11px; line-height: 1.5; }
     @media (max-width: 480px) { .itinerary-dialog-header { padding: 15px 14px 12px; } .itinerary-content { padding: 12px 14px 16px; } .itinerary-list li { padding: 9px; } .itinerary-next-badge { font-size: 9px; } }
@@ -137,6 +139,6 @@
     </div>
   </dialog>
 
-  <script src="./burgos-vehicles.js?v=20261019f"></script>
+  <script src="./burgos-vehicles.js?v=20261019g"></script>
 </body>
 </html>
