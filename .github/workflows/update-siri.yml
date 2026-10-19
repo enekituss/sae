@@ -1366,18 +1366,40 @@ jobs:
           PY
 
       - name: Guardar los datos públicos si han cambiado
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+
+          # La detección prepara vehicle-alert-state.json para el paso posterior.
+          # No lo mezcles con el commit de datos públicos: las alertas también
+          # actualizan ese estado y el archivo puede cambiar mientras se hace rebase.
+          state_backup="$(mktemp)"
+          cp vehicle-alert-state.json "$state_backup"
+          restore_alert_state() {
+            cp "$state_backup" vehicle-alert-state.json
+            rm -f "$state_backup"
+          }
+          trap restore_alert_state EXIT
+
+          # Mantener limpio el estado mutable durante el rebase.
+          git checkout -- vehicle-alert-state.json
+
+          # Este paso solo publica los tres artefactos generados por SIRI.
+          git add -- stops.json vehicles.json vehicles-data.js
           if git diff --cached --quiet; then
-            echo "Los datos no han cambiado; no hay commit que crear."
+            echo "Los datos públicos no han cambiado; no hay commit que crear."
           else
             git commit -m "Actualizar posiciones, paradas y destinos Bizkaibus"
             git fetch origin main
             git rebase origin/main
             git push origin HEAD:main
           fi
+
+          # El siguiente paso usa el estado recién calculado para confirmar avisos.
+          restore_alert_state
+          trap - EXIT
 
       - name: Validar Telegram y enviar alertas pendientes
         env:
