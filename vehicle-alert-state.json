@@ -43021,48 +43021,7 @@
       ]
     }
   },
-  "outbox": {
-    "route_after_gap:8622a38aeba8e78b052bb294": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3527",
-          "old": "A3250"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO (Aut.)",
-          "old": "TEKNO. PARKEA"
-        }
-      ],
-      "destination": "BILBAO (Aut.)",
-      "detectedAt": "2026-10-19T08:18+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:8622a38aeba8e78b052bb294",
-      "line": "A3527",
-      "queuedAt": "2026-10-19T08:18:02+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "2097"
-    },
-    "vehicle_returned:ec5f79699c398751644b043e": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T08:18+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:ec5f79699c398751644b043e",
-      "lastKnown": {
-        "destination": "EHU/UPV",
-        "direction": "",
-        "id": "3247",
-        "line": "A3924"
-      },
-      "line": "A3924",
-      "queuedAt": "2026-10-19T08:18:02+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3247"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1678": {
@@ -43852,14 +43811,15 @@
       "vehicleId": ""
     },
     "5333330154": {
-      "awaitingVehicleId": true,
+      "awaitingVehicleId": false,
       "mode": "vehicle",
       "vehicleId": "7830",
       "vehicleIds": [
         "7830",
-        "7815"
+        "7815",
+        "2107"
       ]
     }
   },
-  "telegramUpdateOffset": 30217624
+  "telegramUpdateOffset": 30217625
 }
