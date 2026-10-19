@@ -1,4 +1,13 @@
 (async function protectPage() {
+  // Los enlaces de invitación y recuperación vuelven con type en el fragmento
+  // de la URL. Enviamos al formulario de contraseña antes de exigir una sesión.
+  const authParams = new URLSearchParams(window.location.hash.slice(1));
+  const authType = authParams.get('type');
+  if (authType === 'invite' || authType === 'recovery') {
+    window.location.replace('./set-password.html' + window.location.search + window.location.hash);
+    return;
+  }
+
   try {
     if (!window.SAE_SUPABASE) {
       window.location.replace('./login.html');
