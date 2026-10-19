@@ -387,47 +387,141 @@ async function fetchVehicleListForLine(line) {
     [PORTLET_PREFIX + "label"]: line
   };
 
-  // La lista de vehículos no debe depender de resourceRoutes ni de las estimaciones.
-  // Así una incidencia al extraer paradas no hace desaparecer la línea completa.
-  let vehicleResult;
+  // Fuente principal para identificar vehículos. Si resourceVehicles se cae,
+  // intentamos la ruta y las estimaciones por parada para seguir observando
+  // autobuses; el resultado alternativo queda marcado como parcial para que
+  // el detector nunca confirme una baja basándose únicamente en estimaciones.
+  let vehicleResult = null;
+  let primaryError = "";
   try {
     vehicleResult = await requestIsaenext("resourceVehicles", lineParams);
   } catch (error) {
-    throw new Error("resourceVehicles línea " + line + ": " + (error?.message || String(error)));
+    primaryError = error?.message || String(error);
   }
 
-  const vehicles = extractVehicleRows(vehicleResult.data, line).map(row => {
-    const lat = Number(row.lat ?? row.latitude);
-    const lon = Number(row.lng ?? row.lon ?? row.longitude);
-    const validPosition = Number.isFinite(lat) && lat >= 42 && lat <= 43 &&
-      Number.isFinite(lon) && lon >= -4 && lon <= -3;
-    return {
-      ...row,
-      id: row.id,
-      lineId: line,
-      line,
-      destination: row.destination || "Destino no publicado",
-      direction: row.direction || "",
-      position: {
-        lat: validPosition ? lat : null,
-        lon: validPosition ? lon : null,
-        source: validPosition ? "GPS publicado por resourceVehicles" : ""
-      }
-    };
-  });
+  if (vehicleResult) {
+    const vehicles = extractVehicleRows(vehicleResult.data, line).map(row => {
+      const lat = Number(row.lat ?? row.latitude);
+      const lon = Number(row.lng ?? row.lon ?? row.longitude);
+      const validPosition = Number.isFinite(lat) && lat >= 42 && lat <= 43 &&
+        Number.isFinite(lon) && lon >= -4 && lon <= -3;
+      return {
+        ...row,
+        id: row.id,
+        lineId: line,
+        line,
+        destination: row.destination || "Destino no publicado",
+        direction: row.direction || "",
+        position: {
+          lat: validPosition ? lat : null,
+          lon: validPosition ? lon : null,
+          source: validPosition ? "GPS publicado por resourceVehicles" : ""
+        }
+      };
+    });
 
-  return {
-    ok: true,
-    line,
-    fetchedAt: new Date().toISOString(),
-    source: vehicleResult.source || BURGOS_SOURCE,
-    sourceType: "ISAENEXT · resourceVehicles por línea",
-    vehicleRowCount: vehicles.length,
-    count: vehicles.length,
-    partial: false,
-    vehicles,
-    observations: []
-  };
+    return {
+      ok: true,
+      line,
+      fetchedAt: new Date().toISOString(),
+      source: vehicleResult.source || BURGOS_SOURCE,
+      sourceType: "ISAENEXT · resourceVehicles por línea",
+      vehicleRowCount: vehicles.length,
+      count: vehicles.length,
+      partial: false,
+      warnings: [],
+      vehicles,
+      observations: []
+    };
+  }
+
+  const warnings = ["resourceVehicles no disponible: " + primaryError];
+  try {
+    const routeResult = await requestIsaenext("resourceRoutes", lineParams, {
+      timeoutMs: 4000,
+      maxSources: 2
+    });
+    const routePayload = routeResult.data;
+    let nodeIds = extractRouteStopIds(routePayload);
+    if (!nodeIds.length && line === "01") nodeIds = [...BURGOS_KNOWN_NODE_IDS];
+    if (!nodeIds.length) {
+      throw new Error("resourceRoutes no ha publicado IDs de parada para la línea " + line + ".");
+    }
+
+    const estimationResult = await requestIsaenext("resourceEstimations", {
+      [PORTLET_PREFIX + "line"]: line,
+      [PORTLET_PREFIX + "tipo"]: "1",
+      [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
+    }, {
+      timeoutMs: 6000,
+      maxSources: 2
+    });
+    if (!Array.isArray(estimationResult.data)) {
+      throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
+    }
+
+    const routeNodeDetails = extractRouteNodeDetails(routePayload);
+    const routeNodes = nodeIds.map(id => routeNodeDetails.get(id) || ({ num: id, __stopId: id }));
+    const observations = extractLineEstimations(line, routeNodes, estimationResult.data);
+    const byId = new Map();
+    const etaById = new Map();
+
+    for (const observation of observations) {
+      const id = String(observation.vehicleId || "").trim();
+      if (!id || id === "0") continue;
+      const seconds = Number.isFinite(observation.seconds) && observation.seconds >= 0
+        ? observation.seconds : Infinity;
+      if (byId.has(id) && seconds >= (etaById.get(id) ?? Infinity)) continue;
+      const lat = Number(observation.vehicleLat);
+      const lon = Number(observation.vehicleLon);
+      const validPosition = Number.isFinite(lat) && lat >= 42 && lat <= 43 &&
+        Number.isFinite(lon) && lon >= -4 && lon <= -3;
+      byId.set(id, {
+        id,
+        lineId: line,
+        line,
+        destination: observation.destination || "Destino no publicado",
+        destinationId: observation.destinationId || "",
+        direction: observation.direction || "",
+        seconds: observation.seconds,
+        meters: observation.meters,
+        stopId: observation.stopId || "",
+        stopName: observation.stopName || "",
+        position: {
+          lat: validPosition ? lat : null,
+          lon: validPosition ? lon : null,
+          source: validPosition ? "GPS publicado por resourceEstimations" : ""
+        }
+      });
+      etaById.set(id, seconds);
+    }
+
+    if (!byId.size) {
+      throw new Error("resourceRoutes y resourceEstimations respondieron, pero no publicaron ningún vehículo identificable.");
+    }
+
+    console.warn("Línea " + line + ": resourceVehicles falló; observaciones parciales por paradas: " + byId.size + " autobuses.");
+    return {
+      ok: true,
+      line,
+      fetchedAt: new Date().toISOString(),
+      source: estimationResult.source || routeResult.source || BURGOS_SOURCE,
+      sourceType: "ISAENEXT · resourceRoutes + resourceEstimations por línea (respaldo)",
+      vehicleRowCount: 0,
+      estimationCount: observations.length,
+      count: byId.size,
+      partial: true,
+      warnings,
+      vehicles: [...byId.values()],
+      observations
+    };
+  } catch (fallbackError) {
+    throw new Error(
+      "resourceVehicles y el respaldo de estimaciones han fallado para la línea " + line +
+      ". resourceVehicles: " + primaryError +
+      " || resourceRoutes/resourceEstimations: " + (fallbackError?.message || String(fallbackError))
+    );
+  }
 }
 
 async function fetchVehiclesForLine(line) {
