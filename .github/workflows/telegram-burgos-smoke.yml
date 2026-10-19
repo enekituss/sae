@@ -104,7 +104,7 @@ jobs:
               if api_version != "sae-three-resources-per-line-v6":
                   failures.append("Versión inesperada del Worker de Burgos: " + (api_version or "sin versión"))
                   print("FALLO: versión API no compatible.")
-              expected_build = "burgos-live-v6.9-2026-10-19"
+              expected_build = "burgos-live-v6.10-2026-10-19"
               if build_id != expected_build:
                   failures.append(
                       "El Worker de Cloudflare sigue desplegado en " + (build_id or "un build sin identificar") +
@@ -112,7 +112,7 @@ jobs:
                   )
                   print("FALLO: falta desplegar la revisión nueva del Worker de Burgos en Cloudflare.")
               else:
-                  print("OK: el build v6.9 prioriza la ruta ISAENEXT /rutas-en-directo facilitada por el usuario.")
+                  print("OK: el build v6.10 prioriza /rutas-en-directo y recupera los tres proxies usados por Bus Burgos, incluido CodeTabs.")
               scheduler = health.get("telegramScheduler") or {}
               if scheduler.get("configured"):
                   print("OK: BURGOS_GITHUB_TOKEN está configurado; programador del Worker activo cada 2 minutos.")
