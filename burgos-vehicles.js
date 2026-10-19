@@ -765,6 +765,7 @@
     let cursor = 0;
     let completed = 0;
     let successful = 0;
+    let stale = 0;
     let failed = 0;
     const concurrency = Math.min(MAX_CONCURRENT_LINES, ALL_LINES.length);
 
@@ -796,8 +797,10 @@
           if (!Array.isArray(payload?.vehicles)) {
             throw new Error("el Worker no devolvió la lista de autobuses");
           }
-          results[index] = { line, payload };
-          successful++;
+          const usingStaleCache = payload?.stale === true;
+          results[index] = { line, payload, stale: usingStaleCache };
+          if (usingStaleCache) stale++;
+          else successful++;
         } catch (error) {
           const message = error?.name === "AbortError"
             ? "tiempo de espera agotado (22 s)"
@@ -809,7 +812,7 @@
         }
 
         completed++;
-        lineFetchProgress = { completed, total: ALL_LINES.length, successful, failed };
+        lineFetchProgress = { completed, total: ALL_LINES.length, successful, stale, failed };
         if (typeof onLineResult === "function") {
           try { onLineResult(results[index], lineFetchProgress); }
           catch (error) { console.warn("No se pudo representar el resultado de línea", line, error); }
@@ -820,6 +823,7 @@
     const vehicles = [];
     const observations = [];
     const failedLines = [];
+    const staleLines = [];
     const warnings = [];
     let lineCount = 0;
     for (const result of results) {
@@ -830,6 +834,10 @@
         continue;
       }
       lineCount++;
+      if (result.stale) {
+        staleLines.push(result.line);
+        warnings.push({ line: result.line, error: "se muestran datos guardados temporalmente" });
+      }
       for (const vehicle of result.payload.vehicles) {
         vehicles.push({ ...vehicle, lineId: result.line, line: result.line });
       }
@@ -849,14 +857,15 @@
     }
 
     return {
-      ok: failedLines.length === 0,
+      ok: failedLines.length === 0 && staleLines.length === 0,
       vehicles,
       observations,
       failedLines,
+      staleLines,
       warnings,
       lineCount,
       totalLines: ALL_LINES.length,
-      partial: failedLines.length > 0,
+      partial: failedLines.length > 0 || staleLines.length > 0,
       fetchedAt: new Date().toISOString()
     };
   }
@@ -1198,20 +1207,36 @@
             const vehiclesForLine = result.payload.vehicles
               .map(bus => normalizeVehicle(bus, line))
               .filter(Boolean);
-            lineSnapshots.set(line, vehiclesForLine);
-            staleLines.delete(line);
-            lastQueryHadSuccess = true;
-            lastSuccessfulUpdate = new Date();
-            $("lastUpdated").textContent = "Consultadas " + progress.completed +
-              "/" + progress.total + " líneas · " + formatTime(lastSuccessfulUpdate.toISOString());
+            if (result.stale) {
+              // Conserva la respuesta local si puede ser más reciente; si no hay datos,
+              // muestra la copia guardada claramente marcada como antigua.
+              if (!lineSnapshots.has(line) || !(lineSnapshots.get(line) || []).length) {
+                lineSnapshots.set(line, vehiclesForLine);
+              }
+              staleLines.add(line);
+              if (!lastQueryHadSuccess) {
+                $("lastUpdated").textContent = "Mostrando última respuesta guardada; no está confirmada como tiempo real.";
+              }
+            } else {
+              lineSnapshots.set(line, vehiclesForLine);
+              staleLines.delete(line);
+              lastQueryHadSuccess = true;
+              lastSuccessfulUpdate = new Date();
+              $("lastUpdated").textContent = "Consultadas " + progress.completed +
+                "/" + progress.total + " líneas · " + formatTime(lastSuccessfulUpdate.toISOString());
+            }
             render();
           }
-          setStatus("Consultando líneas de Burgos: " + progress.completed + "/" +
-            progress.total + " · " + progress.successful + " correctas" +
-            (progress.failed ? " · " + progress.failed + " con error" : "") +
-            ". Los resultados se muestran conforme llegan.", progress.failed ? "error" : "");
+          setStatus("Conexión SAE de Burgos: " + progress.completed + "/" +
+            progress.total + " líneas revisadas · " + progress.successful + " actuales" +
+            (progress.stale ? " · " + progress.stale + " con copia guardada" : "") +
+            (progress.failed ? " · " + progress.failed + " sin respuesta" : "") +
+            ". Los resultados se muestran conforme llegan.",
+            progress.failed || progress.stale ? "error" : "");
         });
         const failedLines = new Set((Array.isArray(snapshot.failedLines) ? snapshot.failedLines : [])
+          .map(line => String(line).trim().toUpperCase()));
+        const staleWorkerLines = new Set((Array.isArray(snapshot.staleLines) ? snapshot.staleLines : [])
           .map(line => String(line).trim().toUpperCase()));
         const rows = Array.isArray(snapshot.vehicles) ? snapshot.vehicles : [];
 
@@ -1223,27 +1248,41 @@
           const lineRows = rows.filter(bus =>
             String(bus.lineId ?? bus.line ?? "").trim().toUpperCase() === line
           );
+          if (staleWorkerLines.has(line)) {
+            if (!lineSnapshots.has(line) || !(lineSnapshots.get(line) || []).length) {
+              lineSnapshots.set(line, lineRows.map(bus => normalizeVehicle(bus, line)).filter(Boolean));
+            }
+            nextStaleLines.add(line);
+            continue;
+          }
           lineSnapshots.set(line, lineRows.map(bus => normalizeVehicle(bus, line)).filter(Boolean));
           successfulCount++;
         }
 
-        if (successfulCount === 0) {
-          throw new Error("El Worker no ha podido consultar ninguna línea de autobús.");
+        if (successfulCount === 0 && staleWorkerLines.size === 0) {
+          throw new Error("El Worker no ha podido consultar ninguna línea actual del SAE de Burgos.");
+        }
+        if (successfulCount === 0 && staleWorkerLines.size > 0 && !lastQueryHadSuccess) {
+          lastQueryHadSuccess = true;
+          $("lastUpdated").textContent = "Se muestran datos guardados del Worker; la conexión actual con el SAE está interrumpida.";
         }
         if (failedLines.size) {
           console.warn("SAE Spotter · líneas de Burgos que no respondieron:", [...failedLines], snapshot.warnings || []);
         }
         staleLines = nextStaleLines;
-        lastQueryHadSuccess = true;
-        lastSuccessfulUpdate = new Date();
-        $("lastUpdated").textContent = "Consulta: " + formatTime(snapshot.fetchedAt || lastSuccessfulUpdate.toISOString());
+        if (successfulCount > 0) {
+          lastQueryHadSuccess = true;
+          lastSuccessfulUpdate = new Date();
+          $("lastUpdated").textContent = "Última conexión actual: " + formatTime(lastSuccessfulUpdate.toISOString());
+        }
 
         const vehicleCount = [...lineSnapshots.values()].reduce((total, list) => total + list.length, 0);
-        if (failedLines.size || snapshot.partial) {
-          setStatus("Datos parciales · " + (snapshot.lineCount ?? successfulCount) + "/" +
-            (snapshot.totalLines ?? ALL_LINES.length) + " líneas consultadas. " +
-            "Fallos: " + [...failedLines].join(", ") +
-            (failedLines.size ? "; se conserva la última respuesta de esas líneas." : ""), "error");
+        if (failedLines.size || staleWorkerLines.size || snapshot.partial) {
+          setStatus("Conexión parcial con el SAE municipal · " + successfulCount + "/" +
+            (snapshot.totalLines ?? ALL_LINES.length) + " líneas actualizadas" +
+            (staleWorkerLines.size ? "; " + staleWorkerLines.size + " con datos guardados" : "") +
+            (failedLines.size ? "; sin respuesta: " + [...failedLines].join(", ") : "") +
+            ". Las copias guardadas se distinguen y no se consideran datos en tiempo real.", "error");
         } else {
           setStatus("Datos en directo · " + vehicleCount + " autobuses en " +
             allVehiclesByLine().size + " líneas (" + successfulCount + "/" + ALL_LINES.length + " consultadas)", "ok");
