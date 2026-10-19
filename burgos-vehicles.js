@@ -16,6 +16,39 @@
     ...Array.from({length: 23}, (_, i) => String(i + 1).padStart(2, "0")),
     "73", "87", "88", "89", "C1", "C2"
   ];
+  let fleetModels = new Map();
+
+  function normalizeFleetVehicleId(value) {
+    const id = String(value ?? "").trim();
+    return /^\\d+$/.test(id) ? String(Number(id)) : id.toUpperCase();
+  }
+
+  function getFleetModel(vehicleId) {
+    return fleetModels.get(normalizeFleetVehicleId(vehicleId)) || "";
+  }
+
+  async function loadFleetModels() {
+    try {
+      const response = await fetch("./burgos-modelos.json?v=20261019a", {
+        method: "GET",
+        cache: "no-store",
+        headers: { "Accept": "application/json" }
+      });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const payload = await response.json();
+      const models = payload && payload.models && typeof payload.models === "object"
+        ? payload.models : {};
+      fleetModels = new Map(Object.entries(models)
+        .map(([id, model]) => [normalizeFleetVehicleId(id), String(model ?? "").trim()])
+        .filter(([id, model]) => id && model));
+      console.info("Base de modelos de Burgos cargada: " + fleetModels.size + " coches.");
+    } catch (error) {
+      console.warn("No se pudo cargar burgos-modelos.json; se mostrarán los modelos que publique el SAE.", error);
+      fleetModels = new Map();
+    }
+  }
+
+  const fleetModelsPromise = loadFleetModels();
   const REFRESH_MS = 60000;
   const REQUEST_TIMEOUT_MS = 8000;
   const MAX_CONCURRENT_LINES = 5;
@@ -752,7 +785,7 @@
         bus.destino_id ?? bus.idDestino ?? bus.id_destino ?? bus.destId ??
         bus.dest_id ?? bus.destinationCode ?? bus.codigoDestino ?? bus.codDestino ?? "").trim(),
       direction: String(bus.direction ?? bus.sentido ?? bus.direccion ?? "").trim(),
-      model: String(bus.model ?? bus.modelo ?? bus.vehicleModel ?? "").trim(),
+      model: getFleetModel(id) || String(bus.model ?? bus.modelo ?? bus.vehicleModel ?? "").trim(),
       registration: String(bus.matricula ?? bus.registration ?? bus.plate ?? bus.licensePlate ?? "").trim(),
       nextStop: String(bus.paradaProxima ?? bus.nextNodeId ?? bus.nextStop ?? bus.stopId ?? bus.stop_id ?? "").trim(),
       nextStopName: String(bus.nextStopName ?? bus.paradaProximaName ?? bus.stopName ?? "").trim()
@@ -1193,6 +1226,8 @@
       ? "Consultando coches por línea a través del Worker…"
       : "Sin Worker configurado · probando conexiones de respaldo…", "");
     try {
+      // Espera a la base local de modelos para que el primer listado ya salga enriquecido.
+      await fleetModelsPromise;
       const workerBase = getWorkerBaseUrl();
       if (workerBase) await verifyBurgosWorker(workerBase);
       let nextStaleLines = new Set();
