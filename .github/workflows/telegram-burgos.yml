@@ -548,6 +548,125 @@ jobs:
                   "stopName": stop_name
               }
 
+          def direct_destination(value):
+              if isinstance(value, dict):
+                  value = (
+                      value.get("destinationName") or value.get("destinationText") or
+                      value.get("name") or value.get("nombre") or value.get("description") or
+                      value.get("descripcion") or value.get("headsign") or value.get("label") or ""
+                  )
+              return clean(value)
+
+          def fetch_direct_line(line):
+              # Respaldo independiente del Worker: consulta el recurso ISAENEXT
+              # directamente desde el runner de GitHub con formDate y _t, como
+              # hace la web de Burgos. Se prueba el portal oficial y su espejo antiguo.
+              portlet_id = "as_asac_isaenext_IsaenextWebPortlet"
+              prefix = "_" + portlet_id + "_"
+              sources = [
+                  "https://movilidad.aytoburgos.es/rutas-en-directo/-/isaenext/filter/23",
+                  "https://movilidad.aytoburgos.es/es/rutas-en-directo",
+                  "https://movilidad.aytoburgos.es/rutas-en-directo",
+                  "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
+              ]
+              failures = []
+              timed_out_hosts = set()
+
+              for base in sources:
+                  host = urllib.parse.urlparse(base).netloc
+                  if host in timed_out_hosts:
+                      continue
+                  timestamp = str(int(time.time() * 1000))
+                  params = {
+                      "p_p_id": portlet_id,
+                      "p_p_lifecycle": "2",
+                      "p_p_state": "normal",
+                      "p_p_mode": "view",
+                      "p_p_resource_id": "resourceVehicles",
+                      "p_p_cacheability": "cacheLevelPage",
+                      prefix + "formDate": timestamp,
+                      prefix + "line": line,
+                      prefix + "label": line,
+                      "_t": timestamp
+                  }
+                  url = base + "?" + urllib.parse.urlencode(params)
+                  request = urllib.request.Request(
+                      url,
+                      headers={
+                          "Accept": "application/json, text/plain, */*",
+                          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
+                          "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo/-/isaenext/filter/23",
+                          "Cache-Control": "no-cache"
+                      }
+                  )
+                  try:
+                      with urllib.request.urlopen(request, timeout=8) as response:
+                          payload = json.loads(response.read().decode("utf-8"))
+                      if isinstance(payload, list):
+                          rows = payload
+                      elif isinstance(payload, dict):
+                          rows = None
+                          for key in ("vehicles", "vehicleList", "resourceVehicles", "data", "result", "rows", "items", "list"):
+                              if isinstance(payload.get(key), list):
+                                  rows = payload[key]
+                                  break
+                          if rows is None:
+                              candidates = [value for value in payload.values() if isinstance(value, list)]
+                              if len(candidates) == 1:
+                                  rows = candidates[0]
+                      else:
+                          rows = None
+                      if not isinstance(rows, list):
+                          raise RuntimeError("resourceVehicles devolvió un JSON sin lista de vehículos")
+
+                      line_current = {}
+                      for raw_vehicle in rows:
+                          if not isinstance(raw_vehicle, dict):
+                              continue
+                          vehicle_id = clean(
+                              raw_vehicle.get("id") or raw_vehicle.get("vehicleId") or
+                              raw_vehicle.get("vehicle_id") or raw_vehicle.get("vehicle") or
+                              raw_vehicle.get("idVehicle") or raw_vehicle.get("numeroCoche") or
+                              raw_vehicle.get("numVehiculo")
+                          )
+                          if not vehicle_id or vehicle_id == "0":
+                              continue
+                          normalized_raw = {
+                              **raw_vehicle,
+                              "id": vehicle_id,
+                              "lineId": line,
+                              "line": line,
+                              "destination": direct_destination(
+                                  raw_vehicle.get("destination") or raw_vehicle.get("destino") or
+                                  raw_vehicle.get("destinationName") or raw_vehicle.get("destinationText") or
+                                  raw_vehicle.get("headsign") or raw_vehicle.get("destiny") or
+                                  raw_vehicle.get("destinoNombre") or raw_vehicle.get("nombreDestino")
+                              ),
+                              "direction": direct_destination(
+                                  raw_vehicle.get("direction") or raw_vehicle.get("sentido") or raw_vehicle.get("direccion")
+                              )
+                          }
+                          vehicle = normalise_vehicle(normalized_raw)
+                          if not vehicle:
+                              continue
+                          vehicle["line"] = line
+                          line_current[vehicle["id"]] = vehicle
+
+                      print(
+                          "Recuperada línea " + line + " mediante consulta directa a ISAENEXT en " +
+                          host + " (" + str(len(line_current)) + " autobuses)."
+                      )
+                      return line, line_current
+                  except urllib.error.HTTPError as exc:
+                      failures.append(host + " HTTP " + str(exc.code))
+                  except Exception as exc:
+                      detail = str(exc)
+                      failures.append(host + ": " + detail[:200])
+                      if "timeout" in detail.lower() or "timed out" in detail.lower() or "aborted" in detail.lower():
+                          timed_out_hosts.add(host)
+
+              raise RuntimeError("respaldo directo municipal falló: " + " | ".join(failures[:4]))
+
           def vehicle_fields_equal(a, b):
               return all(clean(a.get(field)) == clean(b.get(field)) for field in ("line", "destination", "direction"))
 
@@ -603,7 +722,7 @@ jobs:
                           }
                       )
                       try:
-                          with urllib.request.urlopen(request, timeout=30) as response:
+                          with urllib.request.urlopen(request, timeout=16) as response:
                               payload = json.loads(response.read().decode("utf-8"))
                           if not isinstance(payload, dict) or payload.get("ok") is not True:
                               raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta no reconocible"))
@@ -638,6 +757,12 @@ jobs:
                               except Exception:
                                   pass
                           last_error = detail
+                          # Un 502 ya significa que el Worker agotó sus rutas de origen.
+                          # No repetimos el mismo fallo de espera: se prueba enseguida
+                          # el respaldo directo contra el recurso oficial.
+                          if isinstance(exc, urllib.error.HTTPError) and exc.code in (502, 503, 504):
+                              print("Worker HTTP " + str(exc.code) + " para línea " + line + "; se probará ISAENEXT directamente.")
+                              break
                           if attempt < 2:
                               wait_seconds = 2.0 * (attempt + 1)
                               print(
@@ -645,7 +770,12 @@ jobs:
                                   " en " + str(int(wait_seconds)) + " s tras un error: " + detail[:240]
                               )
                               time.sleep(wait_seconds)
-                  raise RuntimeError("fallo tras 3 intentos: " + str(last_error))
+                  try:
+                      return fetch_direct_line(line)
+                  except Exception as direct_error:
+                      raise RuntimeError(
+                          "Worker: " + str(last_error) + " || " + str(direct_error)
+                      )
 
               # Menos peticiones simultáneas reduce los 502 del portal municipal.
               # El control sigue limitado por línea y los fallos se reintentan arriba.
