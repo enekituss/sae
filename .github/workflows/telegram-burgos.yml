@@ -430,6 +430,8 @@ jobs:
                       payload = json.loads(response.read().decode("utf-8"))
                   if not isinstance(payload, dict) or payload.get("ok") is not True:
                       raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta no reconocible"))
+                  if payload.get("stale"):
+                      raise RuntimeError("el Worker solo pudo ofrecer una copia antigua; no se usa para detectar cambios")
                   rows = payload.get("vehicles")
                   if not isinstance(rows, list):
                       raise RuntimeError("el Worker no devolvió una lista de autobuses")
