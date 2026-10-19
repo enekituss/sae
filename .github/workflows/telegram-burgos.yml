@@ -495,7 +495,58 @@ jobs:
               line = clean(vehicle.get("lineId") or vehicle.get("line") or vehicle.get("route") or vehicle.get("ruta"))
               destination = clean(vehicle.get("destination") or vehicle.get("destino") or vehicle.get("headsign") or vehicle.get("destinationName") or vehicle.get("destiny"))
               direction = clean(vehicle.get("direction") or vehicle.get("sentido") or vehicle.get("direccion"))
-              return {"id": vehicle_id, "line": line, "destination": destination, "direction": direction}
+
+              # Conserva la parada publicada con cada observación para que un
+              # cambio de línea pueda indicar la última parada de origen y la
+              # primera registrada en la línea de destino.
+              stop_value = (
+                  vehicle.get("lastStop") or vehicle.get("registeredStop") or
+                  vehicle.get("paradaProxima") or vehicle.get("nextNodeId") or
+                  vehicle.get("nextStop") or vehicle.get("stopId") or
+                  vehicle.get("stop_id") or vehicle.get("nodeId") or
+                  vehicle.get("node_id") or vehicle.get("idParada") or
+                  vehicle.get("parada")
+              )
+              stop_name = clean(
+                  vehicle.get("lastStopName") or vehicle.get("registeredStopName") or
+                  vehicle.get("nextStopName") or vehicle.get("paradaProximaName") or
+                  vehicle.get("stopName") or vehicle.get("stop_name") or
+                  vehicle.get("nombreParada") or vehicle.get("paradaNombre") or
+                  vehicle.get("nodeName") or vehicle.get("nodoNombre")
+              )
+              if isinstance(stop_value, dict):
+                  stop_name = stop_name or clean(
+                      stop_value.get("name") or stop_value.get("stopName") or
+                      stop_value.get("stop_name") or stop_value.get("nombre") or
+                      stop_value.get("nombreParada")
+                  )
+                  stop_value = (
+                      stop_value.get("id") or stop_value.get("stopId") or
+                      stop_value.get("stop_id") or stop_value.get("nodeId") or
+                      stop_value.get("num")
+                  )
+              stop_value = clean(stop_value)
+              stop_id = clean(
+                  vehicle.get("lastStopId") or vehicle.get("registeredStopId") or
+                  vehicle.get("nextNodeId") or vehicle.get("stopId") or
+                  vehicle.get("stop_id") or vehicle.get("nodeId") or
+                  vehicle.get("node_id") or vehicle.get("idParada")
+              )
+              if stop_value:
+                  if stop_value.isdigit():
+                      stop_id = stop_id or stop_value
+                  elif not stop_name:
+                      stop_name = stop_value
+              if not stop_name and stop_id:
+                  stop_name = "Parada " + stop_id
+              return {
+                  "id": vehicle_id,
+                  "line": line,
+                  "destination": destination,
+                  "direction": direction,
+                  "stopId": stop_id,
+                  "stopName": stop_name
+              }
 
           def vehicle_fields_equal(a, b):
               return all(clean(a.get(field)) == clean(b.get(field)) for field in ("line", "destination", "direction"))
@@ -761,6 +812,21 @@ jobs:
                       elif vehicle_id in pending_routes:
                           pending_routes.pop(vehicle_id, None)
                           dirty = True
+                      elif vehicle.get("stopName") or vehicle.get("stopId"):
+                          # Actualiza la última parada registrada solo cuando
+                          # línea/destino/sentido no están cambiando. Si detectamos
+                          # una transición, old conserva la parada previa al cambio.
+                          latest_stop = clean(vehicle.get("stopName"))
+                          latest_stop_id = clean(vehicle.get("stopId"))
+                          if (latest_stop and latest_stop != clean(old.get("stopName"))) or (
+                              latest_stop_id and latest_stop_id != clean(old.get("stopId"))
+                          ):
+                              confirmed[vehicle_id] = {
+                                  **old,
+                                  "stopName": latest_stop or clean(old.get("stopName")),
+                                  "stopId": latest_stop_id or clean(old.get("stopId"))
+                              }
+                              dirty = True
                   else:
                       pending_missing.pop(vehicle_id, None)
                       pending = pending_routes.pop(vehicle_id, None)
@@ -983,24 +1049,51 @@ jobs:
                   ]
               else:
                   route_after_gap = event_type == "route_change_after_gap"
-                  lines = [
-                      "🔁 CAMBIO DETECTADO TRAS REAPARICIÓN" if route_after_gap else "🔄 CAMBIO DE DATOS PUBLICADOS DEL AUTOBÚS",
-                      "Coche: " + vehicle_id
-                  ]
-                  labels = {"line": "Línea", "destination": "Destino", "direction": "Sentido"}
-                  for item in event.get("changed", []):
-                      if not isinstance(item, dict):
-                          continue
-                      field = clean(item.get("field"))
-                      old_value = clean(item.get("old")) or "No disponible"
-                      new_value = clean(item.get("new")) or "No disponible"
-                      if route_after_gap and field == "line":
-                          lines.append("Última línea antes de desaparecer: " + old_value)
-                          lines.append("Nueva línea al reaparecer: " + new_value)
-                      else:
-                          lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)
-                  lines.append("Destino actual: " + destination)
-                  lines.append("Sentido actual: " + direction)
+                  old_vehicle = event.get("old") if isinstance(event.get("old"), dict) else {}
+                  new_vehicle = event.get("new") if isinstance(event.get("new"), dict) else {}
+                  old_line = clean(old_vehicle.get("line")) or "No disponible"
+                  new_line = clean(new_vehicle.get("line")) or line
+                  line_changed = old_line != "No disponible" and new_line != "No disponible" and old_line != new_line
+
+                  def recorded_stop(vehicle):
+                      name = clean(vehicle.get("stopName"))
+                      stop_id = clean(vehicle.get("stopId"))
+                      if name:
+                          return name
+                      if stop_id:
+                          return "Parada " + stop_id
+                      return "No disponible"
+
+                  if line_changed:
+                      lines = [
+                          "🔁 CAMBIO DE LÍNEA TRAS REAPARICIÓN" if route_after_gap else "🔄 CAMBIO DE LÍNEA DETECTADO",
+                          "Coche: " + vehicle_id,
+                          "Línea de origen: " + old_line,
+                          "Última parada registrada: " + recorded_stop(old_vehicle),
+                          "➡️ Línea actual: " + new_line,
+                          "Primera parada registrada: " + recorded_stop(new_vehicle),
+                          "Destino actual: " + (clean(new_vehicle.get("destination")) or destination),
+                          "Sentido actual: " + (clean(new_vehicle.get("direction")) or direction)
+                      ]
+                  else:
+                      lines = [
+                          "🔁 CAMBIO DETECTADO TRAS REAPARICIÓN" if route_after_gap else "🔄 CAMBIO DE DATOS PUBLICADOS DEL AUTOBÚS",
+                          "Coche: " + vehicle_id
+                      ]
+                      labels = {"line": "Línea", "destination": "Destino", "direction": "Sentido"}
+                      for item in event.get("changed", []):
+                          if not isinstance(item, dict):
+                              continue
+                          field = clean(item.get("field"))
+                          old_value = clean(item.get("old")) or "No disponible"
+                          new_value = clean(item.get("new")) or "No disponible"
+                          if route_after_gap and field == "line":
+                              lines.append("Última línea antes de desaparecer: " + old_value)
+                              lines.append("Nueva línea al reaparecer: " + new_value)
+                          else:
+                              lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)
+                      lines.append("Destino actual: " + destination)
+                      lines.append("Sentido actual: " + direction)
                   lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))
               return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
 
