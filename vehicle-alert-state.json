@@ -38918,52 +38918,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:27dbb7e2a3aa25b47503f605": {
-      "destination": "MUNGIA (Aut.)",
-      "detectedAt": "2026-10-19T09:31+02:00",
-      "direction": "",
-      "eventId": "missing:27dbb7e2a3aa25b47503f605",
-      "firstMissingAt": "2026-10-19T09:27:06+02:00",
-      "lastSeenAt": "2026-10-19T09:22:57+02:00",
-      "line": "A3516",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T09:31:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2082"
-    },
-    "missing:6992d9d6bace8b0d6c85a675": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T09:31+02:00",
-      "direction": "",
-      "eventId": "missing:6992d9d6bace8b0d6c85a675",
-      "firstMissingAt": "2026-10-19T09:27:06+02:00",
-      "lastSeenAt": "2026-10-19T09:22:57+02:00",
-      "line": "A2324",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T09:31:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "7802"
-    },
-    "route_after_gap:2f5f2aeb48dbbbac7a4b6f77": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TURTZIOZ",
-          "old": "ARTZENTALES"
-        }
-      ],
-      "destination": "TURTZIOZ",
-      "detectedAt": "2026-10-19T09:31+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:2f5f2aeb48dbbbac7a4b6f77",
-      "line": "A0653",
-      "queuedAt": "2026-10-19T09:31:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "5028"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {},
   "pendingRouteChanges": {
     "1762": {
@@ -39228,7 +39183,7 @@
       "requiredMissing": 2
     },
     "2082": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:27dbb7e2a3aa25b47503f605",
       "firstMissingAt": "2026-10-19T09:27:06+02:00",
@@ -39239,7 +39194,7 @@
         "line": "A3516"
       },
       "lastSeenAt": "2026-10-19T09:22:57+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2087": {
@@ -39672,7 +39627,7 @@
       "requiredMissing": 2
     },
     "7802": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:6992d9d6bace8b0d6c85a675",
       "firstMissingAt": "2026-10-19T09:27:06+02:00",
@@ -39683,7 +39638,7 @@
         "line": "A2324"
       },
       "lastSeenAt": "2026-10-19T09:22:57+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7829": {
