@@ -41263,81 +41263,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:721b16389f3c34e9357ca915": {
-      "destination": "TEKNO. PARKEA",
-      "detectedAt": "2026-10-19T07:57+02:00",
-      "direction": "",
-      "eventId": "missing:721b16389f3c34e9357ca915",
-      "firstMissingAt": "2026-10-19T07:53:05+02:00",
-      "lastSeenAt": "2026-10-19T07:49:06+02:00",
-      "line": "A3224",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T07:57:05+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2140"
-    },
-    "route_after_gap:3b3c4f2d992ccb878eb471d3": {
-      "changed": [
-        {
-          "field": "line",
-          "label": "Línea",
-          "new": "A3343",
-          "old": "A3342"
-        },
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GORDEXOLA",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "GORDEXOLA",
-      "detectedAt": "2026-10-19T07:57+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:3b3c4f2d992ccb878eb471d3",
-      "line": "A3343",
-      "queuedAt": "2026-10-19T07:57:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "5035"
-    },
-    "route_after_gap:3ed90dc29ca39cfc7ffcc331": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALDAKAO",
-          "old": "EHU/UPV"
-        }
-      ],
-      "destination": "GALDAKAO",
-      "detectedAt": "2026-10-19T07:57+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:3ed90dc29ca39cfc7ffcc331",
-      "line": "A2610",
-      "queuedAt": "2026-10-19T07:57:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3312"
-    },
-    "route_after_gap:85782bad9d06791fcdc95f9e": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "TRAPAGARAN",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "TRAPAGARAN",
-      "detectedAt": "2026-10-19T07:57+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:85782bad9d06791fcdc95f9e",
-      "line": "A3332",
-      "queuedAt": "2026-10-19T07:57:05+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7832"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2130": {
       "consecutiveChecks": 1,
@@ -41730,7 +41656,7 @@
       "requiredMissing": 2
     },
     "2140": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:721b16389f3c34e9357ca915",
       "firstMissingAt": "2026-10-19T07:53:05+02:00",
@@ -41741,7 +41667,7 @@
         "line": "A3224"
       },
       "lastSeenAt": "2026-10-19T07:49:06+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "2141": {
