@@ -722,7 +722,7 @@ jobs:
                           }
                       )
                       try:
-                          with urllib.request.urlopen(request, timeout=16) as response:
+                          with urllib.request.urlopen(request, timeout=24) as response:
                               payload = json.loads(response.read().decode("utf-8"))
                           if not isinstance(payload, dict) or payload.get("ok") is not True:
                               raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta no reconocible"))
@@ -762,6 +762,9 @@ jobs:
                           # el respaldo directo contra el recurso oficial.
                           if isinstance(exc, urllib.error.HTTPError) and exc.code in (502, 503, 504):
                               print("Worker HTTP " + str(exc.code) + " para línea " + line + "; se probará ISAENEXT directamente.")
+                              break
+                          if "timed out" in detail.lower() or "timeout" in detail.lower() or "aborted" in detail.lower():
+                              print("Tiempo de espera agotado para línea " + line + "; se probará ISAENEXT directamente.")
                               break
                           if attempt < 2:
                               wait_seconds = 2.0 * (attempt + 1)
