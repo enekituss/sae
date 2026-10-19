@@ -9,7 +9,7 @@
   ];
   // Worker dedicado a Burgos: viene configurado por defecto en el proyecto.
   const DEFAULT_WORKER_URL = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev";
-  const WORKER_API_VERSION = "sae-three-resources-per-line-v3";
+  const WORKER_API_VERSION = "sae-three-resources-per-line-v4";
   const WORKER_STORAGE_KEY = "saeBurgosDedicatedWorkerUrl";
   const WORKER_CONFIG_VERSION_KEY = "saeBurgosDedicatedWorkerApiVersion";
   const ALL_LINES = [
@@ -27,6 +27,7 @@
   let lastSuccessfulUpdate = null;
   let updateRunning = false;
   let lineFetchProgress = { completed: 0, total: 0, successful: 0, failed: 0 };
+  let liveEnrichmentRunning = false;
   let lastQueryHadSuccess = false;
   let nextStopByVehicle = new Map();
   let nextStopQueryRunning = false;
@@ -400,8 +401,7 @@
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 15000);
           try {
-            const endpoint = workerBase + "/api/burgos/live?line="
-              encodeURIComponent(onlyLine);
+            const endpoint = workerBase + "/api/burgos/live?line=" + encodeURIComponent(onlyLine) + "&fresh=1";
             const response = await fetch(endpoint, {
               method: "GET",
               cache: "no-store",
@@ -861,6 +861,154 @@
     }
   }
 
+  async function fetchLiveLineDetails(workerBase, line) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    try {
+      const endpoint = workerBase + "/api/burgos/live?line=" +
+        encodeURIComponent(line) + "&fresh=1";
+      const response = await fetch(endpoint, {
+        method: "GET",
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+        signal: controller.signal
+      });
+      const body = await response.text();
+      let payload;
+      try { payload = JSON.parse(body); }
+      catch { throw new Error("La API de estimaciones no devolvió JSON."); }
+      if (!response.ok || payload?.ok === false) {
+        throw new Error(payload?.error || ("API live HTTP " + response.status));
+      }
+      if (!Array.isArray(payload?.vehicles) || !Array.isArray(payload?.observations)) {
+        throw new Error("La API live no devolvió vehículos y observaciones para la línea " + line + ".");
+      }
+      return payload;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  function mergeLiveLineDetails(line, payload) {
+    const detailById = new Map();
+    for (const raw of payload.vehicles || []) {
+      const id = String(raw?.id ?? raw?.vehicleId ?? raw?.vehicle_id ?? "").trim();
+      if (!id) continue;
+      detailById.set(id, normalizeVehicle(raw, line));
+    }
+
+    // Las estimaciones se enlazan con los coches usando conjuntamente la línea y el ID
+    // publicado; así un número repetido en otra línea no recibe la parada incorrecta.
+    const bestByVehicle = new Map();
+    for (const observation of payload.observations || []) {
+      const id = String(observation?.vehicleId ?? observation?.vehicle_id ?? observation?.vehicle ?? "").trim();
+      const reportedLine = String(observation?.line ?? line).trim();
+      if (!id || normalizeLineKey(reportedLine) !== normalizeLineKey(line)) continue;
+
+      const stopId = String(observation.stopId ?? observation.stop_id ?? "").trim();
+      const stopName = String(observation.stopName ?? observation.stop_name ?? observation.nombreParada ?? "").trim();
+      const candidate = {
+        stopId,
+        stopName: stopName || (stopId ? "Parada " + stopId : ""),
+        seconds: nonNegativeNumber(observation.seconds),
+        meters: nonNegativeNumber(observation.meters),
+        destination: String(observation.destination ?? "").trim(),
+        direction: String(observation.direction ?? "").trim(),
+        line,
+        vehicleId: id,
+        stopLat: observation.stopLat === null || observation.stopLat === undefined ? null : Number(observation.stopLat),
+        stopLon: observation.stopLon === null || observation.stopLon === undefined ? null : Number(observation.stopLon)
+      };
+      const current = bestByVehicle.get(id);
+      if (isBetterStop(candidate, current)) bestByVehicle.set(id, candidate);
+    }
+
+    const currentVehicles = lineSnapshots.get(line) || [];
+    const enrichedVehicles = currentVehicles.map(vehicle => {
+      const detail = detailById.get(String(vehicle.id));
+      const observation = bestByVehicle.get(String(vehicle.id));
+      const destination = observation?.destination || detail?.destination || vehicle.destination || "";
+      const direction = observation?.direction || detail?.direction || vehicle.direction || "";
+      return normalizeVehicle({
+        ...(detail || {}),
+        ...vehicle,
+        id: vehicle.id,
+        line,
+        destination,
+        direction,
+        nextStop: observation?.stopId || detail?.nextStop || vehicle.nextStop || "",
+        nextStopName: observation?.stopName || detail?.nextStopName || vehicle.nextStopName || ""
+      }, line);
+    }).filter(Boolean);
+
+    lineSnapshots.set(line, enrichedVehicles);
+
+    // Sustituye solo las próximas paradas de esta línea y conserva las demás.
+    const next = new Map([...nextStopByVehicle.entries()].filter(([, item]) =>
+      normalizeLineKey(item?.line) !== normalizeLineKey(line)
+    ));
+    for (const [id, observation] of bestByVehicle.entries()) {
+      if (!observation.stopId && !observation.stopName) continue;
+      next.set(vehicleStopKey(id, line), observation);
+    }
+    nextStopByVehicle = next;
+    saveNextStopCache(payload.fetchedAt);
+    itineraryByVehicle.clear();
+    render();
+  }
+
+  async function enrichAllLinesWithLive(workerBase) {
+    if (liveEnrichmentRunning || !workerBase) return;
+    liveEnrichmentRunning = true;
+    const lines = ALL_LINES.filter(line => lineSnapshots.has(line));
+    let cursor = 0;
+    let completed = 0;
+    let successful = 0;
+    let failed = 0;
+
+    if (lines.length) {
+      setStatus("Autobuses cargados · enlazando destinos y próximas paradas (0/" +
+        lines.length + " líneas)…", "");
+    }
+
+    try {
+      await Promise.all(Array.from({ length: 3 }, async () => {
+        while (true) {
+          const index = cursor++;
+          if (index >= lines.length) return;
+          const line = lines[index];
+          try {
+            const payload = await fetchLiveLineDetails(workerBase, line);
+            mergeLiveLineDetails(line, payload);
+            successful++;
+          } catch (error) {
+            failed++;
+            console.warn("SAE Burgos: no se pudieron enlazar destino/próxima parada de la línea " +
+              line + ":", error?.message || String(error));
+          } finally {
+            completed++;
+            $("lastUpdated").textContent = "Destinos y próximas paradas: " +
+              completed + "/" + lines.length + " líneas consultadas";
+            setStatus("Autobuses en directo · destinos y próximas paradas: " +
+              successful + "/" + lines.length + " líneas completadas" +
+              (failed ? " · " + failed + " con error" : ""), failed ? "error" : "");
+          }
+        }
+      }));
+    } finally {
+      liveEnrichmentRunning = false;
+      const vehicleCount = [...lineSnapshots.values()].reduce((total, list) => total + list.length, 0);
+      if (successful) {
+        setStatus("Datos en directo · " + vehicleCount + " autobuses. Destinos/próximas paradas enlazados en " +
+          successful + "/" + lines.length + " líneas" + (failed ? " (" + failed + " con error)" : ""),
+          failed ? "error" : "ok");
+      } else if (lines.length) {
+        setStatus("Los autobuses están cargados, pero no se han podido obtener destinos/próximas paradas. " +
+          "Revisa la versión del Worker de Burgos.", "error");
+      }
+    }
+  }
+
   async function load() {
     if (updateRunning) return;
     updateRunning = true;
@@ -936,9 +1084,9 @@
             allVehiclesByLine().size + " líneas (" + successfulCount + "/" + ALL_LINES.length + " consultadas)", "ok");
         }
         render();
-        // Preload the timetable in parallel; itinerary matching itself is deferred until a popup opens.
+        // Destinos y próximas paradas se obtienen después de mostrar la flota, línea por línea.
         loadGtfsForItinerary();
-        // Las estimaciones se consultan por /api/burgos/live cuando se abre el itinerario.
+        enrichAllLinesWithLive(workerBase);
       } else {
         const results = new Array(ALL_LINES.length);
         let cursor = 0;
