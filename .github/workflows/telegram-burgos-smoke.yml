@@ -54,7 +54,10 @@ jobs:
               me = telegram("getMe")
               if not me.get("ok"):
                   raise RuntimeError("Telegram getMe devolvió ok=false")
-              print("OK: token de Telegram válido para @" + str((me.get("result") or {}).get("username") or "bot"))
+              username = str((me.get("result") or {}).get("username") or "")
+              if username.lower() != "saebur_bot":
+                  raise RuntimeError("el token pertenece a @" + (username or "sin username") + ", no al bot independiente @SAEBUR_bot")
+              print("OK: token válido para el bot independiente @SAEBUR_bot")
           except Exception as exc:
               failures.append("Token de Telegram: " + str(exc))
               print("FALLO: token de Telegram: " + str(exc))
@@ -71,37 +74,15 @@ jobs:
           try:
               webhook = telegram("getWebhookInfo").get("result") or {}
               url = str(webhook.get("url") or "")
-              expected = "https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev/telegram/burgos"
-              if url == expected:
-                  print("OK: webhook de Burgos registrado en Cloudflare.")
-              elif not url:
-                  print("AVISO: webhook de menú sin registrar; las alertas por comparación del SAE pueden comprobarse igualmente.")
+              if url:
+                  print("AVISO: @SAEBUR_bot todavía tiene un webhook instalado; el monitor de Burgos lo retirará tras validar el token.")
               else:
-                  print("AVISO: webhook de menú apunta a otra URL: " + url)
+                  print("OK: no hay webhook; Burgos puede procesar sus preferencias mediante getUpdates.")
               if webhook.get("last_error_message"):
                   print("AVISO de Telegram webhook: " + str(webhook.get("last_error_message"))[:300])
           except Exception as exc:
-              failures.append("Webhook de Telegram: " + str(exc))
-              print("FALLO: no se pudo comprobar el webhook: " + str(exc))
-
-          shared_base = "https://bizkaibus-sae-dispatcher.ecanteroalvarez.workers.dev"
-          try:
-              request = urllib.request.Request(shared_base + "/health", headers={"User-Agent": "SAE-Burgos-Diagnostics/1.0"})
-              with urllib.request.urlopen(request, timeout=10) as response:
-                  shared_health = json.loads(response.read().decode("utf-8"))
-              flags = shared_health.get("telegramSecretStatus") or {}
-              print("Worker de menús Telegram responde.")
-              print("Secret GITHUB_TOKEN presente: " + str(bool(flags.get("githubToken"))))
-              print("Secret TELEGRAM_WEBHOOK_SECRET presente: " + str(bool(flags.get("webhookSecret"))))
-              print("Secret TELEGRAM_BURGOS_BOT_TOKEN presente: " + str(bool(flags.get("burgosBotToken"))))
-              if not flags.get("githubToken"):
-                  print("AVISO: falta GITHUB_TOKEN en el Worker de menús; no es requisito para consultar el SAE oficial.")
-              if not flags.get("webhookSecret"):
-                  print("AVISO: falta TELEGRAM_WEBHOOK_SECRET; afecta al webhook de menú, no a la comparación del SAE.")
-              if not flags.get("burgosBotToken"):
-                  print("AVISO: falta TELEGRAM_BURGOS_BOT_TOKEN en el Worker de menús; el monitor usa el token de GitHub Actions.")
-          except Exception as exc:
-              print("AVISO: Worker de menús Telegram no disponible (no bloquea la prueba de lectura del SAE): " + str(exc))
+              failures.append("Estado del webhook de Telegram: " + str(exc))
+              print("FALLO: no se pudo comprobar el estado del webhook: " + str(exc))
 
           worker_base = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev"
           try:
