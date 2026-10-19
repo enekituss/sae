@@ -1959,21 +1959,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:478d014fc3d24560c17df2bc": {
-      "destination": "AIREPORTUA",
-      "detectedAt": "2026-10-19T05:21+02:00",
-      "direction": "",
-      "eventId": "missing:478d014fc3d24560c17df2bc",
-      "firstMissingAt": "2026-10-19T05:17:03+02:00",
-      "lastSeenAt": "2026-10-19T05:14:04+02:00",
-      "line": "A3247",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T05:21:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "2079"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "2089": {
       "consecutiveChecks": 1,
@@ -2003,7 +1989,7 @@
   "pendingRouteChanges": {},
   "pendingVehicles": {
     "2079": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:478d014fc3d24560c17df2bc",
       "firstMissingAt": "2026-10-19T05:17:03+02:00",
@@ -2014,7 +2000,7 @@
         "line": "A3247"
       },
       "lastSeenAt": "2026-10-19T05:14:04+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7813": {
