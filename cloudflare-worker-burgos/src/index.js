@@ -1,6 +1,9 @@
-const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/es/rutas-en-directo";
+// URL canónica que publica el propio portal de Movilidad en «Rutas en directo».
+// Las otras rutas quedan como respaldo si un alias del portal falla.
+const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo/-/isaenext/filter/23";
 const BURGOS_SOURCE_FALLBACKS = [
   BURGOS_SOURCE,
+  "https://movilidad.aytoburgos.es/es/rutas-en-directo",
   "https://movilidad.aytoburgos.es/rutas-en-directo",
   "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
 ];
@@ -46,6 +49,9 @@ function resourceUrl(resource, extra = {}, base = BURGOS_SOURCE) {
   url.searchParams.set("p_p_mode", "view");
   url.searchParams.set("p_p_resource_id", resource);
   url.searchParams.set("p_p_cacheability", "cacheLevelPage");
+  const formTimestamp = String(Date.now());
+  url.searchParams.set(PORTLET_PREFIX + "formDate", formTimestamp);
+  url.searchParams.set("_t", formTimestamp);
   for (const [key, value] of Object.entries(extra)) {
     url.searchParams.set(key, String(value));
   }
@@ -91,11 +97,7 @@ function normalizeLineCode(value) {
 }
 
 async function requestIsaenext(resource, extra = {}, options = {}) {
-  const sources = [
-    BURGOS_SOURCE,
-    "https://movilidad.aytoburgos.es/rutas-en-directo",
-    "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
-  ];
+  const sources = BURGOS_SOURCE_FALLBACKS;
   // resourceVehicles es imprescindible para detectar altas y bajas. Se le da
   // hasta 10 s por host. Si un host agota el tiempo de espera, no repetimos
   // inmediatamente la petición contra otra ruta del mismo host: pasamos al
@@ -126,6 +128,11 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
     for (const [key, value] of Object.entries(extra)) {
       url.searchParams.set(key, String(value));
     }
+    // Igual que la consulta directa de burgos-vehicles.js, incluye marca temporal
+    // para que ISAENEXT no reutilice una respuesta cacheada de la petición anterior.
+    const formTimestamp = String(Date.now());
+    url.searchParams.set(PORTLET_PREFIX + "formDate", formTimestamp);
+    url.searchParams.set("_t", formTimestamp);
 
     try {
       const response = await fetch(url.toString(), {
@@ -651,7 +658,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.4-2026-10-19",
+        buildId: "burgos-live-v6.5-2026-10-19",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(env?.BURGOS_GITHUB_TOKEN), cadence: "*/2 * * * *" },
