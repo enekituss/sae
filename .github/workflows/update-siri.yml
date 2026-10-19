@@ -1393,7 +1393,10 @@ jobs:
           else
             git commit -m "Actualizar posiciones, paradas y destinos Bizkaibus"
             git fetch origin main
-            git rebase origin/main
+            # Los artefactos publicados son snapshots de una fuente en vivo.
+            # Si otra ejecución publicó primero, conservar los generados por esta
+            # ejecución y rebasarlos automáticamente en vez de fallar por JSON.
+            git rebase -X theirs origin/main
             git push origin HEAD:main
           fi
 
