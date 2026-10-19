@@ -584,11 +584,12 @@ jobs:
           # resourceRoutes ni resourceEstimations respondan para listar un coche.
           try:
               def fetch_worker_line(line):
-                  # Los 502 del portal municipal pueden ser transitorios. Reintenta
-                  # tres veces y fuerza una consulta nueva en los intentos posteriores;
-                  # una copia antigua nunca se acepta para confirmar una baja.
+                  # El SAE municipal responde con 502 de forma intermitente, especialmente
+                  # cuando se consultan muchas líneas simultáneamente. Se hacen hasta tres
+                  # intentos, forzando consulta nueva en los posteriores. Los datos antiguos
+                  # nunca se aceptan como actuales para confirmar bajas.
                   last_error = None
-                  for attempt in range(2):
+                  for attempt in range(3):
                       query = {"line": line}
                       if attempt > 0:
                           query["fresh"] = "1"
@@ -629,14 +630,26 @@ jobs:
                               line_current[vehicle["id"]] = vehicle
                           return line, line_current
                       except Exception as exc:
-                          last_error = exc
-                          if attempt < 1:
-                              wait_seconds = 2.0
-                              print("Reintento 1/1 para la línea " + line + " tras un error: " + str(exc))
+                          detail = str(exc)
+                          if isinstance(exc, urllib.error.HTTPError):
+                              try:
+                                  body = json.loads(exc.read().decode("utf-8", errors="replace"))
+                                  detail = clean(body.get("error") or body.get("message")) or detail
+                              except Exception:
+                                  pass
+                          last_error = detail
+                          if attempt < 2:
+                              wait_seconds = 2.0 * (attempt + 1)
+                              print(
+                                  "Reintento " + str(attempt + 1) + "/2 para la línea " + line +
+                                  " en " + str(int(wait_seconds)) + " s tras un error: " + detail[:240]
+                              )
                               time.sleep(wait_seconds)
-                  raise RuntimeError("fallo tras 2 intentos: " + str(last_error))
+                  raise RuntimeError("fallo tras 3 intentos: " + str(last_error))
 
-              with ThreadPoolExecutor(max_workers=8) as executor:
+              # Menos peticiones simultáneas reduce los 502 del portal municipal.
+              # El control sigue limitado por línea y los fallos se reintentan arriba.
+              with ThreadPoolExecutor(max_workers=5) as executor:
                   futures = {executor.submit(fetch_worker_line, line): line for line in burgos_lines}
                   for future in as_completed(futures):
                       line = futures[future]
