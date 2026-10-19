@@ -41504,50 +41504,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:0a5ff1c59793fc2fc58820f7": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T09:11+02:00",
-      "direction": "",
-      "eventId": "missing:0a5ff1c59793fc2fc58820f7",
-      "firstMissingAt": "2026-10-19T09:07:05+02:00",
-      "lastSeenAt": "2026-10-19T09:03:21+02:00",
-      "line": "A0654",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T09:11:06+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "5020"
-    },
-    "missing:a56f2e74a3af705382265812": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T09:11+02:00",
-      "direction": "",
-      "eventId": "missing:a56f2e74a3af705382265812",
-      "firstMissingAt": "2026-10-19T09:07:05+02:00",
-      "lastSeenAt": "2026-10-19T09:03:21+02:00",
-      "line": "A3525",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T09:11:06+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8656"
-    },
-    "vehicle_returned:3760681d64115a6888e69509": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T09:11+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:3760681d64115a6888e69509",
-      "lastKnown": {
-        "destination": "EHU/UPV",
-        "direction": "",
-        "id": "1514",
-        "line": "A2315"
-      },
-      "line": "A2315",
-      "queuedAt": "2026-10-19T09:11:06+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "1514"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "3303": {
       "consecutiveChecks": 2,
@@ -42299,7 +42256,7 @@
       "requiredMissing": 2
     },
     "5020": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:0a5ff1c59793fc2fc58820f7",
       "firstMissingAt": "2026-10-19T09:07:05+02:00",
@@ -42310,7 +42267,7 @@
         "line": "A0654"
       },
       "lastSeenAt": "2026-10-19T09:03:21+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "7764": {
@@ -42596,7 +42553,7 @@
       "requiredMissing": 2
     },
     "8656": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:a56f2e74a3af705382265812",
       "firstMissingAt": "2026-10-19T09:07:05+02:00",
@@ -42607,7 +42564,7 @@
         "line": "A3525"
       },
       "lastSeenAt": "2026-10-19T09:03:21+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8666": {
