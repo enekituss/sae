@@ -104,7 +104,7 @@ jobs:
               if api_version != "sae-three-resources-per-line-v6":
                   failures.append("Versión inesperada del Worker de Burgos: " + (api_version or "sin versión"))
                   print("FALLO: versión API no compatible.")
-              expected_build = "burgos-live-v6.1-2026-10-19"
+              expected_build = "burgos-live-v6.2-2026-10-19"
               if build_id != expected_build:
                   failures.append(
                       "El Worker de Cloudflare sigue desplegado en " + (build_id or "un build sin identificar") +
