@@ -41903,89 +41903,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:ff1f4c4c8c3638f136c15acb": {
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T10:03+02:00",
-      "direction": "",
-      "eventId": "missing:ff1f4c4c8c3638f136c15acb",
-      "firstMissingAt": "2026-10-19T09:59:06+02:00",
-      "lastSeenAt": "2026-10-19T09:55:16+02:00",
-      "line": "A3525",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T10:03:03+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "8650"
-    },
-    "route_after_gap:404bb11dbe84603520dd60eb": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "BILBAO",
-          "old": "OKONDO"
-        }
-      ],
-      "destination": "BILBAO",
-      "detectedAt": "2026-10-19T10:03+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:404bb11dbe84603520dd60eb",
-      "line": "A3341",
-      "queuedAt": "2026-10-19T10:03:03+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "5042"
-    },
-    "route_after_gap:6a3abc013e8308b6562fc19f": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "USANSOLO",
-          "old": "EHU/UPV"
-        }
-      ],
-      "destination": "USANSOLO",
-      "detectedAt": "2026-10-19T10:03+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:6a3abc013e8308b6562fc19f",
-      "line": "A2610",
-      "queuedAt": "2026-10-19T10:03:03+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "3312"
-    },
-    "vehicle_returned:1fc8cedbd292c032321be081": {
-      "destination": "OROZKO",
-      "detectedAt": "2026-10-19T10:03+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:1fc8cedbd292c032321be081",
-      "lastKnown": {
-        "destination": "OROZKO",
-        "direction": "",
-        "id": "3360",
-        "line": "A3613"
-      },
-      "line": "A3613",
-      "queuedAt": "2026-10-19T10:03:03+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "3360"
-    },
-    "vehicle_returned:87bbb5641a54dbbe022ab0af": {
-      "destination": "GERNIKA LUMO",
-      "detectedAt": "2026-10-19T10:03+02:00",
-      "direction": "",
-      "eventId": "vehicle_returned:87bbb5641a54dbbe022ab0af",
-      "lastKnown": {
-        "destination": "ELANTXOBE-EA",
-        "direction": "",
-        "id": "8681",
-        "line": "A3532"
-      },
-      "line": "A3532",
-      "queuedAt": "2026-10-19T10:03:03+02:00",
-      "type": "vehicle_returned",
-      "vehicleId": "8681"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "1680": {
       "consecutiveChecks": 1,
@@ -42906,7 +42824,7 @@
       "requiredMissing": 2
     },
     "8650": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:ff1f4c4c8c3638f136c15acb",
       "firstMissingAt": "2026-10-19T09:59:06+02:00",
@@ -42917,7 +42835,7 @@
         "line": "A3525"
       },
       "lastSeenAt": "2026-10-19T09:55:16+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "8652": {
