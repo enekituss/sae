@@ -17,7 +17,7 @@ El secreto `BURGOS_GITHUB_TOKEN` permite al cron lanzar el workflow de alertas c
 
 Abre la URL `workers.dev` asignada por Cloudflare:
 
-- `/health`: debe devolver JSON con `"ok": true`, `apiVersion: "sae-three-resources-per-line-v5"` y `telegramScheduler.configured: true`. Si no devuelve `apiVersion: "sae-three-resources-per-line-v5"`, Cloudflare todavía no tiene desplegada la corrección de extracción de paradas necesaria para consultar todas las líneas; despliega la última versión del directorio `cloudflare-worker-burgos`.
+- `/health`: debe devolver JSON con `"ok": true`, `apiVersion: "sae-three-resources-per-line-v6"` y `telegramScheduler.configured: true`. Si no devuelve `apiVersion: "sae-three-resources-per-line-v6"`, Cloudflare todavía no tiene desplegada la corrección de extracción de paradas necesaria para consultar todas las líneas; despliega la última versión del directorio `cloudflare-worker-burgos`.
 - `/api/burgos/vehicles?line=01&fresh=1`: devuelve la lista de autobuses de `resourceVehicles` de la línea 01 sin esperar al trazado ni a las estimaciones.
 - `/api/burgos/live?line=01&fresh=1`: consulta los tres recursos de esa línea y devuelve las observaciones de estimación para próximas paradas/itinerario.
 - Para consultar toda la red, pide cada línea por separado (`01`–`23`, `73`, `87`–`89`, `C1`, `C2`). No se agrega toda la red dentro de una única invocación del Worker para respetar sus límites de subpeticiones.
