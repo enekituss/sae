@@ -38062,93 +38062,7 @@
       ]
     }
   },
-  "outbox": {
-    "missing:aee7adfe9654c5f17dc91463": {
-      "destination": "GALDAKAO Ospital",
-      "detectedAt": "2026-10-19T11:39+02:00",
-      "direction": "",
-      "eventId": "missing:aee7adfe9654c5f17dc91463",
-      "firstMissingAt": "2026-10-19T11:35:08+02:00",
-      "lastSeenAt": "2026-10-19T11:31:36+02:00",
-      "line": "A3642",
-      "missingChecks": 3,
-      "queuedAt": "2026-10-19T11:39:04+02:00",
-      "type": "vehicle_missing",
-      "vehicleId": "3296"
-    },
-    "route:42b860c004fe02403d21983a": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "EHU/UPV",
-          "old": "BILBAO"
-        }
-      ],
-      "destination": "EHU/UPV",
-      "detectedAt": "2026-10-19T11:39+02:00",
-      "direction": "",
-      "eventId": "route:42b860c004fe02403d21983a",
-      "line": "A2321",
-      "queuedAt": "2026-10-19T11:39:04+02:00",
-      "type": "route_change",
-      "vehicleId": "7818"
-    },
-    "route:42d0d7cc7094bfc65d926595": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALDAKAO Ospitalea",
-          "old": "ARRIGORRIAGA"
-        }
-      ],
-      "destination": "GALDAKAO Ospitalea",
-      "detectedAt": "2026-10-19T11:39+02:00",
-      "direction": "",
-      "eventId": "route:42d0d7cc7094bfc65d926595",
-      "line": "A3641",
-      "queuedAt": "2026-10-19T11:39:04+02:00",
-      "type": "route_change",
-      "vehicleId": "3365"
-    },
-    "route:b0c41422c694597b7a357c2f": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GORLIZ",
-          "old": "PLENTZIA (Metro)"
-        }
-      ],
-      "destination": "GORLIZ",
-      "detectedAt": "2026-10-19T11:39+02:00",
-      "direction": "",
-      "eventId": "route:b0c41422c694597b7a357c2f",
-      "line": "A3499",
-      "queuedAt": "2026-10-19T11:39:04+02:00",
-      "type": "route_change",
-      "vehicleId": "1671"
-    },
-    "route_after_gap:c149727be8bca56788385a9d": {
-      "changed": [
-        {
-          "field": "destination",
-          "label": "Destino",
-          "new": "GALLARTA",
-          "old": "SANTURTZI"
-        }
-      ],
-      "destination": "GALLARTA",
-      "detectedAt": "2026-10-19T11:39+02:00",
-      "direction": "",
-      "eventId": "route_after_gap:c149727be8bca56788385a9d",
-      "line": "A3333",
-      "queuedAt": "2026-10-19T11:39:04+02:00",
-      "type": "route_change_after_gap",
-      "vehicleId": "7856"
-    }
-  },
+  "outbox": {},
   "pendingArrivals": {
     "3361": {
       "consecutiveChecks": 2,
@@ -38345,7 +38259,7 @@
       "requiredMissing": 2
     },
     "3296": {
-      "alerted": false,
+      "alerted": true,
       "consecutiveMissing": 3,
       "eventId": "missing:aee7adfe9654c5f17dc91463",
       "firstMissingAt": "2026-10-19T11:35:08+02:00",
@@ -38356,7 +38270,7 @@
         "line": "A3642"
       },
       "lastSeenAt": "2026-10-19T11:31:36+02:00",
-      "notificationQueued": true,
+      "notificationQueued": false,
       "requiredMissing": 2
     },
     "3310": {
