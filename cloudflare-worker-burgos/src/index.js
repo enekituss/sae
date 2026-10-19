@@ -682,34 +682,58 @@ export default {
       encodeURIComponent(requestedLine), url.origin);
     const cacheRequest = new Request(cacheKey.toString(), { method: "GET" });
 
-    if (!forceRefresh) {
-      try {
-        const cached = await cache.match(cacheRequest);
-        if (cached) {
-          const data = await cached.json();
-          return jsonResponse(request, { ...data, cacheHit: true }, 200, {
-            "Cache-Control": "public, max-age=20"
-          });
+    let cachedData = null;
+    let cachedAgeMs = Infinity;
+    try {
+      const cached = await cache.match(cacheRequest);
+      if (cached) {
+        const data = await cached.json();
+        const fetchedAt = Date.parse(String(data?.fetchedAt || ""));
+        cachedAgeMs = Number.isFinite(fetchedAt) ? Math.max(0, Date.now() - fetchedAt) : Infinity;
+        cachedData = data;
+        if (!forceRefresh && cachedAgeMs <= 20000) {
+          return jsonResponse(request, {
+            ...data,
+            cacheHit: true,
+            stale: false,
+            cacheAgeSeconds: Math.floor(cachedAgeMs / 1000)
+          }, 200, { "Cache-Control": "public, max-age=8" });
         }
-      } catch {
-        // La caché es opcional.
       }
+    } catch {
+      // La caché es opcional; la consulta directa sigue siendo el camino principal.
     }
 
     try {
       const data = await fetchVehicleListForLine(requestedLine);
       try {
+        // Se conserva hasta 3 minutos para poder servir una copia marcada como antigua
+        // si el Ayuntamiento tiene una interrupción transitoria.
         await cache.put(cacheRequest, new Response(JSON.stringify(data), {
           headers: {
             "Content-Type": "application/json; charset=utf-8",
-            "Cache-Control": "public, max-age=20"
+            "Cache-Control": "public, max-age=180"
           }
         }));
       } catch {
         // La respuesta sigue siendo válida si no se puede guardar la caché.
       }
-      return jsonResponse(request, data, 200, { "Cache-Control": "public, max-age=20" });
+      return jsonResponse(request, { ...data, stale: false, cacheHit: false }, 200, {
+        "Cache-Control": "public, max-age=8"
+      });
     } catch (error) {
+      const ageAfterFailure = cachedData
+        ? Math.max(0, Date.now() - (Date.parse(String(cachedData.fetchedAt || "")) || 0))
+        : Infinity;
+      if (cachedData && ageAfterFailure <= 180000 && Array.isArray(cachedData.vehicles)) {
+        return jsonResponse(request, {
+          ...cachedData,
+          cacheHit: true,
+          stale: true,
+          staleAgeSeconds: Math.floor(ageAfterFailure / 1000),
+          staleReason: error?.message || "La fuente municipal no respondió."
+        }, 200, { "Cache-Control": "no-store" });
+      }
       return jsonResponse(request, {
         ok: false,
         error: error?.message || "No se pudieron consultar los autobuses de Burgos.",
