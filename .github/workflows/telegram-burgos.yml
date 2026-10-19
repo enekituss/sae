@@ -226,6 +226,10 @@ jobs:
               clean(chat_id) for chat_id in state.get("invalidChatNoticesSent", [])
               if clean(chat_id)
           }
+          primary_fallback_notices = {
+              clean(chat_id) for chat_id in state.get("primaryFallbackNoticesSent", [])
+              if clean(chat_id)
+          }
           try:
               pref_paths = subprocess.run(
                   ["git", "ls-tree", "-r", "--name-only", "refs/remotes/origin/telegram-data", "telegram-preferences/burgos"],
@@ -279,7 +283,35 @@ jobs:
                   dirty = True
                   print("El destinatario principal ha superado la prueba de envío; se han reactivado sus alertas.")
               except Exception as exc:
-                  print("El destinatario principal continúa rechazado por Telegram; se mantiene desactivado: " + str(exc))
+                  error_text = str(exc)
+                  print("El destinatario principal continúa rechazado por Telegram; se mantiene desactivado: " + error_text)
+                  # El secreto principal actual apunta a un bot, destino al que Telegram
+                  # prohíbe enviar. Notifica una sola vez a una suscripción humana activa
+                  # para verificar que la entrega de alertas sí funciona por un chat válido.
+                  if "bot can't send messages to the bot" in error_text.lower():
+                      fallback_candidates = sorted(subscriptions.items(), key=lambda item: item[0])
+                      for fallback_chat_id, fallback_subscription in fallback_candidates:
+                          if fallback_chat_id == primary_chat_id or fallback_chat_id in disabled_chats:
+                              continue
+                          if fallback_chat_id in primary_fallback_notices:
+                              continue
+                          if not isinstance(fallback_subscription, dict):
+                              continue
+                          if clean(fallback_subscription.get("mode")) in ("off", "paused"):
+                              continue
+                          try:
+                              telegram_api("sendMessage", {
+                                  "chat_id": fallback_chat_id,
+                                  "text": "✅ SAE Spotter · Autobuses de Burgos\n\nHe comprobado el envío de Telegram en esta suscripción activa. El identificador principal de configuración apunta a un bot y Telegram lo rechaza; esta cuenta sigue suscrita a los avisos de cambios de autobuses.\n\nLa detección depende también de que el SAE municipal publique datos actualizados.",
+                                  "disable_web_page_preview": True
+                              })
+                              primary_fallback_notices.add(fallback_chat_id)
+                              state["primaryFallbackNoticesSent"] = sorted(primary_fallback_notices)
+                              dirty = True
+                              print("Prueba de envío entregada una sola vez a una suscripción activa alternativa.")
+                              break
+                          except Exception as fallback_error:
+                              print("La suscripción alternativa no aceptó el mensaje de diagnóstico: " + str(fallback_error))
           elif primary_chat_id not in subscriptions:
               subscriptions[primary_chat_id] = {"mode": "all", "vehicleId": "", "vehicleIds": [], "awaitingVehicleId": False}
               dirty = True
@@ -1405,6 +1437,7 @@ jobs:
           state["telegramSubscriptions"] = subscriptions
           state["disabledTelegramChats"] = sorted(disabled_chats)
           state["invalidChatNoticesSent"] = sorted(invalid_chat_notices)
+          state["primaryFallbackNoticesSent"] = sorted(primary_fallback_notices)
           state["outbox"] = outbox
           state["pendingArrivals"] = pending_arrivals
           state["pendingMissing"] = pending_missing
@@ -1482,6 +1515,12 @@ jobs:
                               if isinstance(raw_notices, list):
                                   notice_union.update(clean(value) for value in raw_notices if clean(value))
                           merged_state["invalidChatNoticesSent"] = sorted(notice_union)
+                          fallback_notice_union = set()
+                          for source_state in (local_state, remote_state):
+                              raw_fallback_notices = source_state.get("primaryFallbackNoticesSent", [])
+                              if isinstance(raw_fallback_notices, list):
+                                  fallback_notice_union.update(clean(value) for value in raw_fallback_notices if clean(value))
+                          merged_state["primaryFallbackNoticesSent"] = sorted(fallback_notice_union)
                           try:
                               merged_state["telegramUpdateOffset"] = max(
                                   int(local_state.get("telegramUpdateOffset", 0) or 0),
