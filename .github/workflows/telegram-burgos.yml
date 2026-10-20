@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   # Grupo renovado para que las ejecuciones antiguas atascadas no bloqueen la reparación.
-  group: alertas-telegram-burgos-v4
+  group: alertas-telegram-burgos-v5
   cancel-in-progress: false
 
 jobs:
@@ -35,6 +35,8 @@ jobs:
         env:
           BURGOS_TELEGRAM_BOT_TOKEN: ${{ secrets.BURGOS_TELEGRAM_BOT_TOKEN }}
           BURGOS_TELEGRAM_CHAT_ID: ${{ secrets.BURGOS_TELEGRAM_CHAT_ID }}
+          GITHUB_HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          GITHUB_SHA: ${{ github.sha }}
         shell: bash
         run: |
           python - <<'PY'
@@ -342,6 +344,26 @@ jobs:
               subscriptions[primary_chat_id] = {"mode": "all", "vehicleId": "", "vehicleIds": [], "awaitingVehicleId": False}
               dirty = True
 
+          # Prueba ÚNICA de entrega activada solo por este commit de reparación.
+          # No genera mensajes periódicos: el SHA guardado evita duplicarla si GitHub reintenta.
+          test_marker = "[TEST TELEGRAM BURGOS]" in (os.environ.get("GITHUB_HEAD_COMMIT_MESSAGE") or "")
+          test_commit = clean(os.environ.get("GITHUB_SHA"))
+          if test_marker and test_commit and state.get("lastTelegramTestCommit") != test_commit:
+              telegram_api("sendMessage", {
+                  "chat_id": primary_chat_id,
+                  "text": (
+                      "✅ SAE Spotter · Prueba única de Telegram Burgos\n\n"
+                      "El monitor ha comprobado que puede enviarte mensajes. "
+                      "Los avisos automáticos se enviarán únicamente cuando se detecten cambios confirmados "
+                      "en los datos del SAE. Los mensajes incluirán línea, destino y sentido cuando esos "
+                      "campos estén publicados por el servicio municipal."
+                  ),
+                  "disable_web_page_preview": True
+              })
+              state["lastTelegramTestCommit"] = test_commit
+              dirty = True
+              print("Prueba única de Telegram de Burgos enviada y aceptada por Telegram.")
+
           # Burgos ya no debe depender del Worker compartido con Bizkaibus.
           # Si quedó instalado el webhook antiguo en bizkaibus-sae-dispatcher, Telegram
           # entrega allí los mensajes y GitHub Actions no los puede procesar. Lo retiramos
@@ -605,8 +627,8 @@ jobs:
               if not vehicle_id:
                   return None
               line = clean(vehicle.get("lineId") or vehicle.get("line") or vehicle.get("route") or vehicle.get("ruta"))
-              destination = clean(vehicle.get("destination") or vehicle.get("destino") or vehicle.get("headsign") or vehicle.get("destinationName") or vehicle.get("destiny"))
-              direction = clean(vehicle.get("direction") or vehicle.get("sentido") or vehicle.get("direccion"))
+              destination = clean(vehicle.get("destination") or vehicle.get("destino") or vehicle.get("destinationName") or vehicle.get("destinationText") or vehicle.get("destinationLabel") or vehicle.get("destiny") or vehicle.get("headsign"))
+              direction = clean(vehicle.get("direction") or vehicle.get("directionName") or vehicle.get("sentido") or vehicle.get("direccion") or vehicle.get("directionText"))
 
               # Conserva la parada publicada con cada observación para que un
               # cambio de línea pueda indicar la última parada de origen y la
@@ -651,11 +673,25 @@ jobs:
                       stop_name = stop_value
               if not stop_name and stop_id:
                   stop_name = "Parada " + stop_id
+              try:
+                  seconds = float(vehicle.get("seconds")) if vehicle.get("seconds") not in (None, "") else None
+                  if seconds is not None and (seconds < 0 or seconds != seconds):
+                      seconds = None
+              except (TypeError, ValueError):
+                  seconds = None
+              try:
+                  meters = float(vehicle.get("meters")) if vehicle.get("meters") not in (None, "") else None
+                  if meters is not None and (meters < 0 or meters != meters):
+                      meters = None
+              except (TypeError, ValueError):
+                  meters = None
               return {
                   "id": vehicle_id,
                   "line": line,
                   "destination": destination,
                   "direction": direction,
+                  "seconds": seconds,
+                  "meters": meters,
                   "model": vehicle_model_name(vehicle_id) or clean(
                       vehicle.get("model") or vehicle.get("modelo") or vehicle.get("vehicleModel")
                   ),
@@ -864,16 +900,48 @@ jobs:
                           failures.append(proxy_name + ": " + detail[:160] + ((" intento " + str(attempt)) if attempt == 1 else ""))
               raise RuntimeError("sin acceso a resourceVehicles para línea " + line + ": " + " | ".join(failures[:9]))
 
+          def has_published_value(value):
+              text = clean(value)
+              if not text:
+                  return False
+              normalised = re.sub(r"\s+", " ", text).casefold()
+              placeholders = {
+                  "no disponible", "no publicado", "no publicado por el sae",
+                  "destino no publicado", "destino no publicado por el sae",
+                  "sentido no publicado", "sentido no publicado por el sae",
+                  "sin datos", "desconocido", "n/d", "-", "—"
+              }
+              return normalised not in placeholders and not normalised.startswith("destino no publicado")
+
           def vehicle_fields_equal(a, b):
-              return all(clean(a.get(field)) == clean(b.get(field)) for field in ("line", "destination", "direction"))
+              if clean(a.get("line")) != clean(b.get("line")):
+                  return False
+              for field in ("destination", "direction"):
+                  old_value = clean(a.get(field))
+                  new_value = clean(b.get(field))
+                  if has_published_value(old_value) and has_published_value(new_value):
+                      if old_value.casefold() != new_value.casefold():
+                          return False
+              return True
 
           def changed_fields(old, new):
               labels = {"line": "Línea", "destination": "Destino", "direction": "Sentido"}
-              return [
-                  {"field": field, "label": labels[field], "old": clean(old.get(field)) or "No disponible", "new": clean(new.get(field)) or "No disponible"}
-                  for field in ("line", "destination", "direction")
-                  if clean(old.get(field)) != clean(new.get(field))
-              ]
+              changes = []
+              for field in ("line", "destination", "direction"):
+                  old_value = clean(old.get(field))
+                  new_value = clean(new.get(field))
+                  if not old_value or not new_value:
+                      continue
+                  if field != "line" and (not has_published_value(old_value) or not has_published_value(new_value)):
+                      continue
+                  if old_value.casefold() != new_value.casefold():
+                      changes.append({
+                          "field": field,
+                          "label": labels[field],
+                          "old": old_value,
+                          "new": new_value
+                      })
+              return changes
 
           def queue_event(event):
               event["detectedAt"] = iso_now()
@@ -1035,6 +1103,150 @@ jobs:
                           print("AVISO: fallo de consulta en la línea " + line + ": " + str(exc))
           except Exception as exc:
               source_errors.append("SAE oficial de Burgos por línea: " + str(exc))
+
+          # Enriquecimiento de destino/sentido: la lista ligera identifica los coches,
+          # pero normalmente no publica su destino. Solo se enriquecen líneas con coches
+          # presentes, consultando su SAE completo línea a línea; nunca se altera la lista
+          # autoritativa de vehículos con los resultados de esta segunda consulta.
+          def fetch_live_line_details(line):
+              url = worker_base + "/api/burgos/live?" + urllib.parse.urlencode({
+                  "line": line,
+                  "fresh": "1"
+              })
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      "Accept": "application/json",
+                      "User-Agent": "SAE-Spotter-Burgos-Telegram/1.2",
+                      "Cache-Control": "no-cache"
+                  }
+              )
+              with urllib.request.urlopen(request, timeout=35) as response:
+                  payload = json.loads(response.read().decode("utf-8"))
+              if not isinstance(payload, dict) or payload.get("ok") is not True:
+                  raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta live no reconocible"))
+              returned_line = clean(payload.get("line"))
+              if returned_line and normalise_line_code(returned_line) != normalise_line_code(line):
+                  raise RuntimeError("El SAE live devolvió la línea " + returned_line + " al consultar " + line)
+              if payload.get("stale"):
+                  raise RuntimeError("la consulta live devolvió datos antiguos")
+              rows = payload.get("vehicles")
+              observations = payload.get("observations")
+              if not isinstance(rows, list):
+                  raise RuntimeError("el SAE live no devolvió la lista de coches")
+              if not isinstance(observations, list):
+                  observations = []
+
+              known_ids = set(line_rows.get(line, {}).keys())
+              detail_by_id = {}
+              observation_by_id = {}
+              for raw in rows:
+                  if not isinstance(raw, dict):
+                      continue
+                  vehicle = normalise_vehicle(raw)
+                  if not vehicle or vehicle["id"] not in known_ids:
+                      continue
+                  detail_by_id[vehicle["id"]] = vehicle
+
+              # Las estimaciones incluyen campos que resourceVehicles omite. Si hay
+              # varias paradas, preferimos la observación con menor ETA publicada.
+              for raw in observations:
+                  if not isinstance(raw, dict):
+                      continue
+                  observation = normalise_vehicle(raw)
+                  if not observation or observation["id"] not in known_ids:
+                      continue
+                  previous = observation_by_id.get(observation["id"])
+                  seconds = observation.get("seconds")
+                  previous_seconds = previous.get("seconds") if previous else None
+                  candidate_rank = seconds if seconds is not None else float("inf")
+                  previous_rank = previous_seconds if previous_seconds is not None else float("inf")
+                  if previous is None or candidate_rank < previous_rank:
+                      observation_by_id[observation["id"]] = observation
+
+              enriched = {}
+              for vehicle_id in known_ids:
+                  detail = detail_by_id.get(vehicle_id, {})
+                  observation = observation_by_id.get(vehicle_id, {})
+                  combined = {}
+                  for field in ("destination", "direction", "stopName", "stopId", "model"):
+                      detail_value = clean(detail.get(field))
+                      observation_value = clean(observation.get(field))
+                      if has_published_value(detail_value):
+                          combined[field] = detail_value
+                      elif has_published_value(observation_value):
+                          combined[field] = observation_value
+                  seconds = detail.get("seconds")
+                  if seconds is None:
+                      seconds = observation.get("seconds")
+                  meters = detail.get("meters")
+                  if meters is None:
+                      meters = observation.get("meters")
+                  if seconds is not None:
+                      combined["seconds"] = seconds
+                  if meters is not None:
+                      combined["meters"] = meters
+                  if combined:
+                      enriched[vehicle_id] = combined
+              return line, enriched, clean(payload.get("sourceType"))
+
+          enrichment_lines = [
+              line for line in burgos_lines
+              if line in line_rows and bool(line_rows.get(line))
+          ]
+          enrichment_errors = 0
+          if enrichment_lines:
+              with ThreadPoolExecutor(max_workers=4) as executor:
+                  futures = {
+                      executor.submit(fetch_live_line_details, line): line
+                      for line in enrichment_lines
+                  }
+                  for future in as_completed(futures):
+                      line = futures[future]
+                      try:
+                          result_line, detail_by_id, source_type = future.result()
+                          for vehicle_id, extra in detail_by_id.items():
+                              vehicle = line_rows.get(result_line, {}).get(vehicle_id)
+                              if not isinstance(vehicle, dict):
+                                  continue
+                              for field in ("destination", "direction", "stopName", "stopId", "model", "seconds", "meters"):
+                                  value = extra.get(field)
+                                  if field in ("destination", "direction", "stopName", "stopId", "model"):
+                                      if has_published_value(value):
+                                          vehicle[field] = value
+                                  elif value is not None:
+                                      vehicle[field] = value
+                          print(
+                              "SAE Burgos enriquecimiento línea " + result_line + ": " +
+                              str(sum(1 for value in detail_by_id.values() if has_published_value(value.get("destination")))) +
+                              " destinos publicados, " +
+                              str(sum(1 for value in detail_by_id.values() if has_published_value(value.get("direction")))) +
+                              " sentidos publicados" +
+                              (" (respaldo de estimaciones)." if "respaldo" in source_type.lower() else ".")
+                          )
+                      except Exception as exc:
+                          enrichment_errors += 1
+                          print("AVISO: no se pudieron completar destino/sentido de la línea " + line + ": " + str(exc))
+
+          # Si el SAE omite temporalmente destino/sentido en la nueva lectura,
+          # mantenemos el último dato conocido solo mientras el coche siga en la misma línea.
+          # Nunca trasladamos ese dato a otra línea, porque ocultaría un cambio real.
+          for line, vehicles in line_rows.items():
+              for vehicle_id, vehicle in vehicles.items():
+                  previous = confirmed.get(vehicle_id)
+                  if not isinstance(previous, dict):
+                      continue
+                  if normalise_line_code(previous.get("line")) != normalise_line_code(line):
+                      continue
+                  for field in ("destination", "direction", "stopName", "stopId"):
+                      if not has_published_value(vehicle.get(field)) and has_published_value(previous.get(field)):
+                          vehicle[field] = previous[field]
+
+          if enrichment_lines:
+              print(
+                  "Enriquecimiento SAE terminado: " + str(len(enrichment_lines)) +
+                  " líneas con coches; " + str(enrichment_errors) + " consultas incompletas."
+              )
 
           failed_lines = set(burgos_lines) - successful_lines
           if line_rows:
@@ -1321,20 +1533,20 @@ jobs:
                       elif vehicle_id in pending_routes:
                           pending_routes.pop(vehicle_id, None)
                           dirty = True
-                      elif vehicle.get("stopName") or vehicle.get("stopId"):
-                          # Actualiza la última parada registrada solo cuando
-                          # línea/destino/sentido no están cambiando. Si detectamos
-                          # una transición, old conserva la parada previa al cambio.
-                          latest_stop = clean(vehicle.get("stopName"))
-                          latest_stop_id = clean(vehicle.get("stopId"))
-                          if (latest_stop and latest_stop != clean(old.get("stopName"))) or (
-                              latest_stop_id and latest_stop_id != clean(old.get("stopId"))
-                          ):
-                              confirmed[vehicle_id] = {
-                                  **old,
-                                  "stopName": latest_stop or clean(old.get("stopName")),
-                                  "stopId": latest_stop_id or clean(old.get("stopId"))
-                              }
+                      else:
+                          # Actualiza la referencia aunque no haya cambio operativo:
+                          # así un destino que empieza a publicarse queda guardado y no
+                          # vuelve a compararse como si fuese un cambio en cada ciclo.
+                          updated = dict(old)
+                          for field in ("destination", "direction", "stopName", "stopId", "model"):
+                              value = clean(vehicle.get(field))
+                              if has_published_value(value):
+                                  updated[field] = value
+                          for field in ("seconds", "meters"):
+                              if vehicle.get(field) is not None:
+                                  updated[field] = vehicle.get(field)
+                          if updated != old:
+                              confirmed[vehicle_id] = updated
                               dirty = True
                   else:
                       pending_missing.pop(vehicle_id, None)
@@ -1592,8 +1804,8 @@ jobs:
           def render_event(event):
               vehicle_id = clean(event.get("vehicleId")) or "No disponible"
               line = clean(event.get("line")) or "No disponible"
-              destination = clean(event.get("destination")) or "No disponible"
-              direction = clean(event.get("direction")) or "No disponible"
+              destination = clean(event.get("destination")) or "No publicado por el SAE"
+              direction = clean(event.get("direction")) or "No publicado por el SAE"
               event_type = clean(event.get("type"))
               if event_type == "vehicle_missing":
                   headline = (
