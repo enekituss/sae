@@ -71,6 +71,7 @@ jobs:
                   "pendingMissing": {},
                   "pendingRouteChanges": {},
                   "recentlyMissing": {},
+                  "lineSnapshots": {},
                   "outbox": {},
                   "telegramSubscriptions": {},
                   "telegramUpdateOffset": 0,
@@ -1033,9 +1034,110 @@ jobs:
                       dirty = True
                       print("Candidato de alta caducado por antigüedad para el coche " + str(pending_vehicle_id) + ".")
 
+              # Mismo patrón que el monitor de Bizkaibus: guardar una instantánea
+              # por línea y comparar la lectura nueva con la última lectura válida.
+              # Cada línea conserva su propio timestamp; una consulta fallida no pisa
+              # ni reemplaza el último listado correcto de esa línea.
+              line_snapshots = state.get("lineSnapshots", {})
+              if not isinstance(line_snapshots, dict):
+                  line_snapshots = {}
+
+              # Migración: el estado anterior guardaba la última flota confirmada, pero
+              # no el listado explícito de cada línea. Se usa como referencia solo si
+              # la lectura guardada es reciente; en caso contrario esta pasada reanuda
+              # la captura de instantáneas sin fabricar salidas retrospectivas.
+              if not line_snapshots and state.get("initialized"):
+                  prior_state_dt = parse_time(state.get("stateUpdatedAt"))
+                  prior_state_age = (
+                      (datetime.now(timezone.utc) - prior_state_dt.astimezone(timezone.utc)).total_seconds()
+                      if prior_state_dt else float("inf")
+                  )
+                  if 0 <= prior_state_age <= 20 * 60:
+                      grouped_previous = {}
+                      for previous_vehicle in confirmed.values():
+                          if not isinstance(previous_vehicle, dict):
+                              continue
+                          previous_id = clean(previous_vehicle.get("id"))
+                          previous_line = clean(previous_vehicle.get("line"))
+                          if previous_id and previous_line in burgos_lines:
+                              grouped_previous.setdefault(previous_line, {})[previous_id] = previous_vehicle
+                      for previous_line in burgos_lines:
+                          if previous_line in baseline_lines:
+                              line_snapshots[previous_line] = {
+                                  "fetchedAt": state.get("stateUpdatedAt"),
+                                  "authoritative": True,
+                                  "vehicles": list(grouped_previous.get(previous_line, {}).values())
+                              }
+                      if line_snapshots:
+                          print("Instantáneas SAE Burgos migradas desde el estado previo: " + str(len(line_snapshots)) + " líneas.")
+                          dirty = True
+
+              # Compara cada listado nuevo con la última lectura válida de esa línea.
+              # Se coteja también el ID contra el conjunto de todas las líneas leídas,
+              # para reconocer cambios de línea como movimiento, no como salida.
+              previous_stamp_limit = 20 * 60
+              current_empty_unconfirmed = (
+                  snapshot_complete and not current and
+                  not bool((state.get("emptyFeedState") or {}).get("confirmed"))
+              )
+              snapshot_departures = 0
+              if not current_empty_unconfirmed:
+                  for snapshot_line in burgos_lines:
+                      if snapshot_line not in successful_lines:
+                          continue
+                      previous_line_snapshot = line_snapshots.get(snapshot_line)
+                      if not isinstance(previous_line_snapshot, dict) or not previous_line_snapshot.get("authoritative"):
+                          continue
+                      previous_line_dt = parse_time(previous_line_snapshot.get("fetchedAt"))
+                      previous_line_age = (
+                          (datetime.now(timezone.utc) - previous_line_dt.astimezone(timezone.utc)).total_seconds()
+                          if previous_line_dt else float("inf")
+                      )
+                      if previous_line_age < -120 or previous_line_age > previous_stamp_limit:
+                          continue
+                      previous_line_vehicles = previous_line_snapshot.get("vehicles", [])
+                      if not isinstance(previous_line_vehicles, list):
+                          continue
+                      current_line_ids = set(line_rows.get(snapshot_line, {}).keys())
+                      for previous_vehicle in previous_line_vehicles:
+                          if not isinstance(previous_vehicle, dict):
+                              continue
+                          vehicle_id = clean(previous_vehicle.get("id"))
+                          if not vehicle_id or vehicle_id in current:
+                              continue
+                          # El autobús ya no aparece en ninguna de las líneas observadas
+                          # y su línea de referencia respondió con una lista válida.
+                          # En instantánea parcial, el texto del aviso lo deja explícito.
+                          queue_event({
+                              "type": "vehicle_missing",
+                              "vehicleId": vehicle_id,
+                              "line": clean(previous_vehicle.get("line")) or snapshot_line,
+                              "destination": clean(previous_vehicle.get("destination")),
+                              "direction": clean(previous_vehicle.get("direction")),
+                              "lastSeenAt": previous_line_snapshot.get("fetchedAt") or state.get("stateUpdatedAt") or now,
+                              "missingChecks": 1,
+                              "partialChecks": 0 if snapshot_complete else 1,
+                              "partialSnapshot": not snapshot_complete,
+                              "lastVerifiedLine": snapshot_line
+                          })
+                          recently_missing[vehicle_id] = {
+                              "vehicle": previous_vehicle,
+                              "lastSeenAt": previous_line_snapshot.get("fetchedAt") or now,
+                              "firstMissingAt": now,
+                              "alerted": True
+                          }
+                          confirmed.pop(vehicle_id, None)
+                          pending_missing.pop(vehicle_id, None)
+                          pending_arrivals.pop(vehicle_id, None)
+                          pending_routes.pop(vehicle_id, None)
+                          dirty = True
+                          snapshot_departures += 1
+              if snapshot_departures:
+                  print("Diferencia de instantáneas SAE: " + str(snapshot_departures) + " salidas detectadas respecto a las últimas lecturas válidas por línea.")
+
               # El estado conserva una línea base por línea. Una línea que falla
-              # no bloquea altas/cambios de las demás; solo una lectura completa
-              # permite confirmar ausencias de coches.
+              # no bloquea altas/cambios de las demás; una lectura completa
+              # permite comparar de forma fiable toda la red.
               raw_baseline_lines = state.get("baselineLines", [])
               if not isinstance(raw_baseline_lines, list):
                   raw_baseline_lines = []
@@ -1319,6 +1421,19 @@ jobs:
                           confirmed.pop(vehicle_id, None)
                           pending_missing.pop(vehicle_id, None)
                           dirty = True
+
+              # Guardar el listado actual de cada línea únicamente cuando la fuente
+              # principal resourceVehicles haya devuelto una lista válida. Las líneas
+              # con errores conservan su instantánea anterior para no inventar cambios.
+              for snapshot_line in successful_lines:
+                  line_snapshots[snapshot_line] = {
+                      "fetchedAt": now,
+                      "authoritative": True,
+                      "vehicles": list(line_rows.get(snapshot_line, {}).values())
+                  }
+              if successful_lines:
+                  state["lineSnapshots"] = line_snapshots
+                  dirty = True
 
               state["confirmedVehicles"] = confirmed
               state["pendingArrivals"] = pending_arrivals
