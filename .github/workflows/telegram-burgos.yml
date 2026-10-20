@@ -890,10 +890,10 @@ jobs:
                           }
                       )
                       try:
-                          # El Worker puede agotar varias fuentes y proxies antes de devolver
-                      # una respuesta. 14 s cortaba esa cadena a mitad; damos margen
-                      # para una lectura fresca sin aceptar jamás una caché antigua.
-                      with urllib.request.urlopen(request, timeout=42) as response:
+                              # El Worker puede agotar varias fuentes y proxies antes de devolver
+                          # una respuesta. 14 s cortaba esa cadena a mitad; damos margen
+                          # para una lectura fresca sin aceptar jamás una caché antigua.
+                          with urllib.request.urlopen(request, timeout=42) as response:
                               payload = json.loads(response.read().decode("utf-8"))
                           if not isinstance(payload, dict) or payload.get("ok") is not True:
                               raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta no reconocible"))
