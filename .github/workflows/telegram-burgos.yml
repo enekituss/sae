@@ -869,11 +869,11 @@ jobs:
           try:
               def fetch_worker_line(line):
                   # El SAE municipal responde con 502 de forma intermitente, especialmente
-                  # cuando se consultan muchas líneas simultáneamente. Se hacen hasta tres
+                  # cuando se consultan muchas líneas simultáneamente. Se hacen hasta dos
                   # intentos, forzando consulta nueva en los posteriores. Los datos antiguos
                   # nunca se aceptan como actuales para confirmar bajas.
                   last_error = None
-                  for attempt in range(3):
+                  for attempt in range(2):
                       query = {"line": line}
                       if attempt > 0:
                           query["fresh"] = "1"
@@ -887,7 +887,7 @@ jobs:
                           }
                       )
                       try:
-                          with urllib.request.urlopen(request, timeout=18) as response:
+                          with urllib.request.urlopen(request, timeout=8) as response:
                               payload = json.loads(response.read().decode("utf-8"))
                           if not isinstance(payload, dict) or payload.get("ok") is not True:
                               raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta no reconocible"))
