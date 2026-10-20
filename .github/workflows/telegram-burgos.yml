@@ -1062,7 +1062,7 @@ jobs:
                           if previous_id and previous_line in burgos_lines:
                               grouped_previous.setdefault(previous_line, {})[previous_id] = previous_vehicle
                       for previous_line in burgos_lines:
-                          if previous_line in baseline_lines:
+                          if previous_line in state.get("baselineLines", []):
                               line_snapshots[previous_line] = {
                                   "fetchedAt": state.get("stateUpdatedAt"),
                                   "authoritative": True,
