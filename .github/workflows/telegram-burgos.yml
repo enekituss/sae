@@ -21,7 +21,7 @@ concurrency:
 jobs:
   monitor:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
@@ -887,7 +887,7 @@ jobs:
                           }
                       )
                       try:
-                          with urllib.request.urlopen(request, timeout=8) as response:
+                          with urllib.request.urlopen(request, timeout=14) as response:
                               payload = json.loads(response.read().decode("utf-8"))
                           if not isinstance(payload, dict) or payload.get("ok") is not True:
                               raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta no reconocible"))
@@ -1017,6 +1017,21 @@ jobs:
               print("AVISO: no se ha podido obtener datos utilizables del SAE de Burgos; se conserva el estado del detector: " + " || ".join(source_errors))
           else:
               now = iso_now()
+
+              # Un candidato de alta requiere observaciones recientes. Si una línea
+              # falla durante mucho tiempo, no dejamos que una única observación de
+              # hace horas se convierta más tarde en una alerta de "nueva entrada".
+              now_dt = datetime.now(timezone.utc)
+              for pending_vehicle_id, candidate in list(pending_arrivals.items()):
+                  first_seen = parse_time(candidate.get("firstDetectedAt")) if isinstance(candidate, dict) else None
+                  age_seconds = (
+                      (now_dt - first_seen.astimezone(timezone.utc)).total_seconds()
+                      if first_seen else float("inf")
+                  )
+                  if age_seconds > 20 * 60:
+                      pending_arrivals.pop(pending_vehicle_id, None)
+                      dirty = True
+                      print("Candidato de alta caducado por antigüedad para el coche " + str(pending_vehicle_id) + ".")
 
               # El estado conserva una línea base por línea. Una línea que falla
               # no bloquea altas/cambios de las demás; solo una lectura completa
@@ -1356,7 +1371,7 @@ jobs:
                   if not event.get("partialSnapshot"):
                       lines.append("Confirmación: el coche ha faltado en varias consultas completas del servicio municipal.")
                       lines.append("Importante: no aparecer en el feed no confirma por sí solo una baja administrativa ni que esté físicamente fuera de servicio.")
-                  lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))
+                  lines.append("Detectado por el monitor: " + local_time(event.get("detectedAt")))
               elif event_type == "vehicle_entered":
                   lines = [
                       "🟢 AUTOBÚS DETECTADO ENTRANDO EN SERVICIO",
@@ -1429,6 +1444,7 @@ jobs:
                       lines.append("Destino actual: " + destination)
                       lines.append("Sentido actual: " + direction)
                   lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))
+              lines.append("Enviado a Telegram: " + local_time(iso_now()))
               return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
 
           # Freeze the intended recipients per event so retrying a failed send cannot
