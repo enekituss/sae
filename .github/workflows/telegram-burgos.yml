@@ -1118,8 +1118,10 @@ jobs:
                               "missingChecks": 1,
                               "partialChecks": 0 if snapshot_complete else 1,
                               "partialSnapshot": not snapshot_complete,
+                              "snapshotDiff": True,
                               "lastVerifiedLine": snapshot_line
                           })
+                          print("Diferencia por línea: el coche " + vehicle_id + " ya no aparece tras comparar la línea " + snapshot_line + ".")
                           recently_missing[vehicle_id] = {
                               "vehicle": previous_vehicle,
                               "lastSeenAt": previous_line_snapshot.get("fetchedAt") or now,
@@ -1495,7 +1497,8 @@ jobs:
                       "Última línea publicada: " + line,
                       "Último destino publicado: " + destination,
                       "Último sentido publicado: " + direction,
-                      "Primera ausencia observada: " + local_time(event.get("lastSeenAt"))
+                      ("Última lectura en la que aparecía: " if event.get("snapshotDiff") else "Primera ausencia observada: ") +
+                      local_time(event.get("lastSeenAt"))
                   ]
                   if event.get("partialSnapshot"):
                       lines.append("La consulta de la última línea conocida respondió correctamente y el autobús ya no figura entre los activos observados; otras líneas no respondieron en este ciclo.")
