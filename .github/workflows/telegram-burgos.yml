@@ -1382,7 +1382,7 @@ jobs:
                       "Primera detección: " + local_time(event.get("firstObservedAt")),
                       "Confirmación: aparece en dos consultas completas consecutivas separadas al menos dos minutos.",
                       "Nota: el aviso confirma su aparición en el feed; no es una señal administrativa de alta del operador.",
-                      "Hora del aviso: " + local_time(event.get("detectedAt"))
+                      "Detectado por el monitor: " + local_time(event.get("detectedAt"))
                   ]
               elif event_type == "vehicle_returned":
                   last_known = event.get("lastKnown", {})
@@ -1394,7 +1394,7 @@ jobs:
                       "Sentido actual: " + direction,
                       "Antes de desaparecer: línea " + (clean(last_known.get("line")) or "No disponible") + ", destino " + (clean(last_known.get("destination")) or "No disponible"),
                       "Primera ausencia observada: " + local_time(event.get("firstMissingAt")),
-                      "Hora del aviso: " + local_time(event.get("detectedAt"))
+                      "Detectado por el monitor: " + local_time(event.get("detectedAt"))
                   ]
               else:
                   route_after_gap = event_type == "route_change_after_gap"
@@ -1443,7 +1443,7 @@ jobs:
                               lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)
                       lines.append("Destino actual: " + destination)
                       lines.append("Sentido actual: " + direction)
-                  lines.append("Hora del aviso: " + local_time(event.get("detectedAt")))
+                  lines.append("Detectado por el monitor: " + local_time(event.get("detectedAt")))
               lines.append("Enviado a Telegram: " + local_time(iso_now()))
               return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
 
