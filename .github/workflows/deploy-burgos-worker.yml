@@ -1,0 +1,78 @@
+name: Desplegar Worker SAE de Burgos
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "cloudflare-worker-burgos/src/**"
+      - "cloudflare-worker-burgos/wrangler.jsonc"
+      - ".github/workflows/deploy-burgos-worker.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Comprobar sintaxis del Worker
+        run: node --check cloudflare-worker-burgos/src/index.js
+
+      - name: Avisar si faltan credenciales de despliegue
+        if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '' }}
+        run: |
+          echo "::warning::No se ha desplegado el Worker: faltan los secretos CLOUDFLARE_API_TOKEN y/o CLOUDFLARE_ACCOUNT_ID en Settings → Secrets and variables → Actions."
+          echo "El código está validado, pero Cloudflare seguirá usando la versión desplegada hasta añadir esas credenciales o desplegar manualmente desde Cloudflare."
+
+      - name: Desplegar Worker independiente de Burgos
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare-worker-burgos
+          wranglerVersion: "4"
+          command: deploy
+
+      - name: Verificar que el build nuevo está activo
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          health_url="https://burgos-sae-spotter.ecanteroalvarez.workers.dev/health"
+          expected='burgos-live-v6.12-2026-10-20'
+          for attempt in 1 2 3 4 5; do
+            body="$(curl --silent --show-error --fail "$health_url" || true)"
+            if printf '%s' "$body" | node -e '
+              let input = "";
+              process.stdin.on("data", chunk => input += chunk);
+              process.stdin.on("end", () => {
+                try {
+                  const data = JSON.parse(input);
+                  if (data.ok === true && data.buildId === "burgos-live-v6.12-2026-10-20") {
+                    console.log("OK: Worker de Burgos desplegado y verificado:", data.buildId);
+                    process.exit(0);
+                  }
+                  console.error("Build aún no actualizado:", data.buildId || "sin buildId");
+                  process.exit(1);
+                } catch (error) {
+                  console.error("Respuesta /health no válida:", error.message);
+                  process.exit(1);
+                }
+              });
+            '; then
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::El Worker no confirmó el build esperado en /health."
+          exit 1
