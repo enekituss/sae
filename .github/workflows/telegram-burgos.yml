@@ -825,7 +825,9 @@ jobs:
                       except Exception as exc:
                           detail = str(exc)
                           failures.append(proxy_name + ": " + detail[:160] + ((" intento " + str(attempt)) if attempt == 1 else ""))
-              raise RuntimeError("sin acceso a resourceVehicles para línea " + line + ": " + " | ".join(failures[:9]))          def vehicle_fields_equal(a, b):
+              raise RuntimeError("sin acceso a resourceVehicles para línea " + line + ": " + " | ".join(failures[:9]))
+
+          def vehicle_fields_equal(a, b):
               return all(clean(a.get(field)) == clean(b.get(field)) for field in ("line", "destination", "direction"))
 
           def changed_fields(old, new):
