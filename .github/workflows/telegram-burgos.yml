@@ -1227,7 +1227,7 @@ jobs:
               if snapshot_complete:
                   for pending_vehicle_id in list(pending_arrivals):
                       if pending_vehicle_id not in current:
-                pending_arrivals.pop(pending_vehicle_id, None)
+                          pending_arrivals.pop(pending_vehicle_id, None)
                           dirty = True
               # Una desaparición en la red completa se confirma pronto (>=3 min y 2 lecturas).
               # Si el snapshot es parcial, solo observamos coches cuya última línea conocida
