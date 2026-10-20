@@ -41,6 +41,7 @@ jobs:
           import hashlib
           import json
           import os
+          import re
           import subprocess
           import sys
           import time
@@ -671,6 +672,14 @@ jobs:
                   )
               return clean(value)
 
+          def normalise_line_code(value):
+              line_code = clean(value).upper()
+              line_code = re.sub(r"^L[IÍ]NEA\s*", "", line_code)
+              line_code = re.sub(r"^L(?=\d)", "", line_code)
+              match = re.search(r"(?:^|[^A-Z0-9])(C[12]|\d{1,2})(?=$|[^A-Z0-9])", line_code)
+              token = match.group(1) if match else line_code
+              return str(int(token)) if token.isdigit() else token
+
           def fetch_direct_line(line):
               # Respaldo independiente: primero intenta los endpoints directos,
               # después replica los tres proxies públicos usados por el HTML Bus Burgos.
@@ -719,6 +728,31 @@ jobs:
                       rows = None
                   if not isinstance(rows, list):
                       raise RuntimeError(source_label + " no devolvió una lista JSON de resourceVehicles")
+
+                  # Evita guardar bajo la línea solicitada una respuesta cacheada de otra línea.
+                  known_line_codes = {normalise_line_code(value) for value in burgos_lines}
+                  requested_line_code = normalise_line_code(line)
+                  mismatched_lines = []
+                  for raw_vehicle in rows:
+                      if not isinstance(raw_vehicle, dict):
+                          continue
+                      reported_line = clean(
+                          raw_vehicle.get("lineId") or raw_vehicle.get("line") or
+                          raw_vehicle.get("route") or raw_vehicle.get("ruta") or
+                          raw_vehicle.get("lineName") or raw_vehicle.get("routeName") or
+                          raw_vehicle.get("nombreLinea") or raw_vehicle.get("numeroLinea")
+                      )
+                      if not reported_line:
+                          continue
+                      normalised_reported = normalise_line_code(reported_line)
+                      if normalised_reported in known_line_codes and normalised_reported != requested_line_code:
+                          mismatched_lines.append(reported_line)
+                  if mismatched_lines:
+                      raise RuntimeError(
+                          source_label + " devolvió datos de la línea " +
+                          ", ".join(sorted(set(mismatched_lines))) +
+                          " cuando se pidió " + line + "; respuesta descartada."
+                      )
 
                   line_current = {}
                   for raw_vehicle in rows:
@@ -794,9 +828,9 @@ jobs:
                       if "timeout" in detail.lower() or "timed out" in detail.lower() or "aborted" in detail.lower():
                           timed_out_hosts.add(host)
 
-              # Repite el patrón exacto de Bus Burgos: proxy + URL oficial codificada.
-              # Se usa la ruta legacy porque es la base que empleaba el HTML que funcionaba.
-              proxy_target = make_url("https://www.aytoburgos.es/web/movilidad/rutas-en-directo")
+              # Repite el patrón de proxy usado por Bus Burgos, pero toma como destino
+              # la ruta oficial de referencia del SAE y conserva el parámetro dinámico de línea.
+              proxy_target = make_url("https://movilidad.aytoburgos.es/es/rutas-en-directo")
               encoded_target = urllib.parse.quote(proxy_target, safe="")
               proxies = [
                   ("corsproxy.io", "https://corsproxy.io/?" + encoded_target),
@@ -893,10 +927,13 @@ jobs:
                               # El Worker puede agotar varias fuentes y proxies antes de devolver
                           # una respuesta. 14 s cortaba esa cadena a mitad; damos margen
                           # para una lectura fresca sin aceptar jamás una caché antigua.
-                          with urllib.request.urlopen(request, timeout=42) as response:
+                          with urllib.request.urlopen(request, timeout=35) as response:
                               payload = json.loads(response.read().decode("utf-8"))
                           if not isinstance(payload, dict) or payload.get("ok") is not True:
                               raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta no reconocible"))
+                          returned_line = clean(payload.get("line"))
+                          if returned_line and normalise_line_code(returned_line) != normalise_line_code(line):
+                              raise RuntimeError("El Worker devolvió la línea " + returned_line + " al consultar " + line)
                           if payload.get("stale"):
                               raise RuntimeError("el Worker solo pudo ofrecer una copia antigua; no se usa para detectar cambios")
                           rows = payload.get("vehicles")
@@ -913,9 +950,22 @@ jobs:
                           if "resourceVehicles" not in source_type and not fallback_source:
                               raise RuntimeError("la respuesta no confirma resourceVehicles ni el respaldo de estimaciones")
                           line_current = {}
+                          known_line_codes = {normalise_line_code(value) for value in burgos_lines}
                           for raw_vehicle in rows:
                               if not isinstance(raw_vehicle, dict):
                                   continue
+                              reported_line = clean(
+                                  raw_vehicle.get("lineId") or raw_vehicle.get("line") or
+                                  raw_vehicle.get("route") or raw_vehicle.get("ruta") or
+                                  raw_vehicle.get("lineName") or raw_vehicle.get("routeName")
+                              )
+                              if reported_line:
+                                  normalised_reported = normalise_line_code(reported_line)
+                                  if normalised_reported in known_line_codes and normalised_reported != normalise_line_code(line):
+                                      raise RuntimeError(
+                                          "El Worker mezcló la línea " + reported_line +
+                                          " en la consulta de " + line + "; respuesta descartada."
+                                      )
                               vehicle = normalise_vehicle(raw_vehicle)
                               if not vehicle:
                                   continue
