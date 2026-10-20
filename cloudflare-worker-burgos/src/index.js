@@ -1,11 +1,12 @@
-// La fuente ISAENEXT confirmada por los enlaces del usuario usa /rutas-en-directo.
-// Se prioriza exactamente esa ruta para resourceVehicles/resourceRoutes/resourceEstimations.
-const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
+// URL de referencia facilitada para el SAE municipal: la ruta base es /es/rutas-en-directo.
+// Para cada petición se conservan los mismos parámetros ISAENEXT y se cambia
+// _as_asac_isaenext_IsaenextWebPortlet_line / label con la línea consultada.
+const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/es/rutas-en-directo";
 const BURGOS_SOURCE_FALLBACKS = [
   BURGOS_SOURCE,
-  "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
   "https://www.aytoburgos.es/web/movilidad/rutas-en-directo",
-  "https://movilidad.aytoburgos.es/es/rutas-en-directo",
+  "https://movilidad.aytoburgos.es/rutas-en-directo",
+  "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
   "https://www.aytoburgos.es/rutas-en-directo"
 ];
 const PORTLET_ID = "as_asac_isaenext_IsaenextWebPortlet";
@@ -844,7 +845,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.10-2026-10-19",
+        buildId: "burgos-live-v6.11-2026-10-20",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },
