@@ -20,7 +20,7 @@ El repositorio incluye `.github/workflows/deploy-burgos-worker.yml`. Para que pu
 - `CLOUDFLARE_API_TOKEN`: token de Cloudflare con permiso para editar Workers en la cuenta correcta.
 - `CLOUDFLARE_ACCOUNT_ID`: ID de la cuenta de Cloudflare donde está `burgos-sae-spotter`.
 
-Cada cambio en el código o en `wrangler.jsonc` ejecutará el despliegue y comprobará que `/health` publica el `buildId` esperado. Si falta cualquiera de esos secretos, el workflow solo valida la sintaxis y muestra un aviso: no afirma que haya desplegado el Worker. El secreto `BURGOS_GITHUB_TOKEN` mencionado arriba no sustituye a estas credenciales de despliegue.
+Cada cambio en el código o en `wrangler.jsonc` ejecutará el despliegue y comprobará que `/health` publica el `buildId` esperado. Si falta cualquiera de esos secretos, el workflow solo valida la sintaxis y muestra un aviso: no afirma que haya desplegado el Worker. El secreto `BURGOS_GITHUB_TOKEN` mencionado arriba no sustituye a estas credenciales de despliegue. Después de añadir los dos secretos, abre **Actions → Desplegar Worker SAE de Burgos → Run workflow** para ejecutar el primer despliegue sin tener que modificar más archivos.
 
 ## Comprobarlo
 
