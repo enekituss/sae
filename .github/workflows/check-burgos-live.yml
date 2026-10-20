@@ -33,3 +33,23 @@ jobs:
         run: node --check cloudflare-worker-burgos/src/index.js
       - name: Comprobar sintaxis del importador GTFS
         run: python -m py_compile scripts/update_burgos_gtfs.py
+      - name: Comprobar sintaxis Python del monitor Telegram de Burgos
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          workflow_path = Path(".github/workflows/telegram-burgos.yml")
+          source = workflow_path.read_text(encoding="utf-8")
+          marker = "        run: |\n          python - <<'PY'\n"
+          if source.count(marker) != 1:
+              raise SystemExit("No se pudo aislar el script Python del monitor de Burgos.")
+          start = source.index(marker) + len(marker)
+          end = source.index("\n          PY", start)
+          raw_script = source[start:end]
+          lines = raw_script.splitlines()
+          if not lines or any(line and not line.startswith("          ") for line in lines):
+              raise SystemExit("La sangría del script embebido no coincide con el bloque YAML.")
+          script = "\n".join(line[10:] if line else "" for line in lines) + "\n"
+          compile(script, str(workflow_path), "exec")
+          print("Sintaxis Python del monitor de Burgos correcta.")
+          PY
