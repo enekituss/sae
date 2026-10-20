@@ -590,9 +590,11 @@ jobs:
           def vehicle_model_name(vehicle_id):
               return vehicle_models.get(normalise_model_id(vehicle_id), "")
 
-          def vehicle_identity_lines(vehicle_id):
+          def vehicle_identity_lines(vehicle_id, vehicle=None):
               result = ["Coche: " + vehicle_id]
               model = vehicle_model_name(vehicle_id)
+              if not model and isinstance(vehicle, dict):
+                  model = clean(vehicle.get("model"))
               if model:
                   result.append("Modelo: " + model)
               return result
@@ -1602,12 +1604,12 @@ jobs:
                       return "No disponible"
 
                   if line_changed:
+                      model_vehicle = new_vehicle if clean(new_vehicle.get("model")) else old_vehicle
                       lines = [
                           "🔁 CAMBIO DE LÍNEA TRAS REAPARICIÓN" if route_after_gap else "🔄 CAMBIO DE LÍNEA DETECTADO",
-                          *vehicle_identity_lines(vehicle_id),
-                          "Línea de origen: " + old_line,
+                          *vehicle_identity_lines(vehicle_id, model_vehicle),
+                          "Línea: " + old_line + " \u2192 " + new_line,
                           "Última parada registrada: " + recorded_stop(old_vehicle),
-                          "➡️ Línea actual: " + new_line,
                           "Primera parada registrada: " + recorded_stop(new_vehicle),
                           "Destino actual: " + (clean(new_vehicle.get("destination")) or destination),
                           "Sentido actual: " + (clean(new_vehicle.get("direction")) or direction)
