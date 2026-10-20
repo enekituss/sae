@@ -890,7 +890,10 @@ jobs:
                           }
                       )
                       try:
-                          with urllib.request.urlopen(request, timeout=14) as response:
+                          # El Worker puede agotar varias fuentes y proxies antes de devolver
+                      # una respuesta. 14 s cortaba esa cadena a mitad; damos margen
+                      # para una lectura fresca sin aceptar jamás una caché antigua.
+                      with urllib.request.urlopen(request, timeout=42) as response:
                               payload = json.loads(response.read().decode("utf-8"))
                           if not isinstance(payload, dict) or payload.get("ok") is not True:
                               raise RuntimeError(str(payload.get("error") if isinstance(payload, dict) else "respuesta no reconocible"))
@@ -938,6 +941,9 @@ jobs:
                               break
                           if "timed out" in detail.lower() or "timeout" in detail.lower() or "aborted" in detail.lower():
                               print("Tiempo de espera agotado para línea " + line + "; se probará ISAENEXT directamente.")
+                              break
+                          if "copia antigua" in detail.lower() or "stale" in detail.lower():
+                              print("El Worker solo ofrece una lectura antigua para línea " + line + "; se probará el origen directo sin repetir la misma consulta.")
                               break
                           if attempt < 2:
                               wait_seconds = 2.0 * (attempt + 1)
