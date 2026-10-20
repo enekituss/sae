@@ -622,13 +622,33 @@ jobs:
                   result.append("Modelo: " + model)
               return result
 
+          def first_real_value(*values):
+              fallback = ""
+              placeholders = {
+                  "no disponible", "no publicado", "no publicado por el sae",
+                  "destino no publicado", "destino no publicado por el sae",
+                  "sentido no publicado", "sentido no publicado por el sae",
+                  "sin datos", "desconocido", "n/d", "-", "—"
+              }
+              for raw in values:
+                  candidate = clean(raw)
+                  if not candidate:
+                      continue
+                  if not fallback:
+                      fallback = candidate
+                  normalised = re.sub(r"\s+", " ", candidate).casefold()
+                  if normalised in placeholders or normalised.startswith("destino no publicado") or normalised.startswith("sentido no publicado"):
+                      continue
+                  return candidate
+              return fallback
+
           def normalise_vehicle(vehicle):
               vehicle_id = clean(vehicle.get("id") or vehicle.get("vehicleId") or vehicle.get("vehicle_id") or vehicle.get("vehicle"))
               if not vehicle_id:
                   return None
               line = clean(vehicle.get("lineId") or vehicle.get("line") or vehicle.get("route") or vehicle.get("ruta"))
-              destination = clean(vehicle.get("destination") or vehicle.get("destino") or vehicle.get("destinationName") or vehicle.get("destinationText") or vehicle.get("destinationLabel") or vehicle.get("destiny") or vehicle.get("headsign"))
-              direction = clean(vehicle.get("direction") or vehicle.get("directionName") or vehicle.get("sentido") or vehicle.get("direccion") or vehicle.get("directionText"))
+              destination = first_real_value(vehicle.get("destination"), vehicle.get("destino"), vehicle.get("destinationName"), vehicle.get("destinationText"), vehicle.get("destinationLabel"), vehicle.get("destiny"), vehicle.get("headsign"))
+              direction = first_real_value(vehicle.get("direction"), vehicle.get("directionName"), vehicle.get("sentido"), vehicle.get("direccion"), vehicle.get("directionText"))
 
               # Conserva la parada publicada con cada observación para que un
               # cambio de línea pueda indicar la última parada de origen y la
@@ -911,7 +931,7 @@ jobs:
                   "sentido no publicado", "sentido no publicado por el sae",
                   "sin datos", "desconocido", "n/d", "-", "—"
               }
-              return normalised not in placeholders and not normalised.startswith("destino no publicado")
+              return normalised not in placeholders and not normalised.startswith("destino no publicado") and not normalised.startswith("sentido no publicado")
 
           def vehicle_fields_equal(a, b):
               if clean(a.get("line")) != clean(b.get("line")):
