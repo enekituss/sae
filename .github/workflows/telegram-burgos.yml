@@ -1281,12 +1281,13 @@ jobs:
                           }
                           pending_missing[vehicle_id] = candidate
                       dirty = True
-                      first_missing_dt = parse_time(candidate.get("firstMissingAt"))
-                      elapsed_missing = (datetime.now(timezone.utc) - first_missing_dt.astimezone(timezone.utc)).total_seconds() if first_missing_dt else 0
                       partial_checks = int(candidate.get("partialChecks") or 0)
-                      required_checks = 4 if partial_checks else 2
-                      required_elapsed = 600 if partial_checks else 180
-                      if candidate["checks"] >= required_checks and elapsed_missing >= required_elapsed:
+                      # El usuario ha confirmado el criterio operativo del SAE:
+                      # las consultas válidas solo publican vehículos activos. Si el
+                      # coche desaparece de la nueva lectura y su línea anterior se
+                      # ha consultado correctamente, avisamos en este mismo ciclo.
+                      # No esperamos 3-10 minutos ni cuatro comprobaciones.
+                      if candidate["checks"] >= 1:
                           queue_event({
                               "type": "vehicle_missing",
                               "vehicleId": vehicle_id,
@@ -1358,19 +1359,23 @@ jobs:
               direction = clean(event.get("direction")) or "No disponible"
               event_type = clean(event.get("type"))
               if event_type == "vehicle_missing":
+                  headline = (
+                      "⚠️ AUTOBÚS DESAPARECE DEL SAE ACTIVO (RED PARCIAL)"
+                      if event.get("partialSnapshot")
+                      else "🛑 AUTOBÚS HA SALIDO DEL SERVICIO ACTIVO"
+                  )
                   lines = [
-                      "⚠️ VEHÍCULO SIN POSICIÓN RECIENTE (POSIBLE FIN DE SERVICIO)",
+                      headline,
                       *vehicle_identity_lines(vehicle_id),
                       "Última línea publicada: " + line,
                       "Último destino publicado: " + destination,
                       "Último sentido publicado: " + direction,
-                      "Primera ausencia observada: " + local_time(event.get("lastSeenAt"))
+                      "Última ausencia detectada: " + local_time(event.get("lastSeenAt"))
                   ]
-                  # En una lectura parcial no mostramos advertencias que el usuario
-                  # ha pedido ocultar; tampoco afirmamos que hubo consultas completas.
-                  if not event.get("partialSnapshot"):
-                      lines.append("Confirmación: el coche ha faltado en varias consultas completas del servicio municipal.")
-                      lines.append("Importante: no aparecer en el feed no confirma por sí solo una baja administrativa ni que esté físicamente fuera de servicio.")
+                  if event.get("partialSnapshot"):
+                      lines.append("La consulta de la última línea conocida respondió correctamente y el autobús ya no figura entre los activos observados; otras líneas no respondieron en este ciclo.")
+                  else:
+                      lines.append("La lectura completa del SAE ya no incluye este autobús en el listado de vehículos activos.")
                   lines.append("Detectado por el monitor: " + local_time(event.get("detectedAt")))
               elif event_type == "vehicle_entered":
                   lines = [
