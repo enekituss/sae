@@ -1250,7 +1250,6 @@ jobs:
               # Si su última línea no responde, line_verified bloquea la alerta para no
               # confundir una caída de conexión con una salida del servicio.
               if snapshot_ok:
-                  feed_allows_missing = bool(current) or bool(empty_state.get("confirmed"))
                   for vehicle_id, old_vehicle in list(confirmed.items()):
                       if vehicle_id in current:
                           continue
@@ -1262,7 +1261,18 @@ jobs:
                           dirty = True
                       old_line = clean(old_vehicle.get("line"))
                       line_verified = snapshot_complete or old_line in successful_lines
-                      if not line_verified or not feed_allows_missing:
+                      # No bloquees una salida de una línea válida porque otras líneas
+                      # fallen o no devuelvan vehículos. Solo se aplaza el caso extremo
+                      # en que las 29 líneas respondan correctamente y toda la red venga
+                      # vacía; ese caso requiere confirmación para evitar un falso apagón.
+                      confirmed_empty_network = (
+                          snapshot_complete and not current and bool(empty_state.get("confirmed"))
+                      )
+                      unconfirmed_empty_network = snapshot_complete and not current and not confirmed_empty_network
+                      if not line_verified or unconfirmed_empty_network:
+                          if not line_verified:
+                              print("Salida pendiente: la línea " + (old_line or "?") +
+                                    " del coche " + vehicle_id + " no respondió con una lista válida en este ciclo.")
                           continue
 
                       candidate = pending_missing.get(vehicle_id)
