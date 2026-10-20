@@ -98,6 +98,28 @@ function normalizeLineCode(value) {
   return token;
 }
 
+// Un recurso mal cacheado no debe atribuir los coches de una línea a otra.
+// Solo se comparan campos de línea explícitos que coincidan con una línea conocida.
+function assertVehiclesMatchRequestedLine(rows, requestedLine, sourceLabel) {
+  const requested = normalizeLineCode(requestedLine);
+  const knownLines = new Set(BURGOS_LINES.map(normalizeLineCode));
+  const conflicting = new Set();
+  for (const row of rows) {
+    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+    const reported = String(
+      row.lineId ?? row.line ?? row.route ?? row.ruta ??
+      row.lineName ?? row.routeName ?? row.nombreLinea ?? row.numeroLinea ?? ""
+    ).trim();
+    if (!reported) continue;
+    const normalized = normalizeLineCode(reported);
+    if (knownLines.has(normalized) && normalized !== requested) conflicting.add(reported);
+  }
+  if (conflicting.size) {
+    throw new Error(sourceLabel + " devolvió " + [...conflicting].join(", ") +
+      " al solicitar la línea " + requestedLine + "; se rechaza para evitar asignaciones erróneas.");
+  }
+}
+
 async function requestIsaenext(resource, extra = {}, options = {}) {
   const sources = BURGOS_SOURCE_FALLBACKS;
   // resourceVehicles es imprescindible para detectar altas y bajas. Se le da
@@ -150,6 +172,9 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
       const body = await response.text();
       if (!response.ok) {
         errors.push(new URL(base).host + " HTTP " + response.status);
+        // Un 5xx/429 suele ser un fallo del host o de su limitador, no de la ruta.
+        // Saltamos las otras rutas equivalentes del mismo dominio en este ciclo.
+        if (response.status >= 500 || response.status === 429) timedOutHosts.add(host);
         continue;
       }
       try {
@@ -176,10 +201,10 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
     }
   }
 
-  // Respaldo derivado de SAMyT: si la consulta directa falla, probar una vez
-  // a través de un proxy público. El contenido sigue procediendo de ISAENEXT;
-  // no se usa este respaldo si una petición directa ya respondió correctamente.
-  const proxyBase = "https://www.aytoburgos.es/web/movilidad/rutas-en-directo";
+  // Respaldo a través de proxies públicos sobre la ruta de referencia del SAE.
+  // Se hace un intento corto por proveedor: repetir un proxy lento alarga las 29 líneas
+  // y provoca que el propio monitor abandone la consulta antes de obtener respuesta.
+  const proxyBase = BURGOS_SOURCE;
   const proxyUrl = new URL(proxyBase);
   proxyUrl.searchParams.set("p_p_id", PORTLET_ID);
   proxyUrl.searchParams.set("p_p_lifecycle", "2");
@@ -201,14 +226,14 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
     { name: "AllOrigins", url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(proxyUrl.toString()) },
     { name: "CodeTabs", url: "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(proxyUrl.toString()) }
   ]) {
-    // El proxy puede fallar de forma transitoria; se hacen dos intentos breves por proveedor.
+    // Un intento por proveedor: los restantes ofrecen rutas alternativas independientes.
     let succeeded = false;
-    for (let attempt = 1; attempt <= 2 && !succeeded; attempt++) {
+    for (let attempt = 1; attempt <= 1 && !succeeded; attempt++) {
       try {
         const response = await fetch(proxy.url, {
           method: "GET",
           headers: { "Accept": "application/json, text/plain, */*" },
-          signal: AbortSignal.timeout(6000)
+          signal: AbortSignal.timeout(4000)
         });
         let body = await response.text();
         if (!response.ok) {
@@ -371,6 +396,7 @@ function arrayFromResource(payload, resourceName) {
 
 function extractVehicleRows(payload, line) {
   const rows = arrayFromResource(payload, "resourceVehicles");
+  assertVehiclesMatchRequestedLine(rows, line, "resourceVehicles");
   const vehicles = [];
   for (const row of rows) {
     if (!row || typeof row !== "object") continue;
@@ -845,7 +871,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.11-2026-10-20",
+        buildId: "burgos-live-v6.12-2026-10-20",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },
