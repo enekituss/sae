@@ -1244,11 +1244,11 @@ jobs:
                       if pending_vehicle_id not in current:
                           pending_arrivals.pop(pending_vehicle_id, None)
                           dirty = True
-              # Una desaparición en la red completa se confirma pronto (>=3 min y 2 lecturas).
-              # Si el snapshot es parcial, solo observamos coches cuya última línea conocida
-              # respondió correctamente y que no aparecen en ninguna línea que sí respondió.
-              # Como podrían haberse movido a una línea caída, la alerta parcial exige >=10 min
-              # y 4 comprobaciones válidas, y se identifica al usuario como posible salida del feed.
+              # Cada línea publica solo vehículos activos. Si el coche ya no aparece en
+              # el conjunto de lecturas y su línea anterior respondió correctamente, tratamos
+              # la ausencia como salida del servicio en este ciclo, sin espera artificial.
+              # Si su última línea no responde, line_verified bloquea la alerta para no
+              # confundir una caída de conexión con una salida del servicio.
               if snapshot_ok:
                   feed_allows_missing = bool(current) or bool(empty_state.get("confirmed"))
                   for vehicle_id, old_vehicle in list(confirmed.items()):
@@ -1370,13 +1370,13 @@ jobs:
                       "Última línea publicada: " + line,
                       "Último destino publicado: " + destination,
                       "Último sentido publicado: " + direction,
-                      "Última ausencia detectada: " + local_time(event.get("lastSeenAt"))
+                      "Primera ausencia observada: " + local_time(event.get("lastSeenAt"))
                   ]
                   if event.get("partialSnapshot"):
                       lines.append("La consulta de la última línea conocida respondió correctamente y el autobús ya no figura entre los activos observados; otras líneas no respondieron en este ciclo.")
                   else:
                       lines.append("La lectura completa del SAE ya no incluye este autobús en el listado de vehículos activos.")
-                  lines.append("Detectado por el monitor: " + local_time(event.get("detectedAt")))
+                  lines.append("Alerta generada por el monitor: " + local_time(event.get("detectedAt")))
               elif event_type == "vehicle_entered":
                   lines = [
                       "🟢 AUTOBÚS DETECTADO ENTRANDO EN SERVICIO",
@@ -1387,7 +1387,7 @@ jobs:
                       "Primera detección: " + local_time(event.get("firstObservedAt")),
                       "Confirmación: aparece en dos consultas completas consecutivas separadas al menos dos minutos.",
                       "Nota: el aviso confirma su aparición en el feed; no es una señal administrativa de alta del operador.",
-                      "Detectado por el monitor: " + local_time(event.get("detectedAt"))
+                      "Alerta generada por el monitor: " + local_time(event.get("detectedAt"))
                   ]
               elif event_type == "vehicle_returned":
                   last_known = event.get("lastKnown", {})
@@ -1399,7 +1399,7 @@ jobs:
                       "Sentido actual: " + direction,
                       "Antes de desaparecer: línea " + (clean(last_known.get("line")) or "No disponible") + ", destino " + (clean(last_known.get("destination")) or "No disponible"),
                       "Primera ausencia observada: " + local_time(event.get("firstMissingAt")),
-                      "Detectado por el monitor: " + local_time(event.get("detectedAt"))
+                      "Alerta generada por el monitor: " + local_time(event.get("detectedAt"))
                   ]
               else:
                   route_after_gap = event_type == "route_change_after_gap"
@@ -1448,7 +1448,7 @@ jobs:
                               lines.append(labels.get(field, clean(item.get("label")) or "Dato") + ": " + old_value + " → " + new_value)
                       lines.append("Destino actual: " + destination)
                       lines.append("Sentido actual: " + direction)
-                  lines.append("Detectado por el monitor: " + local_time(event.get("detectedAt")))
+                  lines.append("Alerta generada por el monitor: " + local_time(event.get("detectedAt")))
               lines.append("Enviado a Telegram: " + local_time(iso_now()))
               return "\n".join(lines) + "\n\nConsulta SAE: https://enekituss.github.io/sae/burgos.html"
 
