@@ -13,6 +13,15 @@ Este Worker sirve los datos municipales de los autobuses de Burgos y programa, c
 
 El secreto `BURGOS_GITHUB_TOKEN` permite al cron lanzar el workflow de alertas cada dos minutos. Si falta o no tiene permisos, el Worker lo dejará reflejado en los logs y seguirá existiendo la programación de respaldo de GitHub Actions, que se ejecuta cada cinco minutos cuando GitHub puede atenderla.
 
+## Despliegue automático desde GitHub
+
+El repositorio incluye `.github/workflows/deploy-burgos-worker.yml`. Para que publique el código nuevo de forma automática, añade en **GitHub → Settings → Secrets and variables → Actions** estos dos secretos del repositorio:
+
+- `CLOUDFLARE_API_TOKEN`: token de Cloudflare con permiso para editar Workers en la cuenta correcta.
+- `CLOUDFLARE_ACCOUNT_ID`: ID de la cuenta de Cloudflare donde está `burgos-sae-spotter`.
+
+Cada cambio en el código o en `wrangler.jsonc` ejecutará el despliegue y comprobará que `/health` publica el `buildId` esperado. Si falta cualquiera de esos secretos, el workflow solo valida la sintaxis y muestra un aviso: no afirma que haya desplegado el Worker. El secreto `BURGOS_GITHUB_TOKEN` mencionado arriba no sustituye a estas credenciales de despliegue.
+
 ## Comprobarlo
 
 Abre la URL `workers.dev` asignada por Cloudflare:
