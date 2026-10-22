@@ -1,17 +1,71 @@
 {
   "sourceUrl": "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml",
   "tripUpdatesUrl": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFSRealTime/FeedTripUpdates.pb",
-  "fetchedAt": "2026-10-22T03:09:01+00:00",
-  "vehicleCount": 4,
+  "fetchedAt": "2026-10-22T03:11:03+00:00",
+  "vehicleCount": 5,
   "stopLookupCount": 2325,
-  "stopMatches": 4,
-  "destinationMatches": 4,
+  "stopMatches": 5,
+  "destinationMatches": 5,
   "vehicleBlocks": 0,
   "tripShortNames": 0,
-  "vehiclesWithServiceNumber": 4,
-  "vehiclesWithUpcomingStops": 4,
-  "vehiclesWithRealtimeStopTimes": 0,
+  "vehiclesWithServiceNumber": 5,
+  "vehiclesWithUpcomingStops": 5,
+  "vehiclesWithRealtimeStopTimes": 1,
   "vehicles": [
+    {
+      "id": "2076",
+      "idType": "ID de vehículo",
+      "line": "A3247",
+      "lineRef": "",
+      "direction": "",
+      "destination": "AIREPORTUA",
+      "destinationSource": "GTFS · horario",
+      "destinationRef": "",
+      "tripId": "trp_A3247_775_OP42LJPPV_18900_O42LJP3247_324702_2",
+      "tripShortName": "",
+      "blockId": "",
+      "calendarServiceId": "OP42LJPPV",
+      "serviceNumber": "2",
+      "serviceCode": "324702",
+      "upcomingStops": [
+        {
+          "stopId": "896",
+          "stopSequence": 3,
+          "name": "MOYUA PLAZA (OGASUNA/HACIENDA) (896)",
+          "arrivalTime": "2026-10-22T05:19:10+02:00",
+          "departureTime": "2026-10-22T05:19:12+02:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "4133",
+          "stopSequence": 4,
+          "name": "ALAMEDA RECALDE 11 (4133)",
+          "arrivalTime": "2026-10-22T05:20:16+02:00",
+          "departureTime": "2026-10-22T05:20:18+02:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "3372",
+          "stopSequence": 5,
+          "name": "AIREPORTUA/AEROPUERTO (IRTEERAK/SALIDAS) (3372)",
+          "arrivalTime": "2026-10-22T05:45:00+02:00",
+          "departureTime": "2026-10-22T05:45:02+02:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        }
+      ],
+      "time": "2026-10-22T05:09:58+02:00",
+      "stop": "632",
+      "stopName": "GRAN VÍA 79 (632)",
+      "stopLat": "43.264604915025",
+      "stopLon": "-2.94265486929186",
+      "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
+      "journeyRef": "trp_A3247_775_OP42LJPPV_18900_O42LJP3247_324702_2",
+      "lat": "43.261024",
+      "lon": "-2.9490159"
+    },
     {
       "id": "2090",
       "idType": "ID de vehículo",
@@ -47,15 +101,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-22T05:08:10+02:00",
+      "time": "2026-10-22T05:09:58+02:00",
       "stop": "896",
       "stopName": "MOYUA PLAZA (OGASUNA/HACIENDA) (896)",
       "stopLat": "43.2626475896687",
       "stopLon": "-2.9354274348789",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3247_775_OP42LJPPV_18000_O42LJP3247_324771_2",
-      "lat": "43.264435",
-      "lon": "-2.941472"
+      "lat": "43.262745",
+      "lon": "-2.935424"
     },
     {
       "id": "3333",
@@ -74,21 +128,12 @@
       "serviceCode": "391707",
       "upcomingStops": [
         {
-          "stopId": "2933",
-          "stopSequence": 12,
-          "name": "BILDOSOLA INDUSTRIALGUNEA (2933)",
-          "arrivalTime": "2026-10-22T05:11:31+02:00",
-          "departureTime": "2026-10-22T05:11:33+02:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "2934",
           "stopSequence": 13,
           "name": "BILDOSOLA (2934)",
           "arrivalTime": "2026-10-22T05:13:30+02:00",
           "departureTime": "2026-10-22T05:13:32+02:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -407,15 +452,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-22T05:08:10+02:00",
-      "stop": "2443",
-      "stopName": "HERRIKO PLAZA (2443)",
-      "stopLat": "43.1325290788115",
-      "stopLon": "-2.78274491932654",
+      "time": "2026-10-22T05:09:58+02:00",
+      "stop": "2933",
+      "stopName": "BILDOSOLA INDUSTRIALGUNEA (2933)",
+      "stopLat": "43.1385916686005",
+      "stopLon": "-2.78396538758582",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3917_1017_OP41LJIN_17700_O41LJI3917_391707_2",
-      "lat": "43.128876",
-      "lon": "-2.7791555"
+      "lat": "43.13626",
+      "lon": "-2.784232"
     },
     {
       "id": "3338",
@@ -533,15 +578,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-22T05:08:10+02:00",
+      "time": "2026-10-22T05:09:58+02:00",
       "stop": "2406",
       "stopName": "ATXURI 4 (2406)",
       "stopLat": "43.2549944717662",
       "stopLon": "-2.92219671980597",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3622_976_OP41LJIN_18300_O41LJI3622_362225_2",
-      "lat": "43.258015",
-      "lon": "-2.9266076"
+      "lat": "43.25495",
+      "lon": "-2.927067"
     },
     {
       "id": "7853",
@@ -559,24 +604,6 @@
       "serviceNumber": "6",
       "serviceCode": "313606",
       "upcomingStops": [
-        {
-          "stopId": "472",
-          "stopSequence": 9,
-          "name": "RETUERTO (AV. EUSKADI) (472)",
-          "arrivalTime": "2026-10-22T05:14:22+02:00",
-          "departureTime": "2026-10-22T05:14:24+02:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
-          "stopId": "4264",
-          "stopSequence": 10,
-          "name": "ANSIO (4264)",
-          "arrivalTime": "2026-10-22T05:17:59+02:00",
-          "departureTime": "2026-10-22T05:18:01+02:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "544",
           "stopSequence": 11,
@@ -803,15 +830,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-22T05:08:10+02:00",
-      "stop": "465",
-      "stopName": "RETUERTO 17 (465)",
-      "stopLat": "43.2833407333003",
-      "stopLon": "-2.9966431589099",
+      "time": "2026-10-22T05:09:58+02:00",
+      "stop": "4264",
+      "stopName": "ANSIO (4264)",
+      "stopLat": "43.2891928588347",
+      "stopLon": "-2.98606632559243",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3136_1173_OP40LJIN_18000_O40LJI3136_313606_2",
-      "lat": "43.28536",
-      "lon": "-3.00159"
+      "lat": "43.28499",
+      "lon": "-2.993073"
     }
   ]
 }
