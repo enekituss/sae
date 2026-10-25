@@ -1,7 +1,7 @@
 {
   "sourceUrl": "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml",
   "tripUpdatesUrl": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFSRealTime/FeedTripUpdates.pb",
-  "fetchedAt": "2026-10-25T09:21:09+00:00",
+  "fetchedAt": "2026-10-25T09:23:07+00:00",
   "vehicleCount": 140,
   "stopLookupCount": 2325,
   "stopMatches": 140,
@@ -9,8 +9,8 @@
   "vehicleBlocks": 0,
   "tripShortNames": 0,
   "vehiclesWithServiceNumber": 140,
-  "vehiclesWithUpcomingStops": 131,
-  "vehiclesWithRealtimeStopTimes": 32,
+  "vehiclesWithUpcomingStops": 132,
+  "vehiclesWithRealtimeStopTimes": 41,
   "vehicles": [
     {
       "id": "1111",
@@ -29,21 +29,12 @@
       "serviceCode": "341104",
       "upcomingStops": [
         {
-          "stopId": "4157",
-          "stopSequence": 16,
-          "name": "LAMIAKO PASAI (4157)",
-          "arrivalTime": "2026-10-25T10:24:48+01:00",
-          "departureTime": "2026-10-25T10:24:50+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
           "stopId": "4158",
           "stopSequence": 17,
           "name": "UDONDOKO DARTSENA (4158)",
           "arrivalTime": "2026-10-25T10:30:38+01:00",
           "departureTime": "2026-10-25T10:30:40+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -173,15 +164,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "4",
-      "stopName": "EDUARDO COSTE (4)",
-      "stopLat": "43.3208166042736",
-      "stopLon": "-3.01140806244089",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "4157",
+      "stopName": "LAMIAKO PASAI (4157)",
+      "stopLat": "43.3187198761713",
+      "stopLon": "-3.00543350413311",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3411_804_OP9FIN_36000_O9FI3411_341104_4",
-      "lat": "43.321304",
-      "lon": "-3.0119507"
+      "lat": "43.318836",
+      "lon": "-3.0056114"
     },
     {
       "id": "1112",
@@ -506,7 +497,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4160",
       "stopName": "ZIENTOETXE 45 (MOREAGA) (4160)",
       "stopLat": "43.3738543159677",
@@ -668,15 +659,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "632",
       "stopName": "GRAN VÍA 79 (632)",
       "stopLat": "43.264604915025",
       "stopLon": "-2.94265486929186",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3414_808_OP9FIN_38400_O9FI3414_341406_5",
-      "lat": "43.262753",
-      "lon": "-2.9479177"
+      "lat": "43.262726",
+      "lon": "-2.9479425"
     },
     {
       "id": "1553",
@@ -694,15 +685,15 @@
       "serviceNumber": "5",
       "serviceCode": "341405",
       "upcomingStops": [],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4096",
       "stopName": "ANDRA MARI (4096)",
       "stopLat": "43.3638199786476",
       "stopLon": "-3.01666148373338",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3414_808_OP9FIN_34800_O9FI3414_341405_5",
-      "lat": "43.363083",
-      "lon": "-3.017451"
+      "lat": "43.36373",
+      "lon": "-3.0164516"
     },
     {
       "id": "1671",
@@ -802,15 +793,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4212",
       "stopName": "ARINGOETXE (BEGOÑA JATETXEA) (4212)",
       "stopLat": "43.4199947339577",
       "stopLon": "-2.93920272521856",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3499_827_OP9FIN_37980_O9FI3499_349916_10",
-      "lat": "43.419014",
-      "lon": "-2.943683"
+      "lat": "43.419025",
+      "lon": "-2.9436953"
     },
     {
       "id": "1678",
@@ -829,30 +820,12 @@
       "serviceCode": "345112",
       "upcomingStops": [
         {
-          "stopId": "1463",
-          "stopSequence": 49,
-          "name": "ZUGAZARTE (TRIÁNGULO) (1463)",
-          "arrivalTime": "2026-10-25T10:25:39+01:00",
-          "departureTime": "2026-10-25T10:25:41+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "1464",
-          "stopSequence": 50,
-          "name": "ZUGAZARTE 35 (REPARADORAS) (1464)",
-          "arrivalTime": "2026-10-25T10:27:02+01:00",
-          "departureTime": "2026-10-25T10:27:04+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "1476",
           "stopSequence": 51,
           "name": "AREETA 9 (ELIZA/IGLESIA) (1476)",
           "arrivalTime": "2026-10-25T10:28:18+01:00",
           "departureTime": "2026-10-25T10:28:20+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -874,15 +847,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "39",
-      "stopName": "ALGORTAKO ETORB. 13 (REGOYOS) (39)",
-      "stopLat": "43.3388268768747",
-      "stopLon": "-3.00876583159644",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1464",
+      "stopName": "ZUGAZARTE 35 (REPARADORAS) (1464)",
+      "stopLat": "43.331469921077",
+      "stopLon": "-3.01224342205108",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3451_1161_OP9FIN_33900_O9FI3451_345112_3",
-      "lat": "43.339626",
-      "lon": "-3.0088086"
+      "lat": "43.33435",
+      "lon": "-3.0106828"
     },
     {
       "id": "1715",
@@ -901,21 +874,12 @@
       "serviceCode": "349914",
       "upcomingStops": [
         {
-          "stopId": "44",
-          "stopSequence": 8,
-          "name": "PUENTE BUSTERRI (ATERPETXEA/ALBERGUE) (44)",
-          "arrivalTime": "2026-10-25T10:24:30+01:00",
-          "departureTime": "2026-10-25T10:24:32+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
           "stopId": "4247",
           "stopSequence": 9,
           "name": "PORTUA / PUERTO (4247)",
           "arrivalTime": "2026-10-25T10:27:01+01:00",
           "departureTime": "2026-10-25T10:27:03+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -973,15 +937,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "4240",
-      "stopName": "ITSASBIDE (CAJA LABORAL) (4240)",
-      "stopLat": "43.4133839696767",
-      "stopLon": "-2.93658581465997",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "44",
+      "stopName": "PUENTE BUSTERRI (ATERPETXEA/ALBERGUE) (44)",
+      "stopLat": "43.4126310932949",
+      "stopLon": "-2.94287865695506",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3499_825_OP9FIN_36780_O9FI3499_349914_10",
-      "lat": "43.413933",
-      "lon": "-2.9348435"
+      "lat": "43.412846",
+      "lon": "-2.9401684"
     },
     {
       "id": "1717",
@@ -1063,15 +1027,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "120",
       "stopName": "LOS CHOPOS 46 (FADURA) (120)",
       "stopLat": "43.3488573756693",
       "stopLon": "-3.00075266169871",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3422_1124_OP9FIN_36000_O9FI3451_345111_4",
-      "lat": "43.340637",
-      "lon": "-2.9940536"
+      "lat": "43.341076",
+      "lon": "-2.996336"
     },
     {
       "id": "1721",
@@ -1378,15 +1342,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "806",
       "stopName": "DEUSTUKO UNIBERTSITATEA (PÍO X PLAZA) (806)",
       "stopLat": "43.2709800352779",
       "stopLon": "-2.94122742945928",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3411_805_OP9FIN_37800_O9FI3411_341101_5",
-      "lat": "43.265854",
-      "lon": "-2.9377742"
+      "lat": "43.266026",
+      "lon": "-2.9372811"
     },
     {
       "id": "1723",
@@ -1522,15 +1486,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4203",
       "stopName": "GANDIA (4203)",
       "stopLat": "43.4013126621352",
       "stopLon": "-2.94319827234394",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3499_824_OP9FIN_37140_O9FI3499_349915_7",
-      "lat": "43.40173",
-      "lon": "-2.9469593"
+      "lat": "43.400837",
+      "lon": "-2.9461696"
     },
     {
       "id": "1724",
@@ -1548,15 +1512,6 @@
       "serviceNumber": "8",
       "serviceCode": "347108",
       "upcomingStops": [
-        {
-          "stopId": "119",
-          "stopSequence": 13,
-          "name": "LOS CHOPOS 40 (119)",
-          "arrivalTime": "2026-10-25T10:35:08+01:00",
-          "departureTime": "2026-10-25T10:35:10+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "120",
           "stopSequence": 14,
@@ -1612,15 +1567,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "118",
-      "stopName": "LOS CHOPOS 22 (118)",
-      "stopLat": "43.3398807293547",
-      "stopLon": "-3.00193121808597",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "119",
+      "stopName": "LOS CHOPOS 40 (119)",
+      "stopLat": "43.3443379068986",
+      "stopLon": "-3.00048783665182",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3471_821_OP9FIN_36000_O9FI3471_347108_6",
-      "lat": "43.33445",
-      "lon": "-3.004552"
+      "lat": "43.340096",
+      "lon": "-3.0019615"
     },
     {
       "id": "1733",
@@ -1774,15 +1729,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "399",
       "stopName": "ARGENTA (399)",
       "stopLat": "43.2861754107115",
       "stopLon": "-2.98002737806666",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3472_823_OP9FIN_37800_O9FI3471_347107_7",
-      "lat": "43.283466",
-      "lon": "-2.9831264"
+      "lat": "43.28352",
+      "lon": "-2.9832127"
     },
     {
       "id": "1762",
@@ -1806,7 +1761,7 @@
           "name": "SANTA ANA PLAZA (3)",
           "arrivalTime": "2026-10-25T10:21:47+01:00",
           "departureTime": "2026-10-25T10:21:49+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Horario GTFS · hora pasada",
           "status": ""
         },
         {
@@ -1945,15 +1900,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2",
       "stopName": "SANTA ANA 2 (2)",
       "stopLat": "43.3252296245016",
       "stopLon": "-3.01338811446609",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3472_822_OP9FIN_37200_O9FI3472_347209_6",
-      "lat": "43.323742",
-      "lon": "-3.015417"
+      "lat": "43.32486",
+      "lon": "-3.0147884"
     },
     {
       "id": "2076",
@@ -1999,14 +1954,14 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4095",
       "stopName": "ALAMEDA RECALDE 14 (4095)",
       "stopLat": "43.2660774480741",
       "stopLon": "-2.93381443537402",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3247_776_OP42FPPV_37500_O42FPP3247_324702_8",
-      "lat": "43.30529",
+      "lat": "43.305317",
       "lon": "-2.9048748"
     },
     {
@@ -2025,15 +1980,15 @@
       "serviceNumber": "4",
       "serviceCode": "324704",
       "upcomingStops": [],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "3372",
       "stopName": "AIREPORTUA/AEROPUERTO (IRTEERAK/SALIDAS) (3372)",
       "stopLat": "43.3053444891538",
       "stopLon": "-2.90556014988344",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3247_775_OP42FPPV_36000_O42FPP3247_324704_8",
-      "lat": "43.286438",
-      "lon": "-2.8888433"
+      "lat": "43.299786",
+      "lon": "-2.8826792"
     },
     {
       "id": "2079",
@@ -2079,15 +2034,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4095",
       "stopName": "ALAMEDA RECALDE 14 (4095)",
       "stopLat": "43.2660774480741",
       "stopLon": "-2.93381443537402",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3247_776_OP42FPPV_36600_O42FPP3247_324705_7",
-      "lat": "43.28904",
-      "lon": "-2.9210603"
+      "lat": "43.28689",
+      "lon": "-2.9377651"
     },
     {
       "id": "2089",
@@ -2133,7 +2088,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "632",
       "stopName": "GRAN VÍA 79 (632)",
       "stopLat": "43.264604915025",
@@ -2165,7 +2120,7 @@
           "name": "GOIETAKO PLAZA (3435)",
           "arrivalTime": "2026-10-25T10:40:42+01:00",
           "departureTime": "2026-10-25T10:40:44+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -2295,15 +2250,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2001",
       "stopName": "TROBIKA 4 (UDALETXEA/AYUNTAMIENTO) (2001)",
       "stopLat": "43.3543181377811",
       "stopLon": "-2.84626420680903",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3518_882_OP42FPPV_36000_O42FPP3517_351751_4",
-      "lat": "43.356277",
-      "lon": "-2.8493629"
+      "lat": "43.35441",
+      "lon": "-2.8464801"
     },
     {
       "id": "2102",
@@ -2321,24 +2276,6 @@
       "serviceNumber": "52",
       "serviceCode": "322552",
       "upcomingStops": [
-        {
-          "stopId": "3136",
-          "stopSequence": 25,
-          "name": "ASTEINZA (3136)",
-          "arrivalTime": "2026-10-25T10:21:13+01:00",
-          "departureTime": "2026-10-25T10:21:15+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "3138",
-          "stopSequence": 26,
-          "name": "UDALETXEA (3138)",
-          "arrivalTime": "2026-10-25T10:22:41+01:00",
-          "departureTime": "2026-10-25T10:22:43+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "3139",
           "stopSequence": 27,
@@ -2412,15 +2349,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "3135",
-      "stopName": "OLEA (3135)",
-      "stopLat": "43.379807691796",
-      "stopLon": "-2.88217274708561",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "3138",
+      "stopName": "UDALETXEA (3138)",
+      "stopLat": "43.3797027590479",
+      "stopLon": "-2.86804462852491",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3225_1130_OP42FPPV_35100_O42FPP3225_322552_3",
-      "lat": "43.379826",
-      "lon": "-2.8822289"
+      "lat": "43.382675",
+      "lon": "-2.8761864"
     },
     {
       "id": "2103",
@@ -2439,21 +2376,12 @@
       "serviceCode": "232251",
       "upcomingStops": [
         {
-          "stopId": "3366",
-          "stopSequence": 9,
-          "name": "MAGDALENABIDEA (ZUBIETAKOERROTA) (3366)",
-          "arrivalTime": "2026-10-25T10:24:34+01:00",
-          "departureTime": "2026-10-25T10:24:36+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "86",
           "stopSequence": 10,
           "name": "MEZO 77-79 (BISTALAI) (86)",
           "arrivalTime": "2026-10-25T10:25:49+01:00",
           "departureTime": "2026-10-25T10:25:51+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -2664,15 +2592,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "224",
-      "stopName": "MAGDALENABIDEA (ZABALBIDEA) (224)",
-      "stopLat": "43.3176071209312",
-      "stopLon": "-2.96601155957622",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "3366",
+      "stopName": "MAGDALENABIDEA (ZUBIETAKOERROTA) (3366)",
+      "stopLat": "43.3180581901557",
+      "stopLon": "-2.96896617095819",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A2322_1137_OP42FPPV_36900_O42FPP2322_232251_5",
-      "lat": "43.32135",
-      "lon": "-2.9627292"
+      "lat": "43.31778",
+      "lon": "-2.968096"
     },
     {
       "id": "2104",
@@ -2690,24 +2618,6 @@
       "serviceNumber": "51",
       "serviceCode": "216151",
       "upcomingStops": [
-        {
-          "stopId": "12",
-          "stopSequence": 10,
-          "name": "ELEXALDE (AUZO ETXEA/CENTRO CÍVICO) (12)",
-          "arrivalTime": "2026-10-25T10:22:18+01:00",
-          "departureTime": "2026-10-25T10:22:20+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "13",
-          "stopSequence": 11,
-          "name": "ONDIZ (13)",
-          "arrivalTime": "2026-10-25T10:23:58+01:00",
-          "departureTime": "2026-10-25T10:24:00+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "14",
           "stopSequence": 12,
@@ -2754,15 +2664,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "4129",
-      "stopName": "LUIS BILBAO LIBANO (4129)",
-      "stopLat": "43.3229781238703",
-      "stopLon": "-2.98589753158437",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "13",
+      "stopName": "ONDIZ (13)",
+      "stopLat": "43.3278682202758",
+      "stopLon": "-2.99107675314668",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A2161_844_OP42FPPV_36300_O42FPP2161_216151_4",
-      "lat": "43.32233",
-      "lon": "-2.9859645"
+      "lat": "43.325813",
+      "lon": "-2.9870493"
     },
     {
       "id": "2123",
@@ -3060,7 +2970,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "3436",
       "stopName": "AITA ELORRIAGA (INSTITUTUA) (3436)",
       "stopLat": "43.3528361044165",
@@ -3068,7 +2978,7 @@
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3517_875_OP42FPPV_39000_O42FPP3527_352753_4",
       "lat": "43.353565",
-      "lon": "-2.841139"
+      "lon": "-2.8411267"
     },
     {
       "id": "2124",
@@ -3357,15 +3267,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "129",
       "stopName": "SAN PEDRO PLAZA (129)",
       "stopLat": "43.2719904972641",
       "stopLon": "-2.94513290408517",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3517_874_OP42FPPV_37800_O42FPP3518_351854_4",
-      "lat": "43.26335",
-      "lon": "-2.9357808"
+      "lat": "43.263367",
+      "lon": "-2.935793"
     },
     {
       "id": "2125",
@@ -3383,24 +3293,6 @@
       "serviceNumber": "55",
       "serviceCode": "351755",
       "upcomingStops": [
-        {
-          "stopId": "2181",
-          "stopSequence": 9,
-          "name": "LANDANE. MAÑU (2181)",
-          "arrivalTime": "2026-10-25T10:22:23+01:00",
-          "departureTime": "2026-10-25T10:22:25+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "2182",
-          "stopSequence": 10,
-          "name": "EMERANDO GANE (2182)",
-          "arrivalTime": "2026-10-25T10:25:04+01:00",
-          "departureTime": "2026-10-25T10:25:06+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "2183",
           "stopSequence": 11,
@@ -3510,15 +3402,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "2180",
-      "stopName": "ARRIZURIETA. MAÑU (2180)",
-      "stopLat": "43.3933960428333",
-      "stopLon": "-2.77080643614067",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "2182",
+      "stopName": "EMERANDO GANE (2182)",
+      "stopLat": "43.3844666251329",
+      "stopLon": "-2.77684032476066",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3527_889_OP42FPPV_36300_O42FPP3517_351755_4",
-      "lat": "43.39435",
-      "lon": "-2.768686"
+      "lat": "43.3849",
+      "lon": "-2.7716727"
     },
     {
       "id": "2129",
@@ -3537,42 +3429,24 @@
       "serviceCode": "353151",
       "upcomingStops": [
         {
-          "stopId": "42",
-          "stopSequence": 44,
-          "name": "ONDIZ (42)",
-          "arrivalTime": "2026-10-25T10:38:12+01:00",
-          "departureTime": "2026-10-25T10:38:14+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "43",
-          "stopSequence": 45,
-          "name": "ELEXALDE (SAKONETA) (43)",
-          "arrivalTime": "2026-10-25T10:39:03+01:00",
-          "departureTime": "2026-10-25T10:39:05+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "84",
           "stopSequence": 46,
           "name": "DONIBANE/SAN JUAN (KONTSERBATORIOA) (84)",
           "arrivalTime": "2026-10-25T10:40:00+01:00",
           "departureTime": "2026-10-25T10:40:02+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "41",
-      "stopName": "ARTATZA (SUHILTZAILEAK/BOMBEROS) (41)",
-      "stopLat": "43.3299935936651",
-      "stopLon": "-2.99650379675314",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "43",
+      "stopName": "ELEXALDE (SAKONETA) (43)",
+      "stopLat": "43.3258238985439",
+      "stopLon": "-2.98798132831635",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3531_1139_OP42FPPV_34200_O42FPP3531_353151_3",
-      "lat": "43.32984",
-      "lon": "-2.9980881"
+      "lat": "43.32623",
+      "lon": "-2.9886403"
     },
     {
       "id": "2130",
@@ -3591,21 +3465,12 @@
       "serviceCode": "353153",
       "upcomingStops": [
         {
-          "stopId": "4186",
-          "stopSequence": 9,
-          "name": "SALSIDU (GETXO I) (4186)",
-          "arrivalTime": "2026-10-25T10:24:08+01:00",
-          "departureTime": "2026-10-25T10:24:10+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
           "stopId": "4187",
           "stopSequence": 10,
           "name": "SALSIDU (BASOTXI) (4187)",
           "arrivalTime": "2026-10-25T10:25:07+01:00",
           "departureTime": "2026-10-25T10:25:09+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -3915,15 +3780,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "120",
-      "stopName": "LOS CHOPOS 46 (FADURA) (120)",
-      "stopLat": "43.3488573756693",
-      "stopLon": "-3.00075266169871",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "4186",
+      "stopName": "SALSIDU (GETXO I) (4186)",
+      "stopLat": "43.3534955448768",
+      "stopLon": "-3.00399212550909",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3531_1138_OP42FPPV_36600_O42FPP3531_353153_2",
-      "lat": "43.34848",
-      "lon": "-3.0004196"
+      "lat": "43.353485",
+      "lon": "-3.0042696"
     },
     {
       "id": "2133",
@@ -3941,33 +3806,6 @@
       "serviceNumber": "51",
       "serviceCode": "352251",
       "upcomingStops": [
-        {
-          "stopId": "404",
-          "stopSequence": 4,
-          "name": "ANDIKOLLANO (ANBULATORIOA) (404)",
-          "arrivalTime": "2026-10-25T10:18:44+01:00",
-          "departureTime": "2026-10-25T10:18:46+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "405",
-          "stopSequence": 5,
-          "name": "LUTXANA (ELIZA/IGLESIA) (405)",
-          "arrivalTime": "2026-10-25T10:19:36+01:00",
-          "departureTime": "2026-10-25T10:19:38+01:00",
-          "timeSource": "Horario GTFS · hora pasada",
-          "status": ""
-        },
-        {
-          "stopId": "649",
-          "stopSequence": 6,
-          "name": "LANDETA (GOIKOA) (649)",
-          "arrivalTime": "2026-10-25T10:22:55+01:00",
-          "departureTime": "2026-10-25T10:22:57+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "3553",
           "stopSequence": 7,
@@ -4194,15 +4032,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "403",
-      "stopName": "CIRILO SAGASTAGOITIA (403)",
-      "stopLat": "43.2861398073241",
-      "stopLon": "-2.98256655243816",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "649",
+      "stopName": "LANDETA (GOIKOA) (649)",
+      "stopLat": "43.2932903930767",
+      "stopLon": "-2.98918424176285",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3522_885_OP42FPPV_36900_O42FPP3522_352251_5",
-      "lat": "43.286213",
-      "lon": "-2.9827065"
+      "lat": "43.290913",
+      "lon": "-2.9793398"
     },
     {
       "id": "2134",
@@ -4410,7 +4248,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "3436",
       "stopName": "AITA ELORRIAGA (INSTITUTUA) (3436)",
       "stopLat": "43.3528361044165",
@@ -4418,7 +4256,7 @@
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3537_1143_OP42FPPV_38400_O42FPP3537_353751_4",
       "lat": "43.353413",
-      "lon": "-2.84072"
+      "lon": "-2.840683"
     },
     {
       "id": "2136",
@@ -4436,15 +4274,6 @@
       "serviceNumber": "51",
       "serviceCode": "215151",
       "upcomingStops": [
-        {
-          "stopId": "841",
-          "stopSequence": 16,
-          "name": "BASOZABAL (841)",
-          "arrivalTime": "2026-10-25T10:28:12+01:00",
-          "departureTime": "2026-10-25T10:28:14+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "842",
           "stopSequence": 17,
@@ -4469,7 +4298,7 @@
           "name": "LARRABARRI (OLARRA) (844)",
           "arrivalTime": "2026-10-25T10:32:08+01:00",
           "departureTime": "2026-10-25T10:32:10+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -4608,15 +4437,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "840",
-      "stopName": "SAN JUAN (840)",
-      "stopLat": "43.2993913130226",
-      "stopLon": "-2.92859951474827",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "841",
+      "stopName": "BASOZABAL (841)",
+      "stopLat": "43.2987890869372",
+      "stopLon": "-2.92331754322984",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A2151_832_OP42FPPV_36000_O42FPP2151_215151_5",
-      "lat": "43.29936",
-      "lon": "-2.9341524"
+      "lat": "43.29911",
+      "lon": "-2.9245734"
     },
     {
       "id": "2137",
@@ -4635,24 +4464,6 @@
       "serviceCode": "322451",
       "upcomingStops": [
         {
-          "stopId": "925",
-          "stopSequence": 6,
-          "name": "BIDEKURTZE (925)",
-          "arrivalTime": "2026-10-25T10:20:54+01:00",
-          "departureTime": "2026-10-25T10:20:56+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "926",
-          "stopSequence": 7,
-          "name": "ABELETXEA/GRANJA (926)",
-          "arrivalTime": "2026-10-25T10:21:42+01:00",
-          "departureTime": "2026-10-25T10:21:44+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "3379",
           "stopSequence": 8,
           "name": "GELDO (3379)",
@@ -4667,7 +4478,7 @@
           "name": "SAN CRISTOBAL (927)",
           "arrivalTime": "2026-10-25T10:25:25+01:00",
           "departureTime": "2026-10-25T10:25:27+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -4842,15 +4653,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "924",
-      "stopName": "TEKNOLOGIA-PARKEA (EUSKALTEL) (924)",
-      "stopLat": "43.2947547037241",
-      "stopLon": "-2.86114737570928",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "926",
+      "stopName": "ABELETXEA/GRANJA (926)",
+      "stopLat": "43.2947365570966",
+      "stopLon": "-2.86865515020507",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3224_862_OP42FPPV_36900_O42FPP3224_322451_5",
-      "lat": "43.293396",
-      "lon": "-2.8609087"
+      "lat": "43.2954",
+      "lon": "-2.8665874"
     },
     {
       "id": "2139",
@@ -5031,15 +4842,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "693",
       "stopName": "LAUROETA  (HARITZMENDI) (693)",
       "stopLat": "43.3233428342067",
       "stopLon": "-2.912300557471",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A2153_1249_OP42FPPV_36000_O42FPP2153_215351_4",
-      "lat": "43.31921",
-      "lon": "-2.9163349"
+      "lat": "43.323376",
+      "lon": "-2.9122837"
     },
     {
       "id": "2140",
@@ -5057,15 +4868,6 @@
       "serviceNumber": "52",
       "serviceCode": "215352",
       "upcomingStops": [
-        {
-          "stopId": "890",
-          "stopSequence": 30,
-          "name": "IBARREKOLANDA (890)",
-          "arrivalTime": "2026-10-25T10:52:44+01:00",
-          "departureTime": "2026-10-25T10:52:46+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
         {
           "stopId": "167",
           "stopSequence": 31,
@@ -5094,15 +4896,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "889",
-      "stopName": "ENEKURI (889)",
-      "stopLat": "43.289196019445",
-      "stopLon": "-2.96140057552057",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "890",
+      "stopName": "IBARREKOLANDA (890)",
+      "stopLat": "43.2732998999016",
+      "stopLon": "-2.95354863781794",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A2153_1250_OP42FPPV_35400_O42FPP2153_215352_4",
-      "lat": "43.291565",
-      "lon": "-2.960356"
+      "lat": "43.28019",
+      "lon": "-2.9564195"
     },
     {
       "id": "2141",
@@ -5120,24 +4922,6 @@
       "serviceNumber": "51",
       "serviceCode": "322351",
       "upcomingStops": [
-        {
-          "stopId": "854",
-          "stopSequence": 11,
-          "name": "UZABAL (ATHLETIC) (854)",
-          "arrivalTime": "2026-10-25T10:41:28+01:00",
-          "departureTime": "2026-10-25T10:41:30+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
-          "stopId": "855",
-          "stopSequence": 12,
-          "name": "ELEXALDE (855)",
-          "arrivalTime": "2026-10-25T10:44:24+01:00",
-          "departureTime": "2026-10-25T10:44:26+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "856",
           "stopSequence": 13,
@@ -5202,15 +4986,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "853",
-      "stopName": "KURUTZEA/LA CRUZ (853)",
-      "stopLat": "43.2765180082782",
-      "stopLon": "-2.84538197306887",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "855",
+      "stopName": "ELEXALDE (855)",
+      "stopLat": "43.2736370497291",
+      "stopLon": "-2.83276568340284",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3223_858_OP42FPPV_35400_O42FPP3223_322351_6",
-      "lat": "43.27948",
-      "lon": "-2.8521037"
+      "lat": "43.275757",
+      "lon": "-2.8410583"
     },
     {
       "id": "2150",
@@ -5234,7 +5018,7 @@
           "name": "MOYUA PLAZA (OGASUNA/HACIENDA) (896)",
           "arrivalTime": "2026-10-25T10:22:01+01:00",
           "departureTime": "2026-10-25T10:22:03+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Horario GTFS · hora pasada",
           "status": ""
         },
         {
@@ -5256,15 +5040,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "632",
       "stopName": "GRAN VÍA 79 (632)",
       "stopLat": "43.264604915025",
       "stopLon": "-2.94265486929186",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3247_775_OP42FPPV_36900_O42FPP3247_324771_9",
-      "lat": "43.2624",
-      "lon": "-2.9502592"
+      "lat": "43.262043",
+      "lon": "-2.949163"
     },
     {
       "id": "3292",
@@ -5288,7 +5072,7 @@
           "name": "GERNIKA 55 (SAN MIGUEL) (276)",
           "arrivalTime": "2026-10-25T10:23:50+01:00",
           "departureTime": "2026-10-25T10:23:52+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -5418,15 +5202,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2594",
       "stopName": "ATXUKARRO INDUSTRIALDEA 4 (JATETXEA) (2594)",
       "stopLat": "43.2151410733553",
       "stopLon": "-2.8906562631544",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3632_987_OP41FIN_37200_O41FI3632_363253_5",
-      "lat": "43.215954",
-      "lon": "-2.8928127"
+      "lat": "43.214756",
+      "lon": "-2.8918421"
     },
     {
       "id": "3293",
@@ -5571,15 +5355,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1756",
       "stopName": "ERNESTO ERKOREKA PLAZA (UDALETXEA/AYUNTAMIENTO) (1756)",
       "stopLat": "43.264125395209",
       "stopLon": "-2.92259158192287",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3632_986_OP41FIN_37200_O41FI3632_363251_5",
-      "lat": "43.2602",
-      "lon": "-2.9258287"
+      "lat": "43.260723",
+      "lon": "-2.925976"
     },
     {
       "id": "3296",
@@ -5787,7 +5571,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "273",
       "stopName": "SEVERO OCHOA 13 (CAJA LABORAL) (273)",
       "stopLat": "43.2070240111043",
@@ -5795,7 +5579,7 @@
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3641_992_OP41FIN_38100_O41FI3641_364153_6",
       "lat": "43.20778",
-      "lon": "-2.8879151"
+      "lon": "-2.887903"
     },
     {
       "id": "3319",
@@ -5832,15 +5616,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "305",
       "stopName": "ZABALBURU (AUTONOMÍA 4) (305)",
       "stopLat": "43.2573977902076",
       "stopLon": "-2.93514222498991",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3926_1039_OP41FIN_34800_O41FI3926_392651_3",
-      "lat": "43.24659",
-      "lon": "-2.9327803"
+      "lat": "43.251507",
+      "lon": "-2.9345858"
     },
     {
       "id": "3321",
@@ -5858,24 +5642,6 @@
       "serviceNumber": "53",
       "serviceCode": "391753",
       "upcomingStops": [
-        {
-          "stopId": "2642",
-          "stopSequence": 28,
-          "name": "USANSOLO (2642)",
-          "arrivalTime": "2026-10-25T10:33:36+01:00",
-          "departureTime": "2026-10-25T10:33:38+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "1922",
-          "stopSequence": 29,
-          "name": "OSPITALEA/HOSPITAL (1922)",
-          "arrivalTime": "2026-10-25T10:36:22+01:00",
-          "departureTime": "2026-10-25T10:36:24+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "1834",
           "stopSequence": 30,
@@ -6048,15 +5814,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "2641",
-      "stopName": "GANE (2641)",
-      "stopLat": "43.2142084506299",
-      "stopLon": "-2.81135035657135",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1922",
+      "stopName": "OSPITALEA/HOSPITAL (1922)",
+      "stopLat": "43.2232002305628",
+      "stopLon": "-2.81927385049364",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3917_1017_OP41FIN_34800_O41FI3917_391753_3",
-      "lat": "43.214264",
-      "lon": "-2.8115225"
+      "lat": "43.220726",
+      "lon": "-2.8155906"
     },
     {
       "id": "3327",
@@ -6074,24 +5840,6 @@
       "serviceNumber": "57",
       "serviceCode": "392557",
       "upcomingStops": [
-        {
-          "stopId": "4066",
-          "stopSequence": 13,
-          "name": "KALTZADA (4066)",
-          "arrivalTime": "2026-10-25T10:30:25+01:00",
-          "departureTime": "2026-10-25T10:30:27+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
-          "stopId": "4064",
-          "stopSequence": 14,
-          "name": "DIMA PLAZA (4064)",
-          "arrivalTime": "2026-10-25T10:34:21+01:00",
-          "departureTime": "2026-10-25T10:34:23+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
         {
           "stopId": "3224",
           "stopSequence": 15,
@@ -6417,15 +6165,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "4068",
-      "stopName": "AROSTEGIETA (4068)",
-      "stopLat": "43.1301095345606",
-      "stopLon": "-2.74434315914328",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "4064",
+      "stopName": "DIMA PLAZA (4064)",
+      "stopLat": "43.1432818997322",
+      "stopLon": "-2.75222187195538",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3925_1037_OP41FIN_35700_O41FI3925_392557_3",
-      "lat": "43.130344",
-      "lon": "-2.7443564"
+      "lat": "43.13866",
+      "lon": "-2.7507527"
     },
     {
       "id": "3328",
@@ -6449,7 +6197,7 @@
           "name": "ZUMALAKARREGI (ETXEBARRIA PARKEA) (183)",
           "arrivalTime": "2026-10-25T10:19:48+01:00",
           "departureTime": "2026-10-25T10:19:50+01:00",
-          "timeSource": "Horario GTFS · hora pasada",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -6458,7 +6206,7 @@
           "name": "ZUMALAKARREGI 56 (SANTUTXU) (1759)",
           "arrivalTime": "2026-10-25T10:21:22+01:00",
           "departureTime": "2026-10-25T10:21:24+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Horario GTFS · hora pasada",
           "status": ""
         },
         {
@@ -6831,15 +6579,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1757",
       "stopName": "ZUMALAKARREGI (PANERA) (1757)",
       "stopLat": "43.2647349324567",
       "stopLon": "-2.91858625305444",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3917_1016_OP41FIN_36900_O41FI3917_391755_4",
-      "lat": "43.26416",
-      "lon": "-2.9228053"
+      "lat": "43.264923",
+      "lon": "-2.9199085"
     },
     {
       "id": "3330",
@@ -7434,7 +7182,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1756",
       "stopName": "ERNESTO ERKOREKA PLAZA (UDALETXEA/AYUNTAMIENTO) (1756)",
       "stopLat": "43.264125395209",
@@ -7442,7 +7190,7 @@
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3912_1012_OP41FIN_37800_O41FI3912_391255_3",
       "lat": "43.259808",
-      "lon": "-2.9295254"
+      "lon": "-2.9295378"
     },
     {
       "id": "3332",
@@ -7461,21 +7209,12 @@
       "serviceCode": "393255",
       "upcomingStops": [
         {
-          "stopId": "261",
-          "stopSequence": 5,
-          "name": "BENGOETXE - LA TROKA (261)",
-          "arrivalTime": "2026-10-25T10:20:56+01:00",
-          "departureTime": "2026-10-25T10:20:58+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "257",
           "stopSequence": 6,
           "name": "OLABARRIETA (POBLADO FIRESTONE) (257)",
           "arrivalTime": "2026-10-25T10:24:20+01:00",
           "departureTime": "2026-10-25T10:24:22+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -7497,15 +7236,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "4091",
-      "stopName": "SIXTA BARRENETXEA (4091)",
-      "stopLat": "43.2336318467931",
-      "stopLon": "-2.85402146698378",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "261",
+      "stopName": "BENGOETXE - LA TROKA (261)",
+      "stopLat": "43.2331611219963",
+      "stopLon": "-2.85988826758261",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3932_1051_OP41FIN_36900_O41FI3932_393255_9",
-      "lat": "43.233852",
-      "lon": "-2.851266"
+      "lat": "43.23351",
+      "lon": "-2.8572028"
     },
     {
       "id": "3334",
@@ -7529,7 +7268,7 @@
           "name": "GIPUZKOA ETORBIDEA 54 (SAN LORENZO) (2802)",
           "arrivalTime": "2026-10-25T10:36:28+01:00",
           "departureTime": "2026-10-25T10:36:30+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -7551,15 +7290,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2801",
       "stopName": "KALTXANGO (2801)",
       "stopLat": "43.1856209556844",
       "stopLon": "-2.5034194699974",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3926_1038_OP41FIN_34800_O41FI3923_392353_3",
-      "lat": "43.176376",
-      "lon": "-2.5123217"
+      "lat": "43.18658",
+      "lon": "-2.5077858"
     },
     {
       "id": "3337",
@@ -8055,15 +7794,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "3890",
       "stopName": "ZUBIZABAL (3890)",
       "stopLat": "43.0514403185389",
       "stopLon": "-2.69783209367338",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3925_1033_OP41FIN_38700_O41FI3631_363163_5",
-      "lat": "43.02518",
-      "lon": "-2.688408"
+      "lat": "43.02517",
+      "lon": "-2.6884325"
     },
     {
       "id": "3338",
@@ -8667,15 +8406,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "3966",
       "stopName": "AMAÑA (3966)",
       "stopLat": "43.184557514189",
       "stopLon": "-2.48031138668381",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3912_1013_OP41FIN_37200_O41FI3912_391257_3",
-      "lat": "43.184074",
-      "lon": "-2.4753442"
+      "lat": "43.1841",
+      "lon": "-2.475344"
     },
     {
       "id": "3339",
@@ -8694,21 +8433,12 @@
       "serviceCode": "391253",
       "upcomingStops": [
         {
-          "stopId": "2634",
-          "stopSequence": 38,
-          "name": "ASTEPE (2634)",
-          "arrivalTime": "2026-10-25T10:33:56+01:00",
-          "departureTime": "2026-10-25T10:33:58+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "2635",
           "stopSequence": 39,
           "name": "BOLUNBURU (2635)",
           "arrivalTime": "2026-10-25T10:37:50+01:00",
           "departureTime": "2026-10-25T10:37:52+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -8964,15 +8694,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "2633",
-      "stopName": "LA TEJERA (2633)",
-      "stopLat": "43.2187533104239",
-      "stopLon": "-2.74002045256792",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "2634",
+      "stopName": "ASTEPE (2634)",
+      "stopLat": "43.2129404207543",
+      "stopLon": "-2.74190402467996",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3912_1013_OP41FIN_33600_O41FI3912_391253_2",
-      "lat": "43.219986",
-      "lon": "-2.7361512"
+      "lat": "43.217834",
+      "lon": "-2.741504"
     },
     {
       "id": "3354",
@@ -9153,15 +8883,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4084",
       "stopName": "ANBULATORIOA (4084)",
       "stopLat": "43.2339617051763",
       "stopLon": "-2.84459931536462",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3631_983_OP41FIN_45900_O41FI3631_363155_7",
-      "lat": "43.234013",
-      "lon": "-2.8490734"
+      "lat": "43.23404",
+      "lon": "-2.849061"
     },
     {
       "id": "3355",
@@ -9180,15 +8910,6 @@
       "serviceCode": "363151",
       "upcomingStops": [
         {
-          "stopId": "270",
-          "stopSequence": 16,
-          "name": "UDALETXEA/AYUNTAMIENTO (270)",
-          "arrivalTime": "2026-10-25T11:08:00+01:00",
-          "departureTime": "2026-10-25T11:08:02+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "4085",
           "stopSequence": 17,
           "name": "BIZKAI 12 (4085)",
@@ -9203,7 +8924,7 @@
           "name": "ANBULATORIOA (4083)",
           "arrivalTime": "2026-10-25T11:11:51+01:00",
           "departureTime": "2026-10-25T11:11:53+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -9216,15 +8937,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "269",
-      "stopName": "JUAN BAUTISTA URIARTE 24 (269)",
-      "stopLat": "43.2300454994638",
-      "stopLon": "-2.84522512428221",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "270",
+      "stopName": "UDALETXEA/AYUNTAMIENTO (270)",
+      "stopLat": "43.2307862257723",
+      "stopLon": "-2.84030961712574",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3631_982_OP41FIN_36000_O41FI3631_363151_4",
-      "lat": "43.22974",
-      "lon": "-2.8475814"
+      "lat": "43.230778",
+      "lon": "-2.8410397"
     },
     {
       "id": "3358",
@@ -9396,15 +9117,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1756",
       "stopName": "ERNESTO ERKOREKA PLAZA (UDALETXEA/AYUNTAMIENTO) (1756)",
       "stopLat": "43.264125395209",
       "stopLon": "-2.92259158192287",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3631_982_OP41FIN_37800_O41FI3631_363157_5",
-      "lat": "43.26012",
-      "lon": "-2.9259522"
+      "lat": "43.26022",
+      "lon": "-2.925841"
     },
     {
       "id": "3359",
@@ -9810,15 +9531,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "3020",
       "stopName": "ZUBIAUR (3020)",
       "stopLat": "43.1074966708213",
       "stopLon": "-2.911867492567",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3613_967_OP41FIN_40200_O41FI3613_361355_3",
-      "lat": "43.1058",
-      "lon": "-2.9085763"
+      "lat": "43.105793",
+      "lon": "-2.9085886"
     },
     {
       "id": "3361",
@@ -9837,21 +9558,12 @@
       "serviceCode": "393251",
       "upcomingStops": [
         {
-          "stopId": "1769",
-          "stopSequence": 11,
-          "name": "OLABARRI (1769)",
-          "arrivalTime": "2026-10-25T10:26:06+01:00",
-          "departureTime": "2026-10-25T10:26:08+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "2615",
           "stopSequence": 12,
           "name": "URASKA (2615)",
           "arrivalTime": "2026-10-25T10:28:06+01:00",
           "departureTime": "2026-10-25T10:28:08+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -9873,15 +9585,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1768",
-      "stopName": "ABUSU (1768)",
-      "stopLat": "43.2306472944951",
-      "stopLon": "-2.83134477558303",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1769",
+      "stopName": "OLABARRI (1769)",
+      "stopLat": "43.2316090240281",
+      "stopLon": "-2.82412563675584",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3932_1054_OP41FIN_36000_O41FI3932_393251_8",
-      "lat": "43.229866",
-      "lon": "-2.8333945"
+      "lat": "43.230755",
+      "lon": "-2.8313603"
     },
     {
       "id": "3362",
@@ -9954,15 +9666,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "265",
       "stopName": "APERRIBAI (265)",
       "stopLat": "43.2400036626031",
       "stopLon": "-2.87384837882886",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3932_1052_OP41FIN_37200_O41FI3932_393253_9",
-      "lat": "43.247257",
-      "lon": "-2.9065912"
+      "lat": "43.247562",
+      "lon": "-2.9086971"
     },
     {
       "id": "3364",
@@ -10161,7 +9873,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1834",
       "stopName": "LABEAGA (1834)",
       "stopLat": "43.2250097920331",
@@ -10187,15 +9899,6 @@
       "serviceNumber": "59",
       "serviceCode": "364159",
       "upcomingStops": [
-        {
-          "stopId": "296",
-          "stopSequence": 9,
-          "name": "AGIRRE LEHENDAKARIA 76 (ARIZ DORRETXEA) (296)",
-          "arrivalTime": "2026-10-25T10:23:58+01:00",
-          "departureTime": "2026-10-25T10:24:00+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "2492",
           "stopSequence": 10,
@@ -10323,15 +10026,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "295",
-      "stopName": "NAGUSIA (BEGIRATOKIA/MIRADOR) (295)",
-      "stopLat": "43.2354621725624",
-      "stopLon": "-2.88816872094307",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "296",
+      "stopName": "AGIRRE LEHENDAKARIA 76 (ARIZ DORRETXEA) (296)",
+      "stopLat": "43.2360453419416",
+      "stopLon": "-2.88157124263191",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3641_992_OP41FIN_36300_O41FI3641_364159_3",
-      "lat": "43.23533",
-      "lon": "-2.8893795"
+      "lat": "43.2368",
+      "lon": "-2.8850787"
     },
     {
       "id": "3366",
@@ -10494,15 +10197,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "3987",
       "stopName": "ANBULATORIOA (GOIKOGANE) (3987)",
       "stopLat": "43.1408775911144",
       "stopLon": "-2.95955578467503",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3613_966_OP41FIN_34500_O41FI3613_361353_3",
-      "lat": "43.14702",
-      "lon": "-2.939924"
+      "lat": "43.13756",
+      "lon": "-2.957603"
     },
     {
       "id": "3367",
@@ -10520,15 +10223,6 @@
       "serviceNumber": "57",
       "serviceCode": "391157",
       "upcomingStops": [
-        {
-          "stopId": "2807",
-          "stopSequence": 5,
-          "name": "TRAÑABARREN (2807)",
-          "arrivalTime": "2026-10-25T10:20:59+01:00",
-          "departureTime": "2026-10-25T10:21:01+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "2808",
           "stopSequence": 6,
@@ -10665,15 +10359,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "2793",
-      "stopName": "ZUBIBITARTE (2793)",
-      "stopLat": "43.168528683215",
-      "stopLon": "-2.61220072499783",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "2807",
+      "stopName": "TRAÑABARREN (2807)",
+      "stopLat": "43.1666516718312",
+      "stopLon": "-2.61101930870924",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3913_1015_OP41FIN_36900_O41FI3911_391157_4",
-      "lat": "43.16905",
-      "lon": "-2.6193128"
+      "lat": "43.168552",
+      "lon": "-2.610815"
     },
     {
       "id": "3368",
@@ -10692,30 +10386,12 @@
       "serviceCode": "361351",
       "upcomingStops": [
         {
-          "stopId": "4012",
-          "stopSequence": 15,
-          "name": "ARETA (ELIZA/IGLESIA) (4012)",
-          "arrivalTime": "2026-10-25T10:31:34+01:00",
-          "departureTime": "2026-10-25T10:31:36+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "4057",
-          "stopSequence": 16,
-          "name": "BITORIKA (4057)",
-          "arrivalTime": "2026-10-25T10:33:00+01:00",
-          "departureTime": "2026-10-25T10:33:02+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "3995",
           "stopSequence": 17,
           "name": "ZUMALAKARREGI (BITORIKA) (3995)",
           "arrivalTime": "2026-10-25T10:34:44+01:00",
           "departureTime": "2026-10-25T10:34:46+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -10998,15 +10674,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "4010",
-      "stopName": "ARETA (GELTOKIA/ESTACIÓN) (4010)",
-      "stopLat": "43.1456969394885",
-      "stopLon": "-2.9425816741594",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "4057",
+      "stopName": "BITORIKA (4057)",
+      "stopLat": "43.1486092184063",
+      "stopLon": "-2.95052368992062",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3613_971_OP41FIN_36300_O41FI3613_361351_3",
-      "lat": "43.144276",
-      "lon": "-2.9416237"
+      "lat": "43.147427",
+      "lon": "-2.9449782"
     },
     {
       "id": "3369",
@@ -11030,7 +10706,7 @@
           "name": "KUKULLAGA (259)",
           "arrivalTime": "2026-10-25T10:41:58+01:00",
           "departureTime": "2026-10-25T10:42:00+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -11106,15 +10782,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "258",
       "stopName": "APERRIBAI (258)",
       "stopLat": "43.2404538699003",
       "stopLon": "-2.87382281635625",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3911_1011_OP41FIN_34200_O41FI3913_391353_4",
-      "lat": "43.238995",
-      "lon": "-2.8725362"
+      "lat": "43.240364",
+      "lon": "-2.8738513"
     },
     {
       "id": "3370",
@@ -11520,7 +11196,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4088",
       "stopName": "LANDAKO (4088)",
       "stopLat": "43.171802230907",
@@ -11528,7 +11204,7 @@
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3911_1011_OP41FIN_37800_O41FI3911_391155_5",
       "lat": "43.171246",
-      "lon": "-2.6270869"
+      "lon": "-2.6270993"
     },
     {
       "id": "3371",
@@ -11547,21 +11223,12 @@
       "serviceCode": "391151",
       "upcomingStops": [
         {
-          "stopId": "270",
-          "stopSequence": 13,
-          "name": "UDALETXEA/AYUNTAMIENTO (270)",
-          "arrivalTime": "2026-10-25T10:21:11+01:00",
-          "departureTime": "2026-10-25T10:21:13+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "4087",
           "stopSequence": 14,
           "name": "ZABALGANE (TELEFONICA) (4087)",
           "arrivalTime": "2026-10-25T10:21:29+01:00",
           "departureTime": "2026-10-25T10:21:31+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Horario GTFS · hora pasada",
           "status": ""
         },
         {
@@ -11570,7 +11237,7 @@
           "name": "ABUSU (1768)",
           "arrivalTime": "2026-10-25T10:22:53+01:00",
           "departureTime": "2026-10-25T10:22:55+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -11826,26 +11493,26 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "269",
-      "stopName": "JUAN BAUTISTA URIARTE 24 (269)",
-      "stopLat": "43.2300454994638",
-      "stopLon": "-2.84522512428221",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "270",
+      "stopName": "UDALETXEA/AYUNTAMIENTO (270)",
+      "stopLat": "43.2307862257723",
+      "stopLon": "-2.84030961712574",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3911_1010_OP41FIN_36000_O41FI3911_391151_4",
-      "lat": "43.22978",
-      "lon": "-2.8472736"
+      "lat": "43.2306",
+      "lon": "-2.8421116"
     },
     {
       "id": "3372",
       "idType": "ID de vehículo",
-      "line": "A3641",
+      "line": "A3928",
       "lineRef": "",
       "direction": "",
-      "destination": "ARRIGORRIAGA",
+      "destination": "ZEBERIO",
       "destinationSource": "GTFS · horario",
       "destinationRef": "",
-      "tripId": "trp_A3641_1002_OP41FIN_34200_O41FI3928_392851_4",
+      "tripId": "trp_A3928_1155_OP41FIN_37200_O41FI3928_392851_5",
       "tripShortName": "",
       "blockId": "",
       "calendarServiceId": "OP41FIN",
@@ -11853,24 +11520,222 @@
       "serviceCode": "392851",
       "upcomingStops": [
         {
-          "stopId": "302",
-          "stopSequence": 43,
-          "name": "URGOITI (ANBULATORIOA) (302)",
-          "arrivalTime": "2026-10-25T10:10:00+01:00",
-          "departureTime": "2026-10-25T10:10:02+01:00",
-          "timeSource": "Horario GTFS · hora pasada",
+          "stopId": "2421",
+          "stopSequence": 3,
+          "name": "AGUIRRE (MARTIARTU INDUSTRIALDEA) (2421)",
+          "arrivalTime": "2026-10-25T10:28:05+01:00",
+          "departureTime": "2026-10-25T10:28:07+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2422",
+          "stopSequence": 4,
+          "name": "BENTAKO ERREKA (2422)",
+          "arrivalTime": "2026-10-25T10:31:17+01:00",
+          "departureTime": "2026-10-25T10:31:19+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2423",
+          "stopSequence": 5,
+          "name": "TXAKO (2423)",
+          "arrivalTime": "2026-10-25T10:33:54+01:00",
+          "departureTime": "2026-10-25T10:33:56+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2424",
+          "stopSequence": 6,
+          "name": "USILA ZUBIA / PUENTE USILA (2424)",
+          "arrivalTime": "2026-10-25T10:35:17+01:00",
+          "departureTime": "2026-10-25T10:35:19+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2425",
+          "stopSequence": 7,
+          "name": "TORRE DE UGAO 8 (2425)",
+          "arrivalTime": "2026-10-25T10:36:35+01:00",
+          "departureTime": "2026-10-25T10:36:37+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2426",
+          "stopSequence": 8,
+          "name": "TORRE DE UGAO (GELTOKIA/ESTACIÓN) (2426)",
+          "arrivalTime": "2026-10-25T10:37:30+01:00",
+          "departureTime": "2026-10-25T10:37:32+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2427",
+          "stopSequence": 9,
+          "name": "SAN BARTOLOMÉ (CHAKALA) (2427)",
+          "arrivalTime": "2026-10-25T10:39:01+01:00",
+          "departureTime": "2026-10-25T10:39:03+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2428",
+          "stopSequence": 10,
+          "name": "ARESANDIAGA (2428)",
+          "arrivalTime": "2026-10-25T10:40:25+01:00",
+          "departureTime": "2026-10-25T10:40:27+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "4122",
+          "stopSequence": 11,
+          "name": "ELOSU (4122)",
+          "arrivalTime": "2026-10-25T10:41:24+01:00",
+          "departureTime": "2026-10-25T10:41:26+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2430",
+          "stopSequence": 12,
+          "name": "ELORREBIETA (2430)",
+          "arrivalTime": "2026-10-25T10:42:46+01:00",
+          "departureTime": "2026-10-25T10:42:48+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2431",
+          "stopSequence": 13,
+          "name": "ARBILDU (2431)",
+          "arrivalTime": "2026-10-25T10:47:27+01:00",
+          "departureTime": "2026-10-25T10:47:29+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2432",
+          "stopSequence": 14,
+          "name": "URIONDO (2432)",
+          "arrivalTime": "2026-10-25T10:48:31+01:00",
+          "departureTime": "2026-10-25T10:48:33+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2433",
+          "stopSequence": 15,
+          "name": "SANTA KRUTZ (2433)",
+          "arrivalTime": "2026-10-25T10:49:52+01:00",
+          "departureTime": "2026-10-25T10:49:54+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2434",
+          "stopSequence": 16,
+          "name": "TELLERITXU (2434)",
+          "arrivalTime": "2026-10-25T10:51:19+01:00",
+          "departureTime": "2026-10-25T10:51:21+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2435",
+          "stopSequence": 17,
+          "name": "ARKULANDA (2435)",
+          "arrivalTime": "2026-10-25T10:52:58+01:00",
+          "departureTime": "2026-10-25T10:53:00+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2436",
+          "stopSequence": 18,
+          "name": "OLATXU (2436)",
+          "arrivalTime": "2026-10-25T10:54:22+01:00",
+          "departureTime": "2026-10-25T10:54:24+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2437",
+          "stopSequence": 19,
+          "name": "OLATZAR (2437)",
+          "arrivalTime": "2026-10-25T10:56:03+01:00",
+          "departureTime": "2026-10-25T10:56:05+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2438",
+          "stopSequence": 20,
+          "name": "AREILTZA (2438)",
+          "arrivalTime": "2026-10-25T10:58:04+01:00",
+          "departureTime": "2026-10-25T10:58:06+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2945",
+          "stopSequence": 21,
+          "name": "ARTZUBI (2945)",
+          "arrivalTime": "2026-10-25T10:59:32+01:00",
+          "departureTime": "2026-10-25T10:59:34+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2439",
+          "stopSequence": 22,
+          "name": "ZAUTUOLA (2439)",
+          "arrivalTime": "2026-10-25T11:01:57+01:00",
+          "departureTime": "2026-10-25T11:01:59+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2440",
+          "stopSequence": 23,
+          "name": "UDALETXEA/AYUNTAMIENTO (2440)",
+          "arrivalTime": "2026-10-25T11:03:57+01:00",
+          "departureTime": "2026-10-25T11:03:59+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2441",
+          "stopSequence": 24,
+          "name": "ZUBIBARRIA (2441)",
+          "arrivalTime": "2026-10-25T11:06:03+01:00",
+          "departureTime": "2026-10-25T11:06:05+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "2442",
+          "stopSequence": 25,
+          "name": "ERMITABARRI (2442)",
+          "arrivalTime": "2026-10-25T11:09:33+01:00",
+          "departureTime": "2026-10-25T11:09:35+01:00",
+          "timeSource": "Horario GTFS",
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "301",
-      "stopName": "URGOITI (GELTOKIA/ESTACIÓN) (301)",
-      "stopLat": "43.2101322156615",
-      "stopLon": "-2.8882709003036",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "303",
+      "stopName": "AIXARTE BEKOA (IKASTOLA) (303)",
+      "stopLat": "43.2043823955078",
+      "stopLon": "-2.89268206116345",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
-      "journeyRef": "trp_A3641_1002_OP41FIN_34200_O41FI3928_392851_4",
-      "lat": "43.211716",
-      "lon": "-2.8879695"
+      "journeyRef": "trp_A3928_1155_OP41FIN_37200_O41FI3928_392851_5",
+      "lat": "43.20797",
+      "lon": "-2.8879395"
     },
     {
       "id": "3378",
@@ -12015,15 +11880,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2702",
       "stopName": "MASPE 1 (2702)",
       "stopLat": "43.1739043454816",
       "stopLon": "-2.63933721432546",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3923_1020_OP41FIN_36000_O41FI3926_392657_4",
-      "lat": "43.23296",
-      "lon": "-2.8661203"
+      "lat": "43.232395",
+      "lon": "-2.8390772"
     },
     {
       "id": "3380",
@@ -12041,15 +11906,15 @@
       "serviceNumber": "55",
       "serviceCode": "392355",
       "upcomingStops": [],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2877",
       "stopName": "BILBAO INTERMODAL (2877)",
       "stopLat": "43.2610601506695",
       "stopLon": "-2.94916366936589",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3923_1021_OP41FIN_33000_O41FI3923_392355_3",
-      "lat": "43.258106",
-      "lon": "-2.9500408"
+      "lat": "43.26071",
+      "lon": "-2.9509997"
     },
     {
       "id": "3381",
@@ -12068,30 +11933,12 @@
       "serviceCode": "392659",
       "upcomingStops": [
         {
-          "stopId": "2834",
-          "stopSequence": 6,
-          "name": "ANDRA MARI (2834)",
-          "arrivalTime": "2026-10-25T10:21:56+01:00",
-          "departureTime": "2026-10-25T10:21:58+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "2835",
-          "stopSequence": 7,
-          "name": "MUNTSARATZ (2835)",
-          "arrivalTime": "2026-10-25T10:22:45+01:00",
-          "departureTime": "2026-10-25T10:22:47+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "2836",
           "stopSequence": 8,
           "name": "ZELAIETA (2836)",
           "arrivalTime": "2026-10-25T10:23:53+01:00",
           "departureTime": "2026-10-25T10:23:55+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -12185,15 +12032,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "2833",
-      "stopName": "SAN ANTOLÍN (2833)",
-      "stopLat": "43.1372337083334",
-      "stopLon": "-2.59570098788665",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "2835",
+      "stopName": "MUNTSARATZ (2835)",
+      "stopLat": "43.1461415737741",
+      "stopLon": "-2.60657495032199",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3923_1021_OP41FIN_36600_O41FI3926_392659_4",
-      "lat": "43.136066",
-      "lon": "-2.5939913"
+      "lat": "43.145527",
+      "lon": "-2.6059067"
     },
     {
       "id": "3382",
@@ -12248,15 +12095,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4346",
       "stopName": "UGUNAGANE (4346)",
       "stopLat": "43.1121046584587",
       "stopLon": "-2.76337114812998",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3917_1016_OP41FIN_33300_O41FI3917_391751_3",
-      "lat": "43.115406",
-      "lon": "-2.7665067"
+      "lat": "43.11244",
+      "lon": "-2.7645268"
     },
     {
       "id": "3383",
@@ -12274,15 +12121,15 @@
       "serviceNumber": "51",
       "serviceCode": "392551",
       "upcomingStops": [],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4132",
       "stopName": "ABANDO (GELTOKIA/ESTACIÓN) (4132)",
       "stopLat": "43.2599514993086",
       "stopLon": "-2.9291885931403",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3925_1035_OP41FIN_31500_O41FI3925_392551_3",
-      "lat": "43.25851",
-      "lon": "-2.9324715"
+      "lat": "43.259735",
+      "lon": "-2.9297104"
     },
     {
       "id": "3384",
@@ -12301,39 +12148,12 @@
       "serviceCode": "391251",
       "upcomingStops": [
         {
-          "stopId": "2695",
-          "stopSequence": 34,
-          "name": "IBARGUREN (2695)",
-          "arrivalTime": "2026-10-25T10:16:28+01:00",
-          "departureTime": "2026-10-25T10:16:30+01:00",
-          "timeSource": "Horario GTFS · hora pasada",
-          "status": ""
-        },
-        {
-          "stopId": "2696",
-          "stopSequence": 35,
-          "name": "SAN ANTONIO ELGUEZABAL (2696)",
-          "arrivalTime": "2026-10-25T10:17:47+01:00",
-          "departureTime": "2026-10-25T10:17:49+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "2697",
-          "stopSequence": 36,
-          "name": "EUBA (2697)",
-          "arrivalTime": "2026-10-25T10:19:10+01:00",
-          "departureTime": "2026-10-25T10:19:12+01:00",
-          "timeSource": "Horario GTFS · hora pasada",
-          "status": ""
-        },
-        {
           "stopId": "2698",
           "stopSequence": 37,
           "name": "BERNA (2698)",
           "arrivalTime": "2026-10-25T10:22:56+01:00",
           "departureTime": "2026-10-25T10:22:58+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -12598,15 +12418,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "2694",
-      "stopName": "MONTORRA (2694)",
-      "stopLat": "43.2055623051203",
-      "stopLon": "-2.71490517622465",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "2697",
+      "stopName": "EUBA (2697)",
+      "stopLat": "43.1955685893261",
+      "stopLon": "-2.69722259654978",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3912_1012_OP41FIN_34200_O41FI3912_391251_3",
-      "lat": "43.206112",
-      "lon": "-2.7153335"
+      "lat": "43.197258",
+      "lon": "-2.6995218"
     },
     {
       "id": "3385",
@@ -13210,15 +13030,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "3966",
       "stopName": "AMAÑA (3966)",
       "stopLat": "43.184557514189",
       "stopLon": "-2.48031138668381",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3912_1013_OP41FIN_40800_O41FI3912_391259_4",
-      "lat": "43.184082",
-      "lon": "-2.4751225"
+      "lat": "43.184093",
+      "lon": "-2.4751594"
     },
     {
       "id": "3390",
@@ -13305,7 +13125,7 @@
           "name": "ABUSU (1788)",
           "arrivalTime": "2026-10-25T10:21:58+01:00",
           "departureTime": "2026-10-25T10:22:00+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Horario GTFS · hora pasada",
           "status": ""
         },
         {
@@ -13471,15 +13291,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4109",
       "stopName": "LARRABETZU (4109)",
       "stopLat": "43.2616724709262",
       "stopLon": "-2.7957285828477",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3631_979_OP41FIN_36000_O41FI3631_363153_5",
-      "lat": "43.23247",
-      "lon": "-2.8702962"
+      "lat": "43.23759",
+      "lon": "-2.8759384"
     },
     {
       "id": "3391",
@@ -13534,15 +13354,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "298",
       "stopName": "GERNIKA 8 (ABARO) (298)",
       "stopLat": "43.2235856075633",
       "stopLon": "-2.88867090173754",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3641_993_OP41FIN_35700_O41FI3641_364157_5",
-      "lat": "43.235268",
-      "lon": "-2.8913379"
+      "lat": "43.22863",
+      "lon": "-2.8909802"
     },
     {
       "id": "5024",
@@ -13560,24 +13380,6 @@
       "serviceNumber": "51",
       "serviceCode": "332351",
       "upcomingStops": [
-        {
-          "stopId": "1289",
-          "stopSequence": 29,
-          "name": "NESILLA (1289)",
-          "arrivalTime": "2026-10-25T10:16:37+01:00",
-          "departureTime": "2026-10-25T10:16:39+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "1290",
-          "stopSequence": 30,
-          "name": "SANTELICES (1290)",
-          "arrivalTime": "2026-10-25T10:18:40+01:00",
-          "departureTime": "2026-10-25T10:18:42+01:00",
-          "timeSource": "Horario GTFS · hora pasada",
-          "status": ""
-        },
         {
           "stopId": "3377",
           "stopSequence": 31,
@@ -13597,15 +13399,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1288",
-      "stopName": "EL POBAL (1288)",
-      "stopLat": "43.2999422891724",
-      "stopLon": "-3.12393755817124",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1290",
+      "stopName": "SANTELICES (1290)",
+      "stopLat": "43.3162158323555",
+      "stopLon": "-3.12007774969859",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3334_759_OP43FIN_34800_O43FI3323_332351_5",
-      "lat": "43.299454",
-      "lon": "-3.1251981"
+      "lat": "43.310333",
+      "lon": "-3.1230996"
     },
     {
       "id": "5031",
@@ -13623,15 +13425,6 @@
       "serviceNumber": "51",
       "serviceCode": "065251",
       "upcomingStops": [
-        {
-          "stopId": "1306",
-          "stopSequence": 4,
-          "name": "EL PEÑÓN (1306)",
-          "arrivalTime": "2026-10-25T10:27:10+01:00",
-          "departureTime": "2026-10-25T10:27:12+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "1374",
           "stopSequence": 5,
@@ -14092,15 +13885,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1373",
-      "stopName": "SANGRICES (1373)",
-      "stopLat": "43.2144153392669",
-      "stopLon": "-3.42558266863063",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1306",
+      "stopName": "EL PEÑÓN (1306)",
+      "stopLat": "43.2172772183173",
+      "stopLon": "-3.41472234029077",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A0652_781_OP43FIN_36900_O43FI0652_065251_2",
-      "lat": "43.21749",
-      "lon": "-3.4294984"
+      "lat": "43.214348",
+      "lon": "-3.4229143"
     },
     {
       "id": "5035",
@@ -14118,15 +13911,15 @@
       "serviceNumber": "51",
       "serviceCode": "334251",
       "upcomingStops": [],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2877",
       "stopName": "BILBAO INTERMODAL (2877)",
       "stopLat": "43.2610601506695",
       "stopLon": "-2.94916366936589",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3342_744_OP43FIN_34200_O43FI3342_334251_4",
-      "lat": "43.259106",
-      "lon": "-2.951888"
+      "lat": "43.26164",
+      "lon": "-2.9501367"
     },
     {
       "id": "5042",
@@ -14144,15 +13937,6 @@
       "serviceNumber": "51",
       "serviceCode": "334151",
       "upcomingStops": [
-        {
-          "stopId": "1571",
-          "stopSequence": 23,
-          "name": "KORTATXU (1571)",
-          "arrivalTime": "2026-10-25T11:48:24+01:00",
-          "departureTime": "2026-10-25T11:48:26+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "1572",
           "stopSequence": 24,
@@ -14262,15 +14046,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1570",
-      "stopName": "ARBUIO (1570)",
-      "stopLat": "43.2361924101192",
-      "stopLon": "-3.00720151176132",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1571",
+      "stopName": "KORTATXU (1571)",
+      "stopLat": "43.2381184704979",
+      "stopLon": "-3.0010592059896",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3341_748_OP43FIN_36000_O43FI3341_334151_3",
-      "lat": "43.235523",
-      "lon": "-3.0119216"
+      "lat": "43.237045",
+      "lon": "-3.0042121"
     },
     {
       "id": "5046",
@@ -14288,15 +14072,15 @@
       "serviceNumber": "51",
       "serviceCode": "065151",
       "upcomingStops": [],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2877",
       "stopName": "BILBAO INTERMODAL (2877)",
       "stopLat": "43.2610601506695",
       "stopLon": "-2.94916366936589",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A0651_738_OP43FIN_34500_O43FI0651_065151_4",
-      "lat": "43.240055",
-      "lon": "-2.9960833"
+      "lat": "43.262554",
+      "lon": "-2.9502468"
     },
     {
       "id": "5047",
@@ -14486,15 +14270,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "3506",
       "stopName": "AVDA. ENCARTACIONES (3506)",
       "stopLat": "43.1902000890309",
       "stopLon": "-3.20021782764142",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A0651_738_OP43FIN_38100_O43FI0651_065152_4",
-      "lat": "43.192978",
-      "lon": "-3.197667"
+      "lat": "43.193016",
+      "lon": "-3.1976547"
     },
     {
       "id": "7789",
@@ -14612,7 +14396,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "671",
       "stopName": "TRAPAGA AUZOA (671)",
       "stopLat": "43.299448711952",
@@ -14620,7 +14404,7 @@
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3331_714_OP40FIN_37500_O40FI3331_333101_5",
       "lat": "43.30197",
-      "lon": "-3.01498"
+      "lon": "-3.0149922"
     },
     {
       "id": "7808",
@@ -14638,24 +14422,6 @@
       "serviceNumber": "2",
       "serviceCode": "312202",
       "upcomingStops": [
-        {
-          "stopId": "379",
-          "stopSequence": 23,
-          "name": "HILERRIA/CEMENTERIO (379)",
-          "arrivalTime": "2026-10-25T10:37:55+01:00",
-          "departureTime": "2026-10-25T10:37:57+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "433",
-          "stopSequence": 24,
-          "name": "ERREPELEGA / REPELEGA (433)",
-          "arrivalTime": "2026-10-25T10:40:00+01:00",
-          "departureTime": "2026-10-25T10:40:02+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "434",
           "stopSequence": 25,
@@ -14684,15 +14450,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "378",
-      "stopName": "MARIANA PINEDA (378)",
-      "stopLat": "43.3091556126963",
-      "stopLon": "-3.01183745521968",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "433",
+      "stopName": "ERREPELEGA / REPELEGA (433)",
+      "stopLat": "43.3146036578093",
+      "stopLon": "-3.01750620053938",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3122_677_OP40FIN_35100_O40FI3122_312202_4",
-      "lat": "43.309254",
-      "lon": "-3.012047"
+      "lat": "43.313416",
+      "lon": "-3.0153282"
     },
     {
       "id": "7811",
@@ -14710,24 +14476,6 @@
       "serviceNumber": "1",
       "serviceCode": "313701",
       "upcomingStops": [
-        {
-          "stopId": "392",
-          "stopSequence": 13,
-          "name": "BUEN PASTOR (392)",
-          "arrivalTime": "2026-10-25T10:34:53+01:00",
-          "departureTime": "2026-10-25T10:34:55+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "600",
-          "stopSequence": 14,
-          "name": "LA FLORIDA 7 (600)",
-          "arrivalTime": "2026-10-25T10:39:47+01:00",
-          "departureTime": "2026-10-25T10:39:49+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "786",
           "stopSequence": 15,
@@ -14747,15 +14495,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "314",
-      "stopName": "LUTXANA (GELTOKIA/ESTACIÓN) (314)",
-      "stopLat": "43.288533661218",
-      "stopLon": "-2.97552730487965",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "600",
+      "stopName": "LA FLORIDA 7 (600)",
+      "stopLat": "43.2927947859614",
+      "stopLon": "-2.98669419951901",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3137_1062_OP40FIN_36000_O40FI3137_313701_4",
-      "lat": "43.288372",
-      "lon": "-2.9756181"
+      "lat": "43.290768",
+      "lon": "-2.9785757"
     },
     {
       "id": "7812",
@@ -14788,7 +14536,7 @@
           "name": "SAN JUAN DE DIOS (OSPITALEA/HOSPITAL) (333)",
           "arrivalTime": "2026-10-25T10:21:38+01:00",
           "departureTime": "2026-10-25T10:21:40+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Horario GTFS · hora pasada",
           "status": ""
         },
         {
@@ -15179,15 +14927,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "330",
       "stopName": "LAS VIÑAS (330)",
       "stopLat": "43.3282331753099",
       "stopLon": "-3.03361877790969",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3136_671_OP40FIN_36600_O40FI3136_313601_4",
-      "lat": "43.328297",
-      "lon": "-3.0335624"
+      "lat": "43.328278",
+      "lon": "-3.0336733"
     },
     {
       "id": "7814",
@@ -15206,15 +14954,6 @@
       "serviceCode": "333603",
       "upcomingStops": [
         {
-          "stopId": "358",
-          "stopSequence": 40,
-          "name": "ZABALBURU (QUINTA PARROQUIA) (358)",
-          "arrivalTime": "2026-10-25T10:43:47+01:00",
-          "departureTime": "2026-10-25T10:43:49+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "4132",
           "stopSequence": 41,
           "name": "ABANDO (GELTOKIA/ESTACIÓN) (4132)",
@@ -15224,15 +14963,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "357",
-      "stopName": "AUTONOMÍA 13 (357)",
-      "stopLat": "43.2573721668115",
-      "stopLon": "-2.93764325848109",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "358",
+      "stopName": "ZABALBURU (QUINTA PARROQUIA) (358)",
+      "stopLat": "43.2579450602647",
+      "stopLon": "-2.93274324286592",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3336_726_OP40FIN_33600_O40FI3336_333603_2",
-      "lat": "43.25752",
-      "lon": "-2.9398031"
+      "lat": "43.25738",
+      "lon": "-2.9362304"
     },
     {
       "id": "7824",
@@ -15250,15 +14989,6 @@
       "serviceNumber": "1",
       "serviceCode": "333601",
       "upcomingStops": [
-        {
-          "stopId": "1134",
-          "stopSequence": 21,
-          "name": "URIOSTE (1134)",
-          "arrivalTime": "2026-10-25T10:36:01+01:00",
-          "departureTime": "2026-10-25T10:36:03+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "1135",
           "stopSequence": 22,
@@ -15413,15 +15143,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "674",
-      "stopName": "PRIMERO DE MAYO (UDALETXEA/AYUNTAMIENTO) (674)",
-      "stopLat": "43.3043971312627",
-      "stopLon": "-3.03652827706431",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1134",
+      "stopName": "URIOSTE (1134)",
+      "stopLat": "43.3098607230642",
+      "stopLon": "-3.03963127156723",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3336_725_OP40FIN_35100_O40FI3336_333601_3",
-      "lat": "43.304432",
-      "lon": "-3.0366316"
+      "lat": "43.306423",
+      "lon": "-3.0344012"
     },
     {
       "id": "7825",
@@ -15445,7 +15175,7 @@
           "name": "LOS HERMANOS (JUNTAS GENERALES 30) (410)",
           "arrivalTime": "2026-10-25T10:21:31+01:00",
           "departureTime": "2026-10-25T10:21:33+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Horario GTFS · hora pasada",
           "status": ""
         },
         {
@@ -15719,15 +15449,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "409",
       "stopName": "HERRIKO PLAZA 3 (409)",
       "stopLat": "43.2973961560728",
       "stopLon": "-2.98675471450745",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3136_671_OP40FIN_34800_O40FI3136_313607_5",
-      "lat": "43.301464",
-      "lon": "-2.9870667"
+      "lat": "43.29806",
+      "lon": "-2.986377"
     },
     {
       "id": "7826",
@@ -15872,15 +15602,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "305",
       "stopName": "ZABALBURU (AUTONOMÍA 4) (305)",
       "stopLat": "43.2573977902076",
       "stopLon": "-2.93514222498991",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3137_1062_OP40FIN_37800_O40FI3137_313702_4",
-      "lat": "43.260597",
-      "lon": "-2.928428"
+      "lat": "43.260662",
+      "lon": "-2.928391"
     },
     {
       "id": "7830",
@@ -16142,15 +15872,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "305",
       "stopName": "ZABALBURU (AUTONOMÍA 4) (305)",
       "stopLat": "43.2573977902076",
       "stopLon": "-2.93514222498991",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3115_674_OP40FIN_37200_O40FI3115_311501_2",
-      "lat": "43.260742",
-      "lon": "-2.928243"
+      "lat": "43.26069",
+      "lon": "-2.9282432"
     },
     {
       "id": "7831",
@@ -16169,21 +15899,12 @@
       "serviceCode": "312903",
       "upcomingStops": [
         {
-          "stopId": "450",
-          "stopSequence": 6,
-          "name": "CARLOS VII 18 (450)",
-          "arrivalTime": "2026-10-25T10:20:24+01:00",
-          "departureTime": "2026-10-25T10:20:26+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "451",
           "stopSequence": 7,
           "name": "MIGUEL DE UNAMUNO ( BEILATOKIA / TANATORIO) (451)",
           "arrivalTime": "2026-10-25T10:22:07+01:00",
           "departureTime": "2026-10-25T10:22:09+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -16430,15 +16151,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "4126",
-      "stopName": "SIMON BOLIVAR 11 (4126)",
-      "stopLat": "43.3208237774672",
-      "stopLon": "-3.02343277963222",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "450",
+      "stopName": "CARLOS VII 18 (450)",
+      "stopLat": "43.3180685746664",
+      "stopLon": "-3.02243278959486",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3129_660_OP40FIN_36900_O40FI3129_312903_5",
-      "lat": "43.323128",
-      "lon": "-3.025407"
+      "lat": "43.320805",
+      "lon": "-3.0232108"
     },
     {
       "id": "7833",
@@ -16457,21 +16178,12 @@
       "serviceCode": "312201",
       "upcomingStops": [
         {
-          "stopId": "357",
-          "stopSequence": 23,
-          "name": "AUTONOMÍA 13 (357)",
-          "arrivalTime": "2026-10-25T10:41:04+01:00",
-          "departureTime": "2026-10-25T10:41:06+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "358",
           "stopSequence": 24,
           "name": "ZABALBURU (QUINTA PARROQUIA) (358)",
           "arrivalTime": "2026-10-25T10:42:56+01:00",
           "departureTime": "2026-10-25T10:42:58+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -16484,15 +16196,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "356",
-      "stopName": "LA CASILLA (AUTONOMÍA 45) (356)",
-      "stopLat": "43.2576269866383",
-      "stopLon": "-2.94278794717174",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "357",
+      "stopName": "AUTONOMÍA 13 (357)",
+      "stopLat": "43.2573721668115",
+      "stopLon": "-2.93764325848109",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3122_678_OP40FIN_35100_O40FI3122_312201_4",
-      "lat": "43.25775",
-      "lon": "-2.9426613"
+      "lat": "43.257526",
+      "lon": "-2.9377458"
     },
     {
       "id": "7850",
@@ -16516,7 +16228,7 @@
           "name": "BALEJO (BOLATOKIA/BOLERA) (395)",
           "arrivalTime": "2026-10-25T10:27:14+01:00",
           "departureTime": "2026-10-25T10:27:16+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -16880,15 +16592,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "574",
       "stopName": "BURTZEÑA (GASOLINDEGIA/GASOLINERA) (574)",
       "stopLat": "43.2796731306881",
       "stopLon": "-2.97887541758114",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3136_670_OP40FIN_36000_O40FI3136_313604_4",
-      "lat": "43.277035",
-      "lon": "-2.972973"
+      "lat": "43.279285",
+      "lon": "-2.978814"
     },
     {
       "id": "7851",
@@ -16906,15 +16618,6 @@
       "serviceNumber": "2",
       "serviceCode": "314102",
       "upcomingStops": [
-        {
-          "stopId": "407",
-          "stopSequence": 9,
-          "name": "LARREA 17 (407)",
-          "arrivalTime": "2026-10-25T10:30:41+01:00",
-          "departureTime": "2026-10-25T10:30:43+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "408",
           "stopSequence": 10,
@@ -17069,15 +16772,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "406",
-      "stopName": "BUEN PASTOR 76 (406)",
-      "stopLat": "43.2900460067443",
-      "stopLon": "-2.97646809788618",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "407",
+      "stopName": "LARREA 17 (407)",
+      "stopLat": "43.2976475105293",
+      "stopLon": "-2.98121922772737",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3141_666_OP40FIN_36600_O40FI3141_314102_5",
-      "lat": "43.29057",
-      "lon": "-2.978169"
+      "lat": "43.292847",
+      "lon": "-2.974433"
     },
     {
       "id": "7852",
@@ -17095,33 +16798,6 @@
       "serviceNumber": "1",
       "serviceCode": "314101",
       "upcomingStops": [
-        {
-          "stopId": "682",
-          "stopSequence": 6,
-          "name": "CAUSO (682)",
-          "arrivalTime": "2026-10-25T10:22:38+01:00",
-          "departureTime": "2026-10-25T10:22:40+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "683",
-          "stopSequence": 7,
-          "name": "TRAPAGA AUZOA (683)",
-          "arrivalTime": "2026-10-25T10:24:51+01:00",
-          "departureTime": "2026-10-25T10:24:53+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
-          "stopId": "684",
-          "stopSequence": 8,
-          "name": "EL JUNCAL (FORD) (684)",
-          "arrivalTime": "2026-10-25T10:29:24+01:00",
-          "departureTime": "2026-10-25T10:29:26+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "685",
           "stopSequence": 9,
@@ -17285,15 +16961,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "681",
-      "stopName": "ARKOTXA (681)",
-      "stopLat": "43.3002386312245",
-      "stopLon": "-3.03100257239762",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "684",
+      "stopName": "EL JUNCAL (FORD) (684)",
+      "stopLat": "43.2940465783187",
+      "stopLon": "-3.01430781655907",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3141_667_OP40FIN_36900_O40FI3141_314101_5",
-      "lat": "43.30028",
-      "lon": "-3.0310564"
+      "lat": "43.298645",
+      "lon": "-3.0191586"
     },
     {
       "id": "7853",
@@ -17311,15 +16987,6 @@
       "serviceNumber": "6",
       "serviceCode": "313606",
       "upcomingStops": [
-        {
-          "stopId": "350",
-          "stopSequence": 43,
-          "name": "BURTZEÑA (BATZOKIA) (350)",
-          "arrivalTime": "2026-10-25T10:34:37+01:00",
-          "departureTime": "2026-10-25T10:34:39+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "351",
           "stopSequence": 44,
@@ -17402,15 +17069,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "402",
-      "stopName": "CRUCES OSPITALEA (HORACIO ETXEBARRIETA) (402)",
-      "stopLat": "43.2818985158644",
-      "stopLon": "-2.98189000204994",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "350",
+      "stopName": "BURTZEÑA (BATZOKIA) (350)",
+      "stopLat": "43.2793399859109",
+      "stopLon": "-2.97902342875286",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3136_671_OP40FIN_33000_O40FI3136_313606_4",
-      "lat": "43.280502",
-      "lon": "-2.9859126"
+      "lat": "43.28207",
+      "lon": "-2.981697"
     },
     {
       "id": "7855",
@@ -17870,15 +17537,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "305",
       "stopName": "ZABALBURU (AUTONOMÍA 4) (305)",
       "stopLat": "43.2573977902076",
       "stopLon": "-2.93514222498991",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3136_670_OP40FIN_37800_O40FI3136_313605_5",
-      "lat": "43.260597",
-      "lon": "-2.9284527"
+      "lat": "43.260696",
+      "lon": "-2.9284525"
     },
     {
       "id": "7856",
@@ -17896,15 +17563,6 @@
       "serviceNumber": "3",
       "serviceCode": "333303",
       "upcomingStops": [
-        {
-          "stopId": "436",
-          "stopSequence": 15,
-          "name": "CARLOS VII 3 (436)",
-          "arrivalTime": "2026-10-25T10:23:42+01:00",
-          "departureTime": "2026-10-25T10:23:44+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "326",
           "stopSequence": 16,
@@ -17942,15 +17600,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "435",
-      "stopName": "CARLOS VII (LOS ANGELES KAFETEGIA) (435)",
-      "stopLat": "43.3170790906354",
-      "stopLon": "-3.02273567647254",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "436",
+      "stopName": "CARLOS VII 3 (436)",
+      "stopLat": "43.3200149856659",
+      "stopLon": "-3.02062784895887",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3333_704_OP40FIN_36000_O40FI3333_333303_2",
-      "lat": "43.315628",
-      "lon": "-3.0246024"
+      "lat": "43.31715",
+      "lon": "-3.0227654"
     },
     {
       "id": "7857",
@@ -17974,19 +17632,19 @@
           "name": "VICENTE BLASCO IBÁÑEZ (SAN PEDRO PLAZA) (384)",
           "arrivalTime": "2026-10-25T10:23:38+01:00",
           "departureTime": "2026-10-25T10:23:40+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "383",
       "stopName": "EL KASKO PLAZA (LAS LLANAS) (383)",
       "stopLat": "43.3089758776912",
       "stopLon": "-3.00764500063822",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3135_658_OP40FIN_36000_O40FI3135_313502_5",
-      "lat": "43.31253",
-      "lon": "-3.0132563"
+      "lat": "43.309616",
+      "lon": "-3.008792"
     },
     {
       "id": "7858",
@@ -18010,7 +17668,7 @@
           "name": "VÍA GALINDO 14 (801)",
           "arrivalTime": "2026-10-25T10:24:55+01:00",
           "departureTime": "2026-10-25T10:24:57+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -18140,15 +17798,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "377",
       "stopName": "EL KASKO PLAZA (GRAN VIA) (377)",
       "stopLat": "43.309508108033",
       "stopLon": "-3.00671532850916",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3135_657_OP40FIN_37200_O40FI3135_313505_6",
-      "lat": "43.3083",
-      "lon": "-3.0022442"
+      "lat": "43.30892",
+      "lon": "-3.004735"
     },
     {
       "id": "7859",
@@ -18518,15 +18176,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1365",
       "stopName": "EL CRUCERO (1365)",
       "stopLat": "43.3221292340508",
       "stopLon": "-3.11562005231091",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3336_726_OP40FIN_37200_O40FI3336_333605_4",
-      "lat": "43.321995",
-      "lon": "-3.123419"
+      "lat": "43.32249",
+      "lon": "-3.1232228"
     },
     {
       "id": "7860",
@@ -18545,21 +18203,12 @@
       "serviceCode": "313603",
       "upcomingStops": [
         {
-          "stopId": "601",
-          "stopSequence": 28,
-          "name": "LANDABURU (601)",
-          "arrivalTime": "2026-10-25T10:31:30+01:00",
-          "departureTime": "2026-10-25T10:31:32+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "390",
           "stopSequence": 29,
           "name": "HERRIKO PLAZA (ARRANDI 1) (390)",
           "arrivalTime": "2026-10-25T10:33:13+01:00",
           "departureTime": "2026-10-25T10:33:15+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -18761,15 +18410,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "584",
-      "stopName": "GERNIKAKO ARBOLA (EPAITEGIAK/JUZGADOS) (584)",
-      "stopLat": "43.2941632182088",
-      "stopLon": "-2.99138297054802",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "601",
+      "stopName": "LANDABURU (601)",
+      "stopLat": "43.2940105665548",
+      "stopLon": "-2.98727320942473",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3136_670_OP40FIN_34200_O40FI3136_313603_3",
-      "lat": "43.294426",
-      "lon": "-2.9951675"
+      "lat": "43.29418",
+      "lon": "-2.9885106"
     },
     {
       "id": "7861",
@@ -18851,15 +18500,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "332",
       "stopName": "MURRIETA 42 (BATZOKIA) (332)",
       "stopLat": "43.3274228891726",
       "stopLon": "-3.02887477638773",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3332_663_OP40FIN_37500_O40FI3332_333201_6",
-      "lat": "43.328304",
-      "lon": "-3.0316381"
+      "lat": "43.32833",
+      "lon": "-3.0316136"
     },
     {
       "id": "7862",
@@ -18883,7 +18532,7 @@
           "name": "SAN JULIÁN (1362)",
           "arrivalTime": "2026-10-25T10:28:17+01:00",
           "departureTime": "2026-10-25T10:28:19+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -18932,15 +18581,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1304",
       "stopName": "POBEÑA (1304)",
       "stopLat": "43.3452062069734",
       "stopLon": "-3.12578295365353",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3335_722_OP40FIN_34500_O40FI3135_313503_5",
-      "lat": "43.34014",
-      "lon": "-3.1201742"
+      "lat": "43.34536",
+      "lon": "-3.1254776"
     },
     {
       "id": "7863",
@@ -18958,24 +18607,6 @@
       "serviceNumber": "4",
       "serviceCode": "311504",
       "upcomingStops": [
-        {
-          "stopId": "321",
-          "stopSequence": 19,
-          "name": "IBERIA (321)",
-          "arrivalTime": "2026-10-25T10:30:46+01:00",
-          "departureTime": "2026-10-25T10:30:48+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "322",
-          "stopSequence": 20,
-          "name": "CHAVARRI 34 (ARBOLEDA) (322)",
-          "arrivalTime": "2026-10-25T10:32:04+01:00",
-          "departureTime": "2026-10-25T10:32:06+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "323",
           "stopSequence": 21,
@@ -19058,15 +18689,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "320",
-      "stopName": "LOS BAÑOS (320)",
-      "stopLat": "43.3108490901795",
-      "stopLon": "-2.9999506759005",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "322",
+      "stopName": "CHAVARRI 34 (ARBOLEDA) (322)",
+      "stopLat": "43.3124165380383",
+      "stopLon": "-3.00760350533479",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3115_674_OP40FIN_35400_O40FI3115_311504_2",
-      "lat": "43.30969",
-      "lon": "-2.9970405"
+      "lat": "43.311226",
+      "lon": "-3.004057"
     },
     {
       "id": "7864",
@@ -19085,30 +18716,12 @@
       "serviceCode": "332102",
       "upcomingStops": [
         {
-          "stopId": "1045",
-          "stopSequence": 15,
-          "name": "KALERO (1045)",
-          "arrivalTime": "2026-10-25T10:35:08+01:00",
-          "departureTime": "2026-10-25T10:35:10+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "1079",
-          "stopSequence": 16,
-          "name": "IPARRAGIRRE (REPSOL) (1079)",
-          "arrivalTime": "2026-10-25T10:37:49+01:00",
-          "departureTime": "2026-10-25T10:37:51+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "1080",
           "stopSequence": 17,
           "name": "IPARRAGIRRE (IBERDROLA) (1080)",
           "arrivalTime": "2026-10-25T10:40:51+01:00",
           "departureTime": "2026-10-25T10:40:53+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -19247,15 +18860,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1077",
-      "stopName": "PADEROJOS (1077)",
-      "stopLat": "43.3505980276315",
-      "stopLon": "-3.07664474255032",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1079",
+      "stopName": "IPARRAGIRRE (REPSOL) (1079)",
+      "stopLat": "43.3422328454343",
+      "stopLon": "-3.05896031318612",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3321_701_OP40FIN_36000_O40FI3321_332102_4",
-      "lat": "43.35145",
-      "lon": "-3.0775275"
+      "lat": "43.34359",
+      "lon": "-3.0622065"
     },
     {
       "id": "7865",
@@ -19391,15 +19004,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "528",
       "stopName": "ANBULATORIOA (528)",
       "stopLat": "43.3253965961741",
       "stopLon": "-3.03408590435561",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3135_658_OP40FIN_37200_O40FI3335_333501_5",
-      "lat": "43.32207",
-      "lon": "-3.0375056"
+      "lat": "43.323017",
+      "lon": "-3.036754"
     },
     {
       "id": "7866",
@@ -19418,21 +19031,12 @@
       "serviceCode": "313504",
       "upcomingStops": [
         {
-          "stopId": "452",
-          "stopSequence": 29,
-          "name": "ERREPELEGA / REPELEGA (452)",
-          "arrivalTime": "2026-10-25T10:26:04+01:00",
-          "departureTime": "2026-10-25T10:26:06+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
           "stopId": "382",
           "stopSequence": 30,
           "name": "HILERRIA/CEMENTERIO (382)",
           "arrivalTime": "2026-10-25T10:26:56+01:00",
           "departureTime": "2026-10-25T10:26:58+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -19445,15 +19049,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "451",
-      "stopName": "MIGUEL DE UNAMUNO ( BEILATOKIA / TANATORIO) (451)",
-      "stopLat": "43.3145837667038",
-      "stopLon": "-3.02259182087049",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "452",
+      "stopName": "ERREPELEGA / REPELEGA (452)",
+      "stopLat": "43.3139014444472",
+      "stopLon": "-3.01653179925692",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3335_721_OP40FIN_34500_O40FI3135_313504_5",
-      "lat": "43.315582",
-      "lon": "-3.0239117"
+      "lat": "43.31391",
+      "lon": "-3.016401"
     },
     {
       "id": "7867",
@@ -19461,10 +19065,10 @@
       "line": "A3135",
       "lineRef": "",
       "direction": "",
-      "destination": "CABIECES",
+      "destination": "SESTAO",
       "destinationSource": "GTFS · horario",
       "destinationRef": "",
-      "tripId": "trp_A3135_657_OP40FIN_36000_O40FI3335_333506_5",
+      "tripId": "trp_A3135_658_OP40FIN_38400_O40FI3335_333506_6",
       "tripShortName": "",
       "blockId": "",
       "calendarServiceId": "OP40FIN",
@@ -19472,24 +19076,132 @@
       "serviceCode": "333506",
       "upcomingStops": [
         {
-          "stopId": "443",
-          "stopSequence": 17,
-          "name": "CABIECES (443)",
-          "arrivalTime": "2026-10-25T10:40:00+01:00",
-          "departureTime": "2026-10-25T10:40:02+01:00",
-          "timeSource": "Estimación GTFS-RT",
+          "stopId": "529",
+          "stopSequence": 3,
+          "name": "UDALETXEA / AYUNTAMIENTO (529)",
+          "arrivalTime": "2026-10-25T10:45:12+01:00",
+          "departureTime": "2026-10-25T10:45:14+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "531",
+          "stopSequence": 4,
+          "name": "IGERILEKUAK / PISCINAS (531)",
+          "arrivalTime": "2026-10-25T10:52:23+01:00",
+          "departureTime": "2026-10-25T10:52:25+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "532",
+          "stopSequence": 5,
+          "name": "PEÑOTA (NAUTIKA) (532)",
+          "arrivalTime": "2026-10-25T10:53:55+01:00",
+          "departureTime": "2026-10-25T10:53:57+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "533",
+          "stopSequence": 6,
+          "name": "DOCTOR AREILZA PARKEA (533)",
+          "arrivalTime": "2026-10-25T10:55:16+01:00",
+          "departureTime": "2026-10-25T10:55:18+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "534",
+          "stopSequence": 7,
+          "name": "BIZKAIA ZUBIA / PUENTE BIZKAIA (534)",
+          "arrivalTime": "2026-10-25T10:56:41+01:00",
+          "departureTime": "2026-10-25T10:56:43+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "334",
+          "stopSequence": 8,
+          "name": "ABARO 11 (334)",
+          "arrivalTime": "2026-10-25T10:59:29+01:00",
+          "departureTime": "2026-10-25T10:59:31+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "449",
+          "stopSequence": 9,
+          "name": "CARLOS VII 4 (449)",
+          "arrivalTime": "2026-10-25T11:00:57+01:00",
+          "departureTime": "2026-10-25T11:00:59+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "450",
+          "stopSequence": 10,
+          "name": "CARLOS VII 18 (450)",
+          "arrivalTime": "2026-10-25T11:02:39+01:00",
+          "departureTime": "2026-10-25T11:02:41+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "451",
+          "stopSequence": 11,
+          "name": "MIGUEL DE UNAMUNO ( BEILATOKIA / TANATORIO) (451)",
+          "arrivalTime": "2026-10-25T11:06:17+01:00",
+          "departureTime": "2026-10-25T11:06:19+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "452",
+          "stopSequence": 12,
+          "name": "ERREPELEGA / REPELEGA (452)",
+          "arrivalTime": "2026-10-25T11:09:59+01:00",
+          "departureTime": "2026-10-25T11:10:01+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "382",
+          "stopSequence": 13,
+          "name": "HILERRIA/CEMENTERIO (382)",
+          "arrivalTime": "2026-10-25T11:12:10+01:00",
+          "departureTime": "2026-10-25T11:12:12+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "383",
+          "stopSequence": 14,
+          "name": "EL KASKO PLAZA (LAS LLANAS) (383)",
+          "arrivalTime": "2026-10-25T11:16:16+01:00",
+          "departureTime": "2026-10-25T11:16:18+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "384",
+          "stopSequence": 15,
+          "name": "VICENTE BLASCO IBÁÑEZ (SAN PEDRO PLAZA) (384)",
+          "arrivalTime": "2026-10-25T11:17:48+01:00",
+          "departureTime": "2026-10-25T11:17:50+01:00",
+          "timeSource": "Horario GTFS",
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "442",
-      "stopName": "ANBULATORIOA (442)",
-      "stopLat": "43.3248098886388",
-      "stopLon": "-3.03488012281846",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "528",
+      "stopName": "ANBULATORIOA (528)",
+      "stopLat": "43.3253965961741",
+      "stopLon": "-3.03408590435561",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
-      "journeyRef": "trp_A3135_657_OP40FIN_36000_O40FI3335_333506_5",
-      "lat": "43.32501",
-      "lon": "-3.0345964"
+      "journeyRef": "trp_A3135_658_OP40FIN_38400_O40FI3335_333506_6",
+      "lat": "43.321945",
+      "lon": "-3.0373945"
     },
     {
       "id": "7873",
@@ -19562,15 +19274,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "523",
       "stopName": "PARKEA/PARQUE (ITSASALDE 2) (523)",
       "stopLat": "43.3301605125196",
       "stopLon": "-3.0323738895527",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3136_670_OP40FIN_32400_O40FI3136_313602_4",
-      "lat": "43.32843",
-      "lon": "-3.0307872"
+      "lat": "43.328495",
+      "lon": "-3.03075"
     },
     {
       "id": "7875",
@@ -19949,14 +19661,14 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1070",
       "stopName": "LA ARENA (1070)",
       "stopLat": "43.3487588847888",
       "stopLon": "-3.11235085969488",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3338_717_OP40FIN_38100_O40FI3338_333803_3",
-      "lat": "43.346848",
+      "lat": "43.346836",
       "lon": "-3.1143022"
     },
     {
@@ -19990,7 +19702,7 @@
           "name": "LUTXANA (ELIZA/IGLESIA) (405)",
           "arrivalTime": "2026-10-25T10:28:37+01:00",
           "departureTime": "2026-10-25T10:28:39+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -20012,15 +19724,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "403",
       "stopName": "CIRILO SAGASTAGOITIA (403)",
       "stopLat": "43.2861398073241",
       "stopLon": "-2.98256655243816",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3129_660_OP40FIN_35100_O40FI3129_312902_5",
-      "lat": "43.28197",
-      "lon": "-2.981919"
+      "lat": "43.284565",
+      "lon": "-2.9806979"
     },
     {
       "id": "7877",
@@ -20039,15 +19751,6 @@
       "serviceCode": "312901",
       "upcomingStops": [
         {
-          "stopId": "425",
-          "stopSequence": 16,
-          "name": "VEGA NUEVA (ARAZTEGIA/DEPURADORA) (425)",
-          "arrivalTime": "2026-10-25T10:28:47+01:00",
-          "departureTime": "2026-10-25T10:28:49+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "3805",
           "stopSequence": 17,
           "name": "URBINAGA (METRO) (3805)",
@@ -20062,7 +19765,7 @@
           "name": "URBINAGA (LA NAVAL) (318)",
           "arrivalTime": "2026-10-25T10:32:15+01:00",
           "departureTime": "2026-10-25T10:32:17+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -20219,15 +19922,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "424",
-      "stopName": "CARREFOUR (424)",
-      "stopLat": "43.2998103334881",
-      "stopLon": "-3.00130216720634",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "425",
+      "stopName": "VEGA NUEVA (ARAZTEGIA/DEPURADORA) (425)",
+      "stopLat": "43.306167482568",
+      "stopLon": "-2.99764014627071",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3129_659_OP40FIN_36000_O40FI3129_312901_6",
-      "lat": "43.29664",
-      "lon": "-3.004241"
+      "lat": "43.306213",
+      "lon": "-2.997978"
     },
     {
       "id": "7878",
@@ -20246,21 +19949,12 @@
       "serviceCode": "311502",
       "upcomingStops": [
         {
-          "stopId": "357",
-          "stopSequence": 27,
-          "name": "AUTONOMÍA 13 (357)",
-          "arrivalTime": "2026-10-25T10:45:54+01:00",
-          "departureTime": "2026-10-25T10:45:56+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "358",
           "stopSequence": 28,
           "name": "ZABALBURU (QUINTA PARROQUIA) (358)",
           "arrivalTime": "2026-10-25T10:47:51+01:00",
           "departureTime": "2026-10-25T10:47:53+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -20273,15 +19967,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "356",
-      "stopName": "LA CASILLA (AUTONOMÍA 45) (356)",
-      "stopLat": "43.2576269866383",
-      "stopLon": "-2.94278794717174",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "357",
+      "stopName": "AUTONOMÍA 13 (357)",
+      "stopLat": "43.2573721668115",
+      "stopLon": "-2.93764325848109",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3115_676_OP40FIN_35100_O40FI3115_311502_2",
-      "lat": "43.257835",
-      "lon": "-2.946887"
+      "lat": "43.25752",
+      "lon": "-2.940062"
     },
     {
       "id": "7879",
@@ -20299,15 +19993,6 @@
       "serviceNumber": "5",
       "serviceCode": "333805",
       "upcomingStops": [
-        {
-          "stopId": "600",
-          "stopSequence": 14,
-          "name": "LA FLORIDA 7 (600)",
-          "arrivalTime": "2026-10-25T10:33:57+01:00",
-          "departureTime": "2026-10-25T10:33:59+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
         {
           "stopId": "786",
           "stopSequence": 15,
@@ -20543,15 +20228,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "85",
-      "stopName": "SANTIMAMI (EROSKI) (85)",
-      "stopLat": "43.3185140924521",
-      "stopLon": "-2.97363135193959",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "600",
+      "stopName": "LA FLORIDA 7 (600)",
+      "stopLat": "43.2927947859614",
+      "stopLon": "-2.98669419951901",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3338_718_OP40FIN_36000_O40FI3338_333805_3",
-      "lat": "43.318943",
-      "lon": "-2.974311"
+      "lat": "43.303143",
+      "lon": "-2.9618773"
     },
     {
       "id": "7880",
@@ -20570,30 +20255,12 @@
       "serviceCode": "332101",
       "upcomingStops": [
         {
-          "stopId": "1056",
-          "stopSequence": 18,
-          "name": "PORTUA/PUERTO (1056)",
-          "arrivalTime": "2026-10-25T10:22:12+01:00",
-          "departureTime": "2026-10-25T10:22:14+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "1057",
-          "stopSequence": 19,
-          "name": "VALLE (1057)",
-          "arrivalTime": "2026-10-25T10:24:47+01:00",
-          "departureTime": "2026-10-25T10:24:49+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "1058",
           "stopSequence": 20,
           "name": "LA CUESTA (UDALETXEA/AYUNTAMIENTO) (1058)",
           "arrivalTime": "2026-10-25T10:27:23+01:00",
           "departureTime": "2026-10-25T10:27:25+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -20732,15 +20399,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1055",
-      "stopName": "VIRGEN DEL PUERTO (LAZKANO) (1055)",
-      "stopLat": "43.3515054833618",
-      "stopLon": "-3.07970601899031",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1057",
+      "stopName": "VALLE (1057)",
+      "stopLat": "43.3421697429381",
+      "stopLon": "-3.08326078269775",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3321_702_OP40FIN_36000_O40FI3321_332101_4",
-      "lat": "43.351486",
-      "lon": "-3.079835"
+      "lat": "43.34516",
+      "lon": "-3.0836267"
     },
     {
       "id": "7884",
@@ -20773,7 +20440,7 @@
           "name": "ABARO 11 (334)",
           "arrivalTime": "2026-10-25T10:21:14+01:00",
           "departureTime": "2026-10-25T10:21:16+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Horario GTFS · hora pasada",
           "status": ""
         },
         {
@@ -21002,15 +20669,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "332",
       "stopName": "MURRIETA 42 (BATZOKIA) (332)",
       "stopLat": "43.3274228891726",
       "stopLon": "-3.02887477638773",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3115_676_OP40FIN_36900_O40FI3115_311503_2",
-      "lat": "43.324768",
-      "lon": "-3.023644"
+      "lat": "43.32112",
+      "lon": "-3.0204976"
     },
     {
       "id": "7885",
@@ -21029,21 +20696,12 @@
       "serviceCode": "333302",
       "upcomingStops": [
         {
-          "stopId": "1222",
-          "stopSequence": 14,
-          "name": "INSTITUTUA/INSTITUTO (1222)",
-          "arrivalTime": "2026-10-25T10:49:00+01:00",
-          "departureTime": "2026-10-25T10:49:02+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
           "stopId": "1223",
           "stopSequence": 15,
           "name": "EL MINERO 44 (1223)",
           "arrivalTime": "2026-10-25T10:51:42+01:00",
           "departureTime": "2026-10-25T10:51:44+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -21074,15 +20732,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1221",
-      "stopName": "UDALETXEA/AYUNTAMIENTO (1221)",
-      "stopLat": "43.321434552796",
-      "stopLon": "-3.07314319330111",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1222",
+      "stopName": "INSTITUTUA/INSTITUTO (1222)",
+      "stopLat": "43.3172555704104",
+      "stopLon": "-3.0746058500069",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3333_705_OP40FIN_36000_O40FI3333_333302_4",
-      "lat": "43.321407",
-      "lon": "-3.0730987"
+      "lat": "43.317226",
+      "lon": "-3.0745735"
     },
     {
       "id": "7886",
@@ -21281,15 +20939,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1187",
       "stopName": "TRIANO (1187)",
       "stopLat": "43.2955943783545",
       "stopLon": "-3.06823096705505",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3333_706_OP40FIN_37200_O40FI3333_333301_4",
-      "lat": "43.285004",
-      "lon": "-3.0536296"
+      "lat": "43.288765",
+      "lon": "-3.0536451"
     },
     {
       "id": "8637",
@@ -21479,15 +21137,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "4360",
       "stopName": "UGARAN (4360)",
       "stopLat": "43.3469950036384",
       "stopLon": "-2.50319714499507",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3512_906_OP44FIN_37800_O44FI3512_351254_3",
-      "lat": "43.360382",
-      "lon": "-2.5066915"
+      "lat": "43.360355",
+      "lon": "-2.5066793"
     },
     {
       "id": "8643",
@@ -21505,15 +21163,6 @@
       "serviceNumber": "52",
       "serviceCode": "351452",
       "upcomingStops": [
-        {
-          "stopId": "1914",
-          "stopSequence": 12,
-          "name": "SAN PEDRO (GERALEKUA/APEADERO) (1914)",
-          "arrivalTime": "2026-10-25T10:25:32+01:00",
-          "departureTime": "2026-10-25T10:25:34+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "3939",
           "stopSequence": 13,
@@ -21569,15 +21218,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "3391",
-      "stopName": "SAN JUAN (3391)",
-      "stopLat": "43.2188737235004",
-      "stopLon": "-2.73076318269076",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1914",
+      "stopName": "SAN PEDRO (GERALEKUA/APEADERO) (1914)",
+      "stopLat": "43.2221163377123",
+      "stopLon": "-2.7350092532619",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3514_913_OP44FIN_36000_O44FI3514_351452_3",
-      "lat": "43.21953",
-      "lon": "-2.7301447"
+      "lat": "43.220047",
+      "lon": "-2.7326295"
     },
     {
       "id": "8644",
@@ -21595,15 +21244,6 @@
       "serviceNumber": "20",
       "serviceCode": "353220",
       "upcomingStops": [
-        {
-          "stopId": "2386",
-          "stopSequence": 18,
-          "name": "ANZORA (2386)",
-          "arrivalTime": "2026-10-25T10:29:27+01:00",
-          "departureTime": "2026-10-25T10:29:29+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
         {
           "stopId": "2395",
           "stopSequence": 19,
@@ -21767,15 +21407,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "2394",
-      "stopName": "LAGA (2394)",
-      "stopLat": "43.408210702908",
-      "stopLon": "-2.65594506739592",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "2386",
+      "stopName": "ANZORA (2386)",
+      "stopLat": "43.4092607738551",
+      "stopLon": "-2.67635525864088",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3532_1304_OP44FIN_36000_O44FI3532_353220_4",
-      "lat": "43.40624",
-      "lon": "-2.6532393"
+      "lat": "43.41118",
+      "lon": "-2.6694283"
     },
     {
       "id": "8648",
@@ -22010,7 +21650,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "356",
       "stopName": "LA CASILLA (AUTONOMÍA 45) (356)",
       "stopLat": "43.2576269866383",
@@ -22037,30 +21677,12 @@
       "serviceCode": "351451",
       "upcomingStops": [
         {
-          "stopId": "1924",
-          "stopSequence": 4,
-          "name": "ARRIAGANE INDUSTRIALDEA (1924)",
-          "arrivalTime": "2026-10-25T10:34:02+01:00",
-          "departureTime": "2026-10-25T10:34:04+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
-          "stopId": "1840",
-          "stopSequence": 5,
-          "name": "TANTORTA (1840)",
-          "arrivalTime": "2026-10-25T10:34:56+01:00",
-          "departureTime": "2026-10-25T10:34:58+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "3938",
           "stopSequence": 6,
           "name": "PARTICULAR DE SAN PEDRO (3938)",
           "arrivalTime": "2026-10-25T10:35:35+01:00",
           "departureTime": "2026-10-25T10:35:37+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -22163,15 +21785,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1949",
-      "stopName": "BOROA (ORDAINLEKUA/PEAJE) (1949)",
-      "stopLat": "43.2308968783693",
-      "stopLon": "-2.75064535732794",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1840",
+      "stopName": "TANTORTA (1840)",
+      "stopLat": "43.2254765910556",
+      "stopLon": "-2.74356510014105",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3514_912_OP44FIN_36000_O44FI3514_351451_4",
-      "lat": "43.23125",
-      "lon": "-2.7526908"
+      "lat": "43.22727",
+      "lon": "-2.7480645"
     },
     {
       "id": "8651",
@@ -22189,15 +21811,6 @@
       "serviceNumber": "51",
       "serviceCode": "351251",
       "upcomingStops": [
-        {
-          "stopId": "1803",
-          "stopSequence": 5,
-          "name": "MATIENA (SAN BLAS) (1803)",
-          "arrivalTime": "2026-10-25T10:38:06+01:00",
-          "departureTime": "2026-10-25T10:38:08+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "3392",
           "stopSequence": 6,
@@ -22343,15 +21956,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1802",
-      "stopName": "BIDEBARRIETA (1802)",
-      "stopLat": "43.1750849006762",
-      "stopLon": "-2.63678340971813",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1803",
+      "stopName": "MATIENA (SAN BLAS) (1803)",
+      "stopLat": "43.1694155173034",
+      "stopLon": "-2.60822140148195",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3512_905_OP44FIN_35100_O44FI3512_351251_2",
-      "lat": "43.17512",
-      "lon": "-2.6368325"
+      "lat": "43.17502",
+      "lon": "-2.6295617"
     },
     {
       "id": "8653",
@@ -22541,7 +22154,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "356",
       "stopName": "LA CASILLA (AUTONOMÍA 45) (356)",
       "stopLat": "43.2576269866383",
@@ -22573,7 +22186,7 @@
           "name": "BERREÑO (2329)",
           "arrivalTime": "2026-10-25T10:28:34+01:00",
           "departureTime": "2026-10-25T10:28:36+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -22919,15 +22532,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2328",
       "stopName": "ASTORKIGANE (2328)",
       "stopLat": "43.2725694656767",
       "stopLon": "-2.60714948638162",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3523_917_OP44FIN_35400_O44FI3513_351352_3",
-      "lat": "43.27182",
-      "lon": "-2.60041"
+      "lat": "43.272537",
+      "lon": "-2.6071832"
     },
     {
       "id": "8659",
@@ -22945,15 +22558,15 @@
       "serviceNumber": "54",
       "serviceCode": "352354",
       "upcomingStops": [],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2877",
       "stopName": "BILBAO INTERMODAL (2877)",
       "stopLat": "43.2610601506695",
       "stopLon": "-2.94916366936589",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3513_908_OP44FIN_31800_O44FI3523_352354_3",
-      "lat": "43.226757",
-      "lon": "-2.8198206"
+      "lat": "43.233784",
+      "lon": "-2.8406377"
     },
     {
       "id": "8660",
@@ -22972,21 +22585,12 @@
       "serviceCode": "351551",
       "upcomingStops": [
         {
-          "stopId": "1980",
-          "stopSequence": 4,
-          "name": "ITXAS BEGI (1980)",
-          "arrivalTime": "2026-10-25T10:18:37+01:00",
-          "departureTime": "2026-10-25T10:18:39+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
           "stopId": "1981",
           "stopSequence": 5,
           "name": "LANDABERDE (BBKREN UDALEKUA/COLONIA BBK) (1981)",
           "arrivalTime": "2026-10-25T10:19:16+01:00",
           "departureTime": "2026-10-25T10:19:18+01:00",
-          "timeSource": "Horario GTFS · hora pasada",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -22995,7 +22599,7 @@
           "name": "AXPE (1982)",
           "arrivalTime": "2026-10-25T10:20:34+01:00",
           "departureTime": "2026-10-25T10:20:36+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Horario GTFS · hora pasada",
           "status": ""
         },
         {
@@ -23004,7 +22608,7 @@
           "name": "SAN BARTOLOMÉ (1983)",
           "arrivalTime": "2026-10-25T10:21:37+01:00",
           "departureTime": "2026-10-25T10:21:39+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Horario GTFS · hora pasada",
           "status": ""
         },
         {
@@ -23224,15 +22828,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1979",
-      "stopName": "BIDE ZABALA (SUKARRIETA) (1979)",
-      "stopLat": "43.3962974190154",
-      "stopLon": "-2.69811347832643",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1980",
+      "stopName": "ITXAS BEGI (1980)",
+      "stopLat": "43.391868196489",
+      "stopLon": "-2.69508577248537",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3515_915_OP44FIN_36600_O44FI3515_351551_3",
-      "lat": "43.39656",
-      "lon": "-2.6981065"
+      "lat": "43.392776",
+      "lon": "-2.69694"
     },
     {
       "id": "8662",
@@ -23269,15 +22873,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "305",
       "stopName": "ZABALBURU (AUTONOMÍA 4) (305)",
       "stopLat": "43.2573977902076",
       "stopLon": "-2.93514222498991",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3915_943_OP44FIN_32700_O44FI3915_391551_2",
-      "lat": "43.231365",
-      "lon": "-2.8888202"
+      "lat": "43.236",
+      "lon": "-2.9190474"
     },
     {
       "id": "8663",
@@ -23377,15 +22981,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1808",
       "stopName": "AZPILTZA (1808)",
       "stopLat": "43.2901938806289",
       "stopLon": "-2.48680894818657",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3916_946_OP44FIN_33000_O44FI3915_391553_3",
-      "lat": "43.26658",
-      "lon": "-2.5019171"
+      "lat": "43.26674",
+      "lon": "-2.5033205"
     },
     {
       "id": "8665",
@@ -23409,7 +23013,7 @@
           "name": "ZUBIBITARTE (2793)",
           "arrivalTime": "2026-10-25T10:40:10+01:00",
           "departureTime": "2026-10-25T10:40:12+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -23584,15 +23188,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2703",
       "stopName": "MADALENA PLAZA (2703)",
       "stopLat": "43.1715964946372",
       "stopLon": "-2.63304749762767",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3915_942_OP44FIN_34800_O44FI3916_391657_3",
-      "lat": "43.171688",
-      "lon": "-2.6335187"
+      "lat": "43.171703",
+      "lon": "-2.6327188"
     },
     {
       "id": "8666",
@@ -23629,15 +23233,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "305",
       "stopName": "ZABALBURU (AUTONOMÍA 4) (305)",
       "stopLat": "43.2573977902076",
       "stopLon": "-2.93514222498991",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3512_906_OP44FIN_34200_O44FI3512_351253_3",
-      "lat": "43.180946",
-      "lon": "-2.647663"
+      "lat": "43.18801",
+      "lon": "-2.6807263"
     },
     {
       "id": "8667",
@@ -23645,25 +23249,287 @@
       "line": "A3515",
       "lineRef": "",
       "direction": "",
-      "destination": "BILBAO",
+      "destination": "BERMEO",
       "destinationSource": "GTFS · horario",
       "destinationRef": "",
-      "tripId": "trp_A3515_915_OP44FIN_33000_O44FI3515_351553_3",
+      "tripId": "trp_A3515_914_OP44FIN_37800_O44FI3515_351553_4",
       "tripShortName": "",
       "blockId": "",
       "calendarServiceId": "OP44FIN",
       "serviceNumber": "53",
       "serviceCode": "351553",
-      "upcomingStops": [],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "3950",
-      "stopName": "ABANDO (GELTOKIA/ESTACIÓN) (3950)",
-      "stopLat": "43.2600954289292",
-      "stopLon": "-2.92895433157996",
+      "upcomingStops": [
+        {
+          "stopId": "1949",
+          "stopSequence": 3,
+          "name": "BOROA (ORDAINLEKUA/PEAJE) (1949)",
+          "arrivalTime": "2026-10-25T11:08:42+01:00",
+          "departureTime": "2026-10-25T11:08:44+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1924",
+          "stopSequence": 4,
+          "name": "ARRIAGANE INDUSTRIALDEA (1924)",
+          "arrivalTime": "2026-10-25T11:09:53+01:00",
+          "departureTime": "2026-10-25T11:09:55+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1840",
+          "stopSequence": 5,
+          "name": "TANTORTA (1840)",
+          "arrivalTime": "2026-10-25T11:10:56+01:00",
+          "departureTime": "2026-10-25T11:10:58+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "3938",
+          "stopSequence": 6,
+          "name": "PARTICULAR DE SAN PEDRO (3938)",
+          "arrivalTime": "2026-10-25T11:11:41+01:00",
+          "departureTime": "2026-10-25T11:11:43+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1841",
+          "stopSequence": 7,
+          "name": "SAN PEDRO  (GERALEKUA/APEADERO) (1841)",
+          "arrivalTime": "2026-10-25T11:12:42+01:00",
+          "departureTime": "2026-10-25T11:12:44+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "3388",
+          "stopSequence": 8,
+          "name": "SAN JUAN (3388)",
+          "arrivalTime": "2026-10-25T11:13:46+01:00",
+          "departureTime": "2026-10-25T11:13:48+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "3389",
+          "stopSequence": 9,
+          "name": "ATEGORRI (3389)",
+          "arrivalTime": "2026-10-25T11:16:04+01:00",
+          "departureTime": "2026-10-25T11:16:06+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1844",
+          "stopSequence": 10,
+          "name": "ZUGASTIETA (1844)",
+          "arrivalTime": "2026-10-25T11:24:52+01:00",
+          "departureTime": "2026-10-25T11:24:54+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "3940",
+          "stopSequence": 11,
+          "name": "OKA (3940)",
+          "arrivalTime": "2026-10-25T11:28:52+01:00",
+          "departureTime": "2026-10-25T11:28:54+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1845",
+          "stopSequence": 12,
+          "name": "ARIATZA (1845)",
+          "arrivalTime": "2026-10-25T11:29:52+01:00",
+          "departureTime": "2026-10-25T11:29:54+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1846",
+          "stopSequence": 13,
+          "name": "ASTELARRA (1846)",
+          "arrivalTime": "2026-10-25T11:32:27+01:00",
+          "departureTime": "2026-10-25T11:32:29+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1847",
+          "stopSequence": 14,
+          "name": "KURTZERO (GELTOKIA/ESTACIÓN) (1847)",
+          "arrivalTime": "2026-10-25T11:33:53+01:00",
+          "departureTime": "2026-10-25T11:33:55+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1848",
+          "stopSequence": 15,
+          "name": "ARANA (SEAT) (1848)",
+          "arrivalTime": "2026-10-25T11:35:49+01:00",
+          "departureTime": "2026-10-25T11:35:51+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1849",
+          "stopSequence": 16,
+          "name": "LURGORRI (IPARRAGUIRRE) (1849)",
+          "arrivalTime": "2026-10-25T11:38:39+01:00",
+          "departureTime": "2026-10-25T11:38:41+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1800",
+          "stopSequence": 17,
+          "name": "GELTOKIA/ESTACIÓN (1800)",
+          "arrivalTime": "2026-10-25T11:40:18+01:00",
+          "departureTime": "2026-10-25T11:40:20+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1964",
+          "stopSequence": 18,
+          "name": "CARLOS GANGOITI (1964)",
+          "arrivalTime": "2026-10-25T11:42:00+01:00",
+          "departureTime": "2026-10-25T11:42:02+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1963",
+          "stopSequence": 19,
+          "name": "LANDA-BERDE (1963)",
+          "arrivalTime": "2026-10-25T11:43:14+01:00",
+          "departureTime": "2026-10-25T11:43:16+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1965",
+          "stopSequence": 20,
+          "name": "ELEJALDE (1965)",
+          "arrivalTime": "2026-10-25T11:45:37+01:00",
+          "departureTime": "2026-10-25T11:45:39+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1966",
+          "stopSequence": 21,
+          "name": "AGARREGANE (1966)",
+          "arrivalTime": "2026-10-25T11:47:55+01:00",
+          "departureTime": "2026-10-25T11:47:57+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1967",
+          "stopSequence": 22,
+          "name": "GOIERRIA (1967)",
+          "arrivalTime": "2026-10-25T11:49:22+01:00",
+          "departureTime": "2026-10-25T11:49:24+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1968",
+          "stopSequence": 23,
+          "name": "LARRABE (1968)",
+          "arrivalTime": "2026-10-25T11:51:57+01:00",
+          "departureTime": "2026-10-25T11:51:59+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1969",
+          "stopSequence": 24,
+          "name": "SAN CRISTOBAL (1969)",
+          "arrivalTime": "2026-10-25T11:53:29+01:00",
+          "departureTime": "2026-10-25T11:53:31+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1970",
+          "stopSequence": 25,
+          "name": "SAN BARTOLOMÉ (1970)",
+          "arrivalTime": "2026-10-25T11:55:42+01:00",
+          "departureTime": "2026-10-25T11:55:44+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1971",
+          "stopSequence": 26,
+          "name": "AXPE (1971)",
+          "arrivalTime": "2026-10-25T11:57:17+01:00",
+          "departureTime": "2026-10-25T11:57:19+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1972",
+          "stopSequence": 27,
+          "name": "LANDABERDE (BBKREN UDALEKUA/COLONIA BBK) (1972)",
+          "arrivalTime": "2026-10-25T11:58:39+01:00",
+          "departureTime": "2026-10-25T11:58:41+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1973",
+          "stopSequence": 28,
+          "name": "ITXAS BEGI (1973)",
+          "arrivalTime": "2026-10-25T11:59:25+01:00",
+          "departureTime": "2026-10-25T11:59:27+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1974",
+          "stopSequence": 29,
+          "name": "BIDE ZABALA (SUKARRIETA) (1974)",
+          "arrivalTime": "2026-10-25T12:00:57+01:00",
+          "departureTime": "2026-10-25T12:00:59+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1977",
+          "stopSequence": 30,
+          "name": "MUNDAKA (SAHIESBIDEA/VARIANTE) (1977)",
+          "arrivalTime": "2026-10-25T12:03:45+01:00",
+          "departureTime": "2026-10-25T12:03:47+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "1976",
+          "stopSequence": 31,
+          "name": "LAMERA (1976)",
+          "arrivalTime": "2026-10-25T12:10:00+01:00",
+          "departureTime": "2026-10-25T12:10:02+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        }
+      ],
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "4121",
+      "stopName": "ZABALBURU (JUAN DE GARAY) (4121)",
+      "stopLat": "43.2567486983503",
+      "stopLon": "-2.9338246629385",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
-      "journeyRef": "trp_A3515_915_OP44FIN_33000_O44FI3515_351553_3",
-      "lat": "43.259575",
-      "lon": "-2.9300556"
+      "journeyRef": "trp_A3515_914_OP44FIN_37800_O44FI3515_351553_4",
+      "lat": "43.260204",
+      "lon": "-2.9289582"
     },
     {
       "id": "8668",
@@ -24222,7 +24088,7 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1879",
       "stopName": "GARDATA (1879)",
       "stopLat": "43.3639012689065",
@@ -24230,7 +24096,7 @@
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3513_908_OP44FIN_39000_O44FI3523_352355_3",
       "lat": "43.360275",
-      "lon": "-2.5067787"
+      "lon": "-2.506791"
     },
     {
       "id": "8669",
@@ -24249,39 +24115,12 @@
       "serviceCode": "352351",
       "upcomingStops": [
         {
-          "stopId": "1833",
-          "stopSequence": 3,
-          "name": "OSPITALEA/HOSPITAL (1833)",
-          "arrivalTime": "2026-10-25T10:38:19+01:00",
-          "departureTime": "2026-10-25T10:38:21+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "1834",
-          "stopSequence": 4,
-          "name": "LABEAGA (1834)",
-          "arrivalTime": "2026-10-25T10:38:50+01:00",
-          "departureTime": "2026-10-25T10:38:52+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
-          "stopId": "1770",
-          "stopSequence": 5,
-          "name": "ASKARRI (1770)",
-          "arrivalTime": "2026-10-25T10:41:06+01:00",
-          "departureTime": "2026-10-25T10:41:08+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "1771",
           "stopSequence": 6,
           "name": "ERLETXETA (ERMITA) (1771)",
           "arrivalTime": "2026-10-25T10:43:12+01:00",
           "departureTime": "2026-10-25T10:43:14+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -24771,15 +24610,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1832",
-      "stopName": "LABEAGA (1832)",
-      "stopLat": "43.2236958816792",
-      "stopLon": "-2.82032223035607",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1770",
+      "stopName": "ASKARRI (1770)",
+      "stopLat": "43.2327837061449",
+      "stopLon": "-2.81527989469449",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3523_916_OP44FIN_36300_O44FI3523_352351_3",
-      "lat": "43.22589",
-      "lon": "-2.8198848"
+      "lat": "43.22744",
+      "lon": "-2.8192892"
     },
     {
       "id": "8671",
@@ -24798,30 +24637,12 @@
       "serviceCode": "351353",
       "upcomingStops": [
         {
-          "stopId": "1860",
-          "stopSequence": 37,
-          "name": "ELEJALDE 12 (1860)",
-          "arrivalTime": "2026-10-25T10:48:10+01:00",
-          "departureTime": "2026-10-25T10:48:12+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
-        {
-          "stopId": "1861",
-          "stopSequence": 38,
-          "name": "IBINAGA (1861)",
-          "arrivalTime": "2026-10-25T10:49:05+01:00",
-          "departureTime": "2026-10-25T10:49:07+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "1862",
           "stopSequence": 39,
           "name": "IBINAGA (LOS ANGELES) (1862)",
           "arrivalTime": "2026-10-25T10:50:01+01:00",
           "departureTime": "2026-10-25T10:50:03+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -25023,15 +24844,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "1859",
-      "stopName": "APRAIZ (1859)",
-      "stopLat": "43.384210849019",
-      "stopLon": "-2.63466074014076",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "1861",
+      "stopName": "IBINAGA (1861)",
+      "stopLat": "43.3934340787099",
+      "stopLon": "-2.6326790918131",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3513_907_OP44FIN_32700_O44FI3513_351353_2",
-      "lat": "43.38063",
-      "lon": "-2.6353118"
+      "lat": "43.38982",
+      "lon": "-2.6313798"
     },
     {
       "id": "8672",
@@ -25049,15 +24870,6 @@
       "serviceNumber": "55",
       "serviceCode": "391655",
       "upcomingStops": [
-        {
-          "stopId": "2801",
-          "stopSequence": 19,
-          "name": "KALTXANGO (2801)",
-          "arrivalTime": "2026-10-25T10:24:43+01:00",
-          "departureTime": "2026-10-25T10:24:45+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "2802",
           "stopSequence": 20,
@@ -25095,15 +24907,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "2911",
-      "stopName": "ZUBIAURRE (2911)",
-      "stopLat": "43.1908936030526",
-      "stopLon": "-2.50184378738096",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "2801",
+      "stopName": "KALTXANGO (2801)",
+      "stopLat": "43.1856209556844",
+      "stopLon": "-2.5034194699974",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3916_947_OP44FIN_34800_O44FI3916_391655_2",
-      "lat": "43.19216",
-      "lon": "-2.503101"
+      "lat": "43.19013",
+      "lon": "-2.5019732"
     },
     {
       "id": "8673",
@@ -25122,15 +24934,6 @@
       "serviceCode": "391652",
       "upcomingStops": [
         {
-          "stopId": "2863",
-          "stopSequence": 8,
-          "name": "EGI (2863)",
-          "arrivalTime": "2026-10-25T10:16:51+01:00",
-          "departureTime": "2026-10-25T10:16:53+01:00",
-          "timeSource": "Horario GTFS · hora pasada",
-          "status": ""
-        },
-        {
           "stopId": "1822",
           "stopSequence": 9,
           "name": "PLAZAKOLA (1822)",
@@ -25145,7 +24948,7 @@
           "name": "AZPILTZA (1823)",
           "arrivalTime": "2026-10-25T10:20:16+01:00",
           "departureTime": "2026-10-25T10:20:18+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Horario GTFS · hora pasada",
           "status": ""
         },
         {
@@ -25293,15 +25096,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "2862",
-      "stopName": "ERRIBERA (2862)",
-      "stopLat": "43.309090967022",
-      "stopLon": "-2.46888831926674",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "2863",
+      "stopName": "EGI (2863)",
+      "stopLat": "43.3011355416411",
+      "stopLon": "-2.47317965096262",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3915_943_OP44FIN_36300_O44FI3916_391652_3",
-      "lat": "43.311028",
-      "lon": "-2.4647954"
+      "lat": "43.30886",
+      "lon": "-2.46913"
     },
     {
       "id": "8674",
@@ -25455,14 +25258,14 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "1849",
       "stopName": "LURGORRI (IPARRAGUIRRE) (1849)",
       "stopLat": "43.3067594299191",
       "stopLon": "-2.68037201857065",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3515_914_OP44FIN_34200_O44FI3515_351552_3",
-      "lat": "43.306908",
+      "lat": "43.30692",
       "lon": "-2.6802773"
     },
     {
@@ -25481,15 +25284,6 @@
       "serviceNumber": "54",
       "serviceCode": "391554",
       "upcomingStops": [
-        {
-          "stopId": "2704",
-          "stopSequence": 4,
-          "name": "GIPUZKOA  ETORBIDEA 23 (2704)",
-          "arrivalTime": "2026-10-25T11:16:14+01:00",
-          "departureTime": "2026-10-25T11:16:16+01:00",
-          "timeSource": "Estimación GTFS-RT",
-          "status": ""
-        },
         {
           "stopId": "2705",
           "stopSequence": 5,
@@ -25662,15 +25456,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
-      "stop": "4121",
-      "stopName": "ZABALBURU (JUAN DE GARAY) (4121)",
-      "stopLat": "43.2567486983503",
-      "stopLon": "-2.9338246629385",
+      "time": "2026-10-25T10:21:33+01:00",
+      "stop": "2704",
+      "stopName": "GIPUZKOA  ETORBIDEA 23 (2704)",
+      "stopLat": "43.1797344550569",
+      "stopLon": "-2.4978318050537",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3916_946_OP44FIN_36600_O44FI3915_391554_3",
-      "lat": "43.256714",
-      "lon": "-2.933681"
+      "lat": "43.250607",
+      "lon": "-2.9349318"
     },
     {
       "id": "8679",
@@ -25878,15 +25672,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2858",
       "stopName": "ASTILLERU (2858)",
       "stopLat": "43.319214927098",
       "stopLon": "-2.42130600154611",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3916_947_OP44FIN_38400_O44FI3916_391656_4",
-      "lat": "43.322777",
-      "lon": "-2.421328"
+      "lat": "43.322765",
+      "lon": "-2.4213529"
     },
     {
       "id": "8680",
@@ -25904,15 +25698,15 @@
       "serviceNumber": "1",
       "serviceCode": "353301",
       "upcomingStops": [],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2276",
       "stopName": "ALBIZ (2276)",
       "stopLat": "43.2583368507307",
       "stopLon": "-2.63777971408143",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3533_1307_OP44FIN_34200_O44FI3533_353301_3",
-      "lat": "43.258293",
-      "lon": "-2.6378045"
+      "lat": "43.25831",
+      "lon": "-2.637792"
     },
     {
       "id": "8681",
@@ -26120,15 +25914,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T10:19:54+01:00",
+      "time": "2026-10-25T10:21:33+01:00",
       "stop": "2268",
       "stopName": "BARAIA (2268)",
       "stopLat": "43.3265224164526",
       "stopLon": "-2.71873109070361",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3534_1313_OP44FIN_37800_O44FI3534_353401_4",
-      "lat": "43.329674",
-      "lon": "-2.7190742"
+      "lat": "43.329647",
+      "lon": "-2.7190745"
     }
   ]
 }
