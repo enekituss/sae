@@ -1,16 +1,16 @@
 {
   "sourceUrl": "https://ctb-siri.s3.eu-south-2.amazonaws.com/bizkaibus-vehicle-positions.xml",
   "tripUpdatesUrl": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFSRealTime/FeedTripUpdates.pb",
-  "fetchedAt": "2026-10-25T04:43:05+00:00",
-  "vehicleCount": 3,
+  "fetchedAt": "2026-10-25T04:45:04+00:00",
+  "vehicleCount": 4,
   "stopLookupCount": 2325,
-  "stopMatches": 3,
-  "destinationMatches": 3,
+  "stopMatches": 4,
+  "destinationMatches": 4,
   "vehicleBlocks": 0,
   "tripShortNames": 0,
-  "vehiclesWithServiceNumber": 3,
-  "vehiclesWithUpcomingStops": 2,
-  "vehiclesWithRealtimeStopTimes": 0,
+  "vehiclesWithServiceNumber": 4,
+  "vehiclesWithUpcomingStops": 3,
+  "vehiclesWithRealtimeStopTimes": 1,
   "vehicles": [
     {
       "id": "2076",
@@ -28,15 +28,69 @@
       "serviceNumber": "2",
       "serviceCode": "324702",
       "upcomingStops": [],
-      "time": "2026-10-25T05:42:10+01:00",
+      "time": "2026-10-25T05:43:52+01:00",
       "stop": "3372",
       "stopName": "AIREPORTUA/AEROPUERTO (IRTEERAK/SALIDAS) (3372)",
       "stopLat": "43.3053444891538",
       "stopLon": "-2.90556014988344",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3247_775_OP42FPPV_18900_O42FPP3247_324702_2",
-      "lat": "43.305355",
-      "lon": "-2.9054666"
+      "lat": "43.305298",
+      "lon": "-2.9053557"
+    },
+    {
+      "id": "2078",
+      "idType": "ID de vehículo",
+      "line": "A3247",
+      "lineRef": "",
+      "direction": "",
+      "destination": "AIREPORTUA",
+      "destinationSource": "GTFS · horario",
+      "destinationRef": "",
+      "tripId": "trp_A3247_775_OP42FPPV_20700_O42FPP3247_324704_2",
+      "tripShortName": "",
+      "blockId": "",
+      "calendarServiceId": "OP42FPPV",
+      "serviceNumber": "4",
+      "serviceCode": "324704",
+      "upcomingStops": [
+        {
+          "stopId": "896",
+          "stopSequence": 3,
+          "name": "MOYUA PLAZA (OGASUNA/HACIENDA) (896)",
+          "arrivalTime": "2026-10-25T05:50:06+01:00",
+          "departureTime": "2026-10-25T05:50:08+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "4133",
+          "stopSequence": 4,
+          "name": "ALAMEDA RECALDE 11 (4133)",
+          "arrivalTime": "2026-10-25T05:51:28+01:00",
+          "departureTime": "2026-10-25T05:51:30+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        },
+        {
+          "stopId": "3372",
+          "stopSequence": 5,
+          "name": "AIREPORTUA/AEROPUERTO (IRTEERAK/SALIDAS) (3372)",
+          "arrivalTime": "2026-10-25T06:21:49+01:00",
+          "departureTime": "2026-10-25T06:21:51+01:00",
+          "timeSource": "Horario GTFS",
+          "status": ""
+        }
+      ],
+      "time": "2026-10-25T05:43:52+01:00",
+      "stop": "632",
+      "stopName": "GRAN VÍA 79 (632)",
+      "stopLat": "43.264604915025",
+      "stopLon": "-2.94265486929186",
+      "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
+      "journeyRef": "trp_A3247_775_OP42FPPV_20700_O42FPP3247_324704_2",
+      "lat": "43.261024",
+      "lon": "-2.9490159"
     },
     {
       "id": "7825",
@@ -55,21 +109,12 @@
       "serviceCode": "313607",
       "upcomingStops": [
         {
-          "stopId": "581",
-          "stopSequence": 12,
-          "name": "RESURRECCIÓN MARÍA AZKUE 34 (LA RONDA) (581)",
-          "arrivalTime": "2026-10-25T05:51:29+01:00",
-          "departureTime": "2026-10-25T05:51:31+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
-        {
           "stopId": "507",
           "stopSequence": 13,
           "name": "PRIMERO DE MAYO (507)",
           "arrivalTime": "2026-10-25T05:53:32+01:00",
           "departureTime": "2026-10-25T05:53:34+01:00",
-          "timeSource": "Horario GTFS",
+          "timeSource": "Estimación GTFS-RT",
           "status": ""
         },
         {
@@ -271,15 +316,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T05:42:10+01:00",
-      "stop": "544",
-      "stopName": "RESURRECCIÓN MARÍA AZKUE 12 (544)",
-      "stopLat": "43.2909493474861",
-      "stopLon": "-2.99100905317737",
+      "time": "2026-10-25T05:43:52+01:00",
+      "stop": "581",
+      "stopName": "RESURRECCIÓN MARÍA AZKUE 34 (LA RONDA) (581)",
+      "stopLat": "43.290013133025",
+      "stopLon": "-2.99556160705814",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3136_1173_OP40FIN_19800_O40FI3136_313607_2",
-      "lat": "43.289265",
-      "lon": "-2.9861448"
+      "lat": "43.29066",
+      "lon": "-2.9923697"
     },
     {
       "id": "7855",
@@ -297,15 +342,6 @@
       "serviceNumber": "5",
       "serviceCode": "313605",
       "upcomingStops": [
-        {
-          "stopId": "3554",
-          "stopSequence": 14,
-          "name": "EL DESIERTO PLAZA (3554)",
-          "arrivalTime": "2026-10-25T05:54:10+01:00",
-          "departureTime": "2026-10-25T05:54:12+01:00",
-          "timeSource": "Horario GTFS",
-          "status": ""
-        },
         {
           "stopId": "409",
           "stopSequence": 15,
@@ -595,15 +631,15 @@
           "status": ""
         }
       ],
-      "time": "2026-10-25T05:42:10+01:00",
-      "stop": "343",
-      "stopName": "URBINAGA (LA NAVAL) (343)",
-      "stopLat": "43.3063471127769",
-      "stopLon": "-2.98945281977482",
+      "time": "2026-10-25T05:43:52+01:00",
+      "stop": "3554",
+      "stopName": "EL DESIERTO PLAZA (3554)",
+      "stopLat": "43.301807953927",
+      "stopLon": "-2.98321515384245",
       "stopSource": "https://baliabideak.bizkaia.eus/Bizkaibus/GTFS/Bizkaibus.zip (stops.txt)",
       "journeyRef": "trp_A3136_669_OP40FIN_19800_O40FI3136_313605_2",
-      "lat": "43.30832",
-      "lon": "-2.9949691"
+      "lat": "43.305725",
+      "lon": "-2.9844396"
     }
   ]
 }
