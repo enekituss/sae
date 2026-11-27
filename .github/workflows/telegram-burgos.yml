@@ -884,13 +884,13 @@ jobs:
                       if "timeout" in detail.lower() or "timed out" in detail.lower() or "aborted" in detail.lower():
                           timed_out_hosts.add(host)
 
-              # Repite el patrón de proxy usado por Bus Burgos, pero toma como destino
-              # la ruta oficial de referencia del SAE y conserva el parámetro dinámico de línea.
+              # Usa dos proxies independientes como último respaldo. Se omite AllOrigins
+              # por sus respuestas 408 recurrentes. El destino sigue siendo la ruta oficial
+              # de referencia del SAE con el parámetro dinámico de línea.
               proxy_target = make_url("https://movilidad.aytoburgos.es/es/rutas-en-directo")
               encoded_target = urllib.parse.quote(proxy_target, safe="")
               proxies = [
                   ("corsproxy.io", "https://corsproxy.io/?" + encoded_target),
-                  ("AllOrigins", "https://api.allorigins.win/raw?url=" + encoded_target),
                   ("CodeTabs", "https://api.codetabs.com/v1/proxy?quest=" + encoded_target)
               ]
               for proxy_name, proxy_url in proxies:
