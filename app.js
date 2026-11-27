@@ -393,6 +393,127 @@
     );
   }
 
+  function normalizeBearing(value) {
+    if (value === null || value === undefined || value === "") return null;
+    const number = Number(value);
+    if (!Number.isFinite(number)) return null;
+    return ((number % 360) + 360) % 360;
+  }
+
+  function bearingBetweenPositions(from, to) {
+    if (!validPosition(from) || !validPosition(to)) return null;
+    const lat1 = Number(from.lat) * Math.PI / 180;
+    const lat2 = Number(to.lat) * Math.PI / 180;
+    const deltaLon = (Number(to.lon) - Number(from.lon)) * Math.PI / 180;
+    const y = Math.sin(deltaLon) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) -
+      Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLon);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || Math.hypot(x, y) < 1e-12) return null;
+    return normalizeBearing(Math.atan2(y, x) * 180 / Math.PI);
+  }
+
+  function bearingForShapeSegment(shapePoints, segmentIndex) {
+    if (!Array.isArray(shapePoints) || shapePoints.length < 2) return null;
+    const index = Number(segmentIndex);
+    if (!Number.isInteger(index) || index < 0 || index >= shapePoints.length - 1) return null;
+
+    const toPosition = point => {
+      if (Array.isArray(point)) return { lat: Number(point[0]), lon: Number(point[1]) };
+      return {
+        lat: Number(point?.lat),
+        lon: Number(point?.lon ?? point?.lng ?? point?.longitude)
+      };
+    };
+
+    return bearingBetweenPositions(
+      toPosition(shapePoints[index]),
+      toPosition(shapePoints[index + 1])
+    );
+  }
+
+  function angularDifference(first, second) {
+    const a = normalizeBearing(first);
+    const b = normalizeBearing(second);
+    if (a === null || b === null) return Infinity;
+    return Math.abs(((a - b + 540) % 360) - 180);
+  }
+
+  // Calcula el rumbo real comparando las posiciones GPS entre actualizaciones.
+  // Se ignoran desplazamientos pequeños y velocidades físicamente improbables
+  // para no confundir el ruido del GPS con un cambio de sentido.
+  function attachVehicleMotion(lineCode, vehicles) {
+    const now = Date.now();
+    const line = normalizeLine(lineCode);
+    const maxSampleAge = 15 * 60 * 1000;
+    const bearingMemoryAge = 10 * 60 * 1000;
+
+    const enriched = (Array.isArray(vehicles) ? vehicles : []).map(bus => {
+      const id = String(bus?.id ?? bus?.vehicleId ?? bus?.vehicle_id ?? bus?.vehicle ?? "").trim();
+      const position = vehiclePosition(bus);
+      if (!id || !position) return bus;
+
+      const key = line + "|" + id;
+      const previous = state.lastPositions.get(key);
+      const publishedBearing = [
+        bus.motionBearing, bus.bearing, bus.heading, bus.course
+      ].map(normalizeBearing).find(value => value !== null) ?? null;
+
+      let motionBearing = publishedBearing;
+      let nextRecord = {
+        lat: Number(position.lat),
+        lon: Number(position.lon),
+        timestamp: now,
+        bearing: publishedBearing
+      };
+
+      const hasPrevious = previous && validPosition(previous) &&
+        Number.isFinite(Number(previous.timestamp));
+
+      if (hasPrevious) {
+        const elapsed = now - Number(previous.timestamp);
+        const displacement = distanceBetweenPositions(previous, position);
+
+        if (elapsed > 0 && elapsed <= maxSampleAge && displacement >= 8) {
+          const speedKmh = displacement / (elapsed / 1000) * 3.6;
+          if (speedKmh >= 4 && speedKmh <= 100) {
+            motionBearing = publishedBearing ??
+              bearingBetweenPositions(previous, position);
+          }
+          nextRecord.bearing = motionBearing ?? previous.bearing ?? null;
+        } else if (elapsed > maxSampleAge || elapsed <= 0) {
+          nextRecord.bearing = publishedBearing;
+        } else {
+          // Conserva el punto de referencia para acumular pequeños movimientos
+          // y evitar que el GPS parado genere rumbos aleatorios.
+          nextRecord = {
+            ...previous,
+            bearing: publishedBearing ?? previous.bearing ?? null
+          };
+        }
+
+        if (motionBearing === null && elapsed <= bearingMemoryAge) {
+          motionBearing = normalizeBearing(previous.bearing);
+        }
+      }
+
+      state.lastPositions.set(key, {
+        ...nextRecord,
+        bearing: motionBearing ?? nextRecord.bearing ?? null
+      });
+
+      return motionBearing === null ? bus : { ...bus, motionBearing };
+    });
+
+    // Evita conservar indefinidamente posiciones de vehículos desaparecidos.
+    for (const [key, record] of state.lastPositions.entries()) {
+      if (!record || now - Number(record.timestamp) > 30 * 60 * 1000) {
+        state.lastPositions.delete(key);
+      }
+    }
+
+    return enriched;
+  }
+
   function findStopIndex(direction, bus) {
     const identifiers = [
       bus.stopId, bus.stopCode, bus.nodeId, bus.node_id,
