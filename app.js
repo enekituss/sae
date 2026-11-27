@@ -1192,12 +1192,22 @@
       const model = state.models[id] || "";
       const eta = formatETA(bus.seconds);
       const distance = formatDistance(bus.meters);
-      const detail = [eta, distance].filter(Boolean).join(" · ");
       const delayDirection = direction || findBestDelayDirection(bus, directions);
       const delay = busStatus(bus, delayDirection);
+      const rawPosition = vehiclePosition(bus);
+      const coordinateText = rawPosition
+        ? Number(rawPosition.lat).toFixed(5) + ", " + Number(rawPosition.lon).toFixed(5)
+        : "";
       const placement = position
-        ? (position.source === "GPS" ? "GPS en recorrido" : "Próxima parada")
-        : (direction ? "Posición sin confirmar" : "Sentido sin confirmar");
+        ? (position.source === "GPS" ? "GPS situado en el recorrido" : "Posición estimada por paradas")
+        : rawPosition ? "GPS publicado, sin encaje en el trazado" : "Posición no publicada";
+      const senseText = direction
+        ? "Sentido: " + direction.headsign
+        : "Sentido sin confirmar";
+      const positionText = coordinateText
+        ? placement + " (" + coordinateText + ")"
+        : position ? placement + " (" + position.source + ")" : placement;
+      const detail = [eta, distance, senseText, positionText].filter(Boolean).join(" · ");
 
       return '<div class="vehicle-chip" title="' + escapeHTML([
         displayId === "Sin ID" ? "Vehículo sin identificador publicado" : "Coche " + id,
