@@ -742,10 +742,8 @@ jobs:
               portlet_id = "as_asac_isaenext_IsaenextWebPortlet"
               prefix = "_" + portlet_id + "_"
               sources = [
-                  "https://movilidad.aytoburgos.es/es/rutas-en-directo",
-                  "https://www.aytoburgos.es/web/movilidad/rutas-en-directo",
                   "https://movilidad.aytoburgos.es/rutas-en-directo",
-                  "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo"
+                  "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
               ]
               failures = []
               timed_out_hosts = set()
@@ -863,13 +861,13 @@ jobs:
                       headers={
                           "Accept": "application/json, text/plain, */*",
                           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
-                          "Referer": "https://movilidad.aytoburgos.es/es/rutas-en-directo",
+                          "Referer": "https://movilidad.aytoburgos.es/rutas-en-directo",
                           "Cache-Control": "no-cache",
                           "X-Requested-With": "XMLHttpRequest"
                       }
                   )
                   try:
-                      with urllib.request.urlopen(request, timeout=5) as response:
+                      with urllib.request.urlopen(request, timeout=9) as response:
                           payload = json.loads(response.read().decode("utf-8"))
                       return parse_line_payload(payload, host + " (directo)")
                   except urllib.error.HTTPError as exc:
@@ -887,7 +885,7 @@ jobs:
               # Usa dos proxies independientes como último respaldo. Se omite AllOrigins
               # por sus respuestas 408 recurrentes. El destino sigue siendo la ruta oficial
               # de referencia del SAE con el parámetro dinámico de línea.
-              proxy_target = make_url("https://movilidad.aytoburgos.es/es/rutas-en-directo")
+              proxy_target = make_url("https://movilidad.aytoburgos.es/rutas-en-directo")
               encoded_target = urllib.parse.quote(proxy_target, safe="")
               proxies = [
                   ("corsproxy.io", "https://corsproxy.io/?" + encoded_target),
@@ -904,7 +902,7 @@ jobs:
                           }
                       )
                       try:
-                          with urllib.request.urlopen(request, timeout=5) as response:
+                          with urllib.request.urlopen(request, timeout=9) as response:
                               body = response.read().decode("utf-8", errors="replace")
                           if body.startswith("URL_DECODED:"):
                               try:
