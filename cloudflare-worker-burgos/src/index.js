@@ -1,15 +1,11 @@
 // Despliegue: Cloudflare Workers Builds desde la integración GitHub de este repositorio.
-// La autenticación de despliegue se gestiona en Cloudflare, no en este código.
-// URL de referencia facilitada para el SAE municipal: la ruta base es /es/rutas-en-directo.
-// Para cada petición se conservan los mismos parámetros ISAENEXT y se cambia
+// La ruta pública española del portal municipal es /rutas-en-directo (sin prefijo /es).
+// Para cada petición se conservan los parámetros ISAENEXT y se cambia
 // _as_asac_isaenext_IsaenextWebPortlet_line / label con la línea consultada.
-const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/es/rutas-en-directo";
+const BURGOS_SOURCE = "https://movilidad.aytoburgos.es/rutas-en-directo";
 const BURGOS_SOURCE_FALLBACKS = [
   BURGOS_SOURCE,
-  "https://www.aytoburgos.es/web/movilidad/rutas-en-directo",
-  "https://movilidad.aytoburgos.es/rutas-en-directo",
-  "https://movilidad.aytoburgos.es/web/movilidad/rutas-en-directo",
-  "https://www.aytoburgos.es/rutas-en-directo"
+  "https://www.aytoburgos.es/web/movilidad/rutas-en-directo"
 ];
 const PORTLET_ID = "as_asac_isaenext_IsaenextWebPortlet";
 const PORTLET_PREFIX = "_as_asac_isaenext_IsaenextWebPortlet_";
@@ -257,7 +253,7 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
         const response = await fetch(proxy.url, {
           method: "GET",
           headers: { "Accept": "application/json, text/plain, */*" },
-          signal: AbortSignal.timeout(resource === "resourceVehicles" ? 3500 : 3000)
+          signal: AbortSignal.timeout(resource === "resourceVehicles" ? 5000 : 4000)
         });
         let body = await response.text();
         if (!response.ok) {
@@ -673,7 +669,7 @@ async function fetchVehicleListForLine(line) {
   let vehicleResult = null;
   let primaryError = "";
   try {
-    vehicleResult = await requestIsaenext("resourceVehicles", lineParams, { timeoutMs: 5000, maxSources: 2 });
+    vehicleResult = await requestIsaenext("resourceVehicles", lineParams, { timeoutMs: 9000, maxSources: 2 });
   } catch (error) {
     primaryError = error?.message || String(error);
   }
@@ -717,7 +713,7 @@ async function fetchVehicleListForLine(line) {
   const warnings = ["resourceVehicles no disponible: " + primaryError];
   try {
     const routeResult = await requestIsaenext("resourceRoutes", lineParams, {
-      timeoutMs: 3000,
+      timeoutMs: 6000,
       maxSources: 2
     });
     const routePayload = routeResult.data;
@@ -732,7 +728,7 @@ async function fetchVehicleListForLine(line) {
       [PORTLET_PREFIX + "tipo"]: "1",
       [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
     }, {
-      timeoutMs: 4000,
+      timeoutMs: 6000,
       maxSources: 2
     });
     if (!Array.isArray(estimationResult.data)) {
@@ -828,7 +824,7 @@ async function fetchVehiclesForLine(line) {
   // primero para que un fallo de trazado no haga perder el listado del SAE.
   let vehicleResult;
   try {
-    vehicleResult = await requestIsaenext("resourceVehicles", lineParams, { timeoutMs: 5000, maxSources: 2 });
+    vehicleResult = await requestIsaenext("resourceVehicles", lineParams, { timeoutMs: 9000, maxSources: 2 });
   } catch (error) {
     throw new Error("resourceVehicles: " + (error?.message || String(error)));
   }
@@ -871,7 +867,7 @@ async function fetchVehiclesForLine(line) {
   // con una advertencia y sin inventar próximas paradas.
   try {
     const routeResult = await requestIsaenext("resourceRoutes", lineParams, {
-      timeoutMs: 2500,
+      timeoutMs: 6000,
       maxSources: 2
     });
     routePayload = routeResult.data;
@@ -1092,7 +1088,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.17-2026-11-27",
+        buildId: "burgos-live-v6.18-2026-11-27",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },
