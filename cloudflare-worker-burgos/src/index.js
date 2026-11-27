@@ -244,8 +244,8 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
     proxyUrl.searchParams.set(key, String(value));
   }
 
-  // Mismos tres transportes usados por la versión de Bus Burgos que ya consultaba
-  // ISAENEXT desde el navegador. CodeTabs era el tercer respaldo y faltaba en el Worker.
+  // Dos respaldos proxy independientes. AllOrigins se omite porque devuelve 408
+  // de forma recurrente y solo retrasa las consultas de la flota.
   for (const proxy of [
     { name: "corsproxy.io", url: "https://corsproxy.io/?" + encodeURIComponent(proxyUrl.toString()) },
     { name: "CodeTabs", url: "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(proxyUrl.toString()) }
@@ -536,8 +536,14 @@ function extractVehicleRows(payload, line) {
       (typeof row.vehicle === "string" || typeof row.vehicle === "number" ? row.vehicle :
         typeof row.vehiculo === "string" || typeof row.vehiculo === "number" ? row.vehiculo : "");
     const id = String(idValue ?? "").trim();
-    const nestedPosition = row.position ?? row.gps ?? row.location ??
-      nestedVehicle.position ?? nestedVehicle.gps ?? nestedVehicle.location ?? {};
+    const nestedPosition = {
+      ...(nestedVehicle.location || {}),
+      ...(nestedVehicle.gps || {}),
+      ...(nestedVehicle.position || {}),
+      ...(row.location || {}),
+      ...(row.gps || {}),
+      ...(row.position || {})
+    };
     const lat = Number(row.lat ?? row.latitude ?? nestedPosition.lat ?? nestedPosition.latitude ??
       nestedVehicle.lat ?? nestedVehicle.latitude);
     const lon = Number(row.lng ?? row.lon ?? row.longitude ?? nestedPosition.lon ??
@@ -612,8 +618,14 @@ function extractLineEstimations(line, nodes, payload) {
         if (!vehicleId || vehicleId === "0") continue;
         const seconds = item.seconds === null || item.seconds === undefined || item.seconds === "" ? null : Number(item.seconds);
         const meters = item.meters === null || item.meters === undefined || item.meters === "" ? null : Number(item.meters);
-        const nestedPosition = item.position ?? item.gps ?? item.location ??
-          nestedVehicle.position ?? nestedVehicle.gps ?? nestedVehicle.location ?? {};
+        const nestedPosition = {
+          ...(nestedVehicle.location || {}),
+          ...(nestedVehicle.gps || {}),
+          ...(nestedVehicle.position || {}),
+          ...(item.location || {}),
+          ...(item.gps || {}),
+          ...(item.position || {})
+        };
         const lat = Number(item.lat ?? item.latitude ?? nestedPosition.lat ?? nestedPosition.latitude ??
           nestedVehicle.lat ?? nestedVehicle.latitude);
         const lon = Number(item.lon ?? item.lng ?? item.longitude ?? nestedPosition.lon ??
