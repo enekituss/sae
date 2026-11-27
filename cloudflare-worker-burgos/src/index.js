@@ -1,3 +1,5 @@
+// Despliegue: Cloudflare Workers Builds desde la integración GitHub de este repositorio.
+// La autenticación de despliegue se gestiona en Cloudflare, no en este código.
 // URL de referencia facilitada para el SAE municipal: la ruta base es /es/rutas-en-directo.
 // Para cada petición se conservan los mismos parámetros ISAENEXT y se cambia
 // _as_asac_isaenext_IsaenextWebPortlet_line / label con la línea consultada.

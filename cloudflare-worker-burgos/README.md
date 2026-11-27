@@ -11,23 +11,22 @@ Este Worker sirve los datos municipales de los autobuses de Burgos y programa, c
 5. Despliega con `npx wrangler deploy` si Cloudflare solicita un comando de despliegue. La configuración ya declara el cron `*/2 * * * *`.
 6. En **Settings → Variables and Secrets**, crea el secreto **`BURGOS_GITHUB_TOKEN`**. Usa un token de GitHub con acceso solo al repositorio `enekituss/sae` y permiso **Actions: Read and write**. No reutilices el secreto del Worker de Bizkaibus: este secreto pertenece al Worker independiente de Burgos.
 
-El secreto `BURGOS_GITHUB_TOKEN` permite al cron lanzar el workflow de alertas cada dos minutos. Si falta o no tiene permisos, el Worker lo dejará reflejado en los logs y seguirá existiendo la programación de respaldo de GitHub Actions, que se ejecuta cada cinco minutos cuando GitHub puede atenderla.
+El secreto `BURGOS_GITHUB_TOKEN` es independiente del despliegue: permite al cron lanzar el workflow de alertas cada dos minutos. Si falta o no tiene permisos, el Worker lo dejará reflejado en los logs y seguirá existiendo la programación de respaldo de GitHub Actions, que se ejecuta cada cinco minutos cuando GitHub puede atenderla.
 
 ## Despliegue automático desde GitHub
 
-El repositorio incluye `.github/workflows/deploy-burgos-worker.yml`. Para que publique el código nuevo de forma automática, añade en **GitHub → Settings → Secrets and variables → Actions** estos dos secretos del repositorio:
+Este repositorio ya tiene conectada la integración oficial **Cloudflare Workers Builds**. El Worker `burgos-sae-spotter` se construye y despliega desde Cloudflare al recibir cambios en la rama conectada de GitHub. No se necesitan `CLOUDFLARE_API_TOKEN` ni `CLOUDFLARE_ACCOUNT_ID` en los secretos de GitHub para este método.
 
-- `CLOUDFLARE_API_TOKEN`: token de Cloudflare con permiso para editar Workers en la cuenta correcta.
-- `CLOUDFLARE_ACCOUNT_ID`: ID de la cuenta de Cloudflare donde está `burgos-sae-spotter`.
+La configuración de Wrangler está en `cloudflare-worker-burgos/wrangler.jsonc`; el directorio raíz del proyecto en Cloudflare debe ser exactamente `cloudflare-worker-burgos`, y el nombre del Worker debe ser `burgos-sae-spotter`.
 
-Cada cambio en el código o en `wrangler.jsonc` ejecutará el despliegue y comprobará que `/health` publica el `buildId` esperado. Si falta cualquiera de esos secretos, el workflow solo valida la sintaxis y muestra un aviso: no afirma que haya desplegado el Worker. El secreto `BURGOS_GITHUB_TOKEN` mencionado arriba no sustituye a estas credenciales de despliegue. Después de añadir los dos secretos, abre **Actions → Desplegar Worker SAE de Burgos → Run workflow** para ejecutar el primer despliegue sin tener que modificar más archivos.
+El workflow `.github/workflows/deploy-burgos-worker.yml` solo valida la sintaxis de JavaScript y la configuración Wrangler. El despliegue real se comprueba en el check que genera Cloudflare en GitHub: **Workers Builds: burgos-sae-spotter**. Un check fallido significa que Cloudflare no ha terminado correctamente el build; no se corrige añadiendo secretos a este repositorio.
 
 ## Comprobarlo
 
 Abre la URL `workers.dev` asignada por Cloudflare:
 
 - `/health`: debe devolver JSON con `"ok": true`, `apiVersion: "sae-three-resources-per-line-v6"` y `buildId: "burgos-live-v6.15-2026-11-27"`. La API permanece en v6 para conservar compatibilidad, así que hay que comprobar también `buildId`: si aparece una versión anterior, Cloudflare sigue usando un código desactualizado. El build v6.12 prioriza la URL de referencia facilitada para el SAE municipal: `/es/rutas-en-directo`. Para cada línea mantiene la estructura de URL y cambia `...Portlet_line` y `...Portlet_label` (por ejemplo, `01`, `02`, `03`…); el enlace base no cambia. Los errores 5xx/429 evitan reintentos redundantes en el mismo host y cada proxy tiene un límite de espera corto. Además, el Worker y el monitor descartan respuestas que indiquen que los autobuses pertenecen a otra línea, para no registrar un coche en la línea equivocada.
-- Para desplegarlo manualmente, abre **Workers & Pages → `burgos-sae-spotter` → Edit code/Deployments** y despliega la última versión de `main`. Si usas despliegue mediante Wrangler, entra en el directorio raíz `cloudflare-worker-burgos` y ejecuta `npx wrangler deploy`. Después, vuelve a abrir `/health` y confirma que el `buildId` sea `burgos-live-v6.15-2026-11-27`.
+- Para desplegarlo manualmente, abre **Workers & Pages → `burgos-sae-spotter` → Edit code/Deployments** y despliega la última versión de `main`. Si la integración de Cloudflare falla, consulta el detalle de **Workers Builds: burgos-sae-spotter** en GitHub/Cloudflare. También se puede desplegar desde el panel de Cloudflare con la cuenta ya autenticada.
 - Para que el Worker dispare las alertas cada 2 minutos, `telegramScheduler.configured` debe ser `true`. Si es `false`, falta el secreto `BURGOS_GITHUB_TOKEN` en **Settings → Variables and Secrets** del Worker; las comprobaciones de respaldo de GitHub Actions siguen programadas cada 5 minutos.
 - `/api/burgos/vehicles?line=01&fresh=1`: devuelve la lista de autobuses de `resourceVehicles` de la línea 01 sin esperar al trazado ni a las estimaciones.
 - `/api/burgos/live?line=01&fresh=1`: consulta los tres recursos de esa línea y devuelve las observaciones de estimación para próximas paradas/itinerario.

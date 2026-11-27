@@ -38,7 +38,7 @@ burgos-modelos.json relaciona los identificadores conocidos con el modelo de veh
 
 ## Retrasos y turnos
 
-El Worker extrae el campo tiempo desfase cuando ISAENEXT lo publica (incluidas las variantes de nombre habituales). Si no existe en la respuesta, la web calcula un desfase orientativo comparando la llegada estimada con la hora programada GTFS y marca su procedencia. El desfase calculado no es una incidencia oficial. Si la fuente no publica GPS o una próxima parada asociable, el vehículo se conserva en la lista de flota sin inventar su posición sobre el dibujo.
+El Worker se despliega mediante la integración oficial Cloudflare Workers Builds conectada al repositorio; no requiere secretos de despliegue en GitHub Actions. El workflow de este repositorio solo valida el código. El Worker extrae el campo tiempo desfase cuando ISAENEXT lo publica (incluidas las variantes de nombre habituales). Si no existe en la respuesta, la web calcula un desfase orientativo comparando la llegada estimada con la hora programada GTFS y marca su procedencia. El desfase calculado no es una incidencia oficial. Si la fuente no publica GPS o una próxima parada asociable, el vehículo se conserva en la lista de flota sin inventar su posición sobre el dibujo.
 
 El campo GTFS block_id identifica un bloque de viajes asociado a un vehículo. No debe confundirse automáticamente con el turno interno de conductor o con el número de servicio operativo.
 
