@@ -91,6 +91,29 @@ function destinationId(value) {
     value.dest_id ?? value.destinationCode ?? value.codigoDestino ?? value.codDestino ?? "").trim();
 }
 
+function directionText(...sources) {
+  const keys = [
+    "direction", "sentido", "direccion",
+    "directionId", "direction_id", "sentidoId", "sentido_id",
+    "directionCode", "direction_code", "sentidoCode", "sentido_code",
+    "directionName", "direction_name", "sentidoNombre", "sentido_nombre"
+  ];
+  for (const source of sources) {
+    if (!source || typeof source !== "object") continue;
+    for (const key of keys) {
+      let value = source[key];
+      if (value === null || value === undefined || value === "") continue;
+      if (typeof value === "object") {
+        value = value.id ?? value.code ?? value.value ?? value.directionId ??
+          value.direction_id ?? value.name ?? value.nombre ?? value.label ?? "";
+      }
+      const text = String(value ?? "").trim();
+      if (text) return text;
+    }
+  }
+  return "";
+}
+
 function normalizeLineCode(value) {
   let line = String(value ?? "").trim().toUpperCase();
   line = line.replace(/^L[IÍ]NEA\s*/, "").replace(/^L(?=\d)/, "");
@@ -225,7 +248,6 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
   // ISAENEXT desde el navegador. CodeTabs era el tercer respaldo y faltaba en el Worker.
   for (const proxy of [
     { name: "corsproxy.io", url: "https://corsproxy.io/?" + encodeURIComponent(proxyUrl.toString()) },
-    { name: "AllOrigins", url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(proxyUrl.toString()) },
     { name: "CodeTabs", url: "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(proxyUrl.toString()) }
   ]) {
     // Un intento por proveedor: los restantes ofrecen rutas alternativas independientes.
@@ -235,7 +257,7 @@ async function requestIsaenext(resource, extra = {}, options = {}) {
         const response = await fetch(proxy.url, {
           method: "GET",
           headers: { "Accept": "application/json, text/plain, */*" },
-          signal: AbortSignal.timeout(4000)
+          signal: AbortSignal.timeout(resource === "resourceVehicles" ? 3500 : 3000)
         });
         let body = await response.text();
         if (!response.ok) {
@@ -514,8 +536,12 @@ function extractVehicleRows(payload, line) {
       (typeof row.vehicle === "string" || typeof row.vehicle === "number" ? row.vehicle :
         typeof row.vehiculo === "string" || typeof row.vehiculo === "number" ? row.vehiculo : "");
     const id = String(idValue ?? "").trim();
-    const lat = Number(row.lat ?? row.latitude ?? row.position?.lat ?? nestedVehicle.lat ?? nestedVehicle.latitude);
-    const lon = Number(row.lng ?? row.lon ?? row.longitude ?? row.position?.lon ??
+    const nestedPosition = row.position ?? row.gps ?? row.location ??
+      nestedVehicle.position ?? nestedVehicle.gps ?? nestedVehicle.location ?? {};
+    const lat = Number(row.lat ?? row.latitude ?? nestedPosition.lat ?? nestedPosition.latitude ??
+      nestedVehicle.lat ?? nestedVehicle.latitude);
+    const lon = Number(row.lng ?? row.lon ?? row.longitude ?? nestedPosition.lon ??
+      nestedPosition.lng ?? nestedPosition.longitude ??
       nestedVehicle.lng ?? nestedVehicle.lon ?? nestedVehicle.longitude);
     const validPosition = Number.isFinite(lat) && lat >= 42 && lat <= 43 &&
       Number.isFinite(lon) && lon >= -4 && lon <= -3;
@@ -531,7 +557,7 @@ function extractVehicleRows(payload, line) {
         row.destinationText ?? row.headsign ?? row.destiny ?? row.destinoNombre ??
         row.nombreDestino ?? row.destinationLabel ?? row.destinationDescription ?? ""),
       destinationId: destinationId(row),
-      direction: String(row.direction ?? row.sentido ?? row.direccion ?? "").trim(),
+      direction: directionText(row, nestedVehicle),
       seconds: row.seconds === null || row.seconds === undefined || row.seconds === ""
         ? null : Number.isFinite(Number(row.seconds)) ? Number(row.seconds) : null,
       meters: row.meters === null || row.meters === undefined || row.meters === ""
@@ -574,12 +600,25 @@ function extractLineEstimations(line, nodes, payload) {
       if (!Array.isArray(estimates)) continue;
       for (const item of estimates) {
         if (!item || typeof item !== "object") continue;
-        const vehicleId = String(item.vehicle ?? item.vehicleId ?? item.vehicle_id ?? "").trim();
+        const nestedVehicle = item.vehicle && typeof item.vehicle === "object" ? item.vehicle :
+          item.vehiculo && typeof item.vehiculo === "object" ? item.vehiculo : {};
+        const vehicleIdValue = item.vehicleId ?? item.vehicle_id ?? item.busId ?? item.bus_id ??
+          item.idVehicle ?? item.numeroCoche ?? item.numVehiculo ??
+          nestedVehicle.vehicleId ?? nestedVehicle.vehicle_id ?? nestedVehicle.busId ??
+          nestedVehicle.id ?? nestedVehicle.number ?? nestedVehicle.numero ??
+          (typeof item.vehicle === "string" || typeof item.vehicle === "number" ? item.vehicle :
+            typeof item.vehiculo === "string" || typeof item.vehiculo === "number" ? item.vehiculo : "");
+        const vehicleId = String(vehicleIdValue ?? "").trim();
         if (!vehicleId || vehicleId === "0") continue;
         const seconds = item.seconds === null || item.seconds === undefined || item.seconds === "" ? null : Number(item.seconds);
         const meters = item.meters === null || item.meters === undefined || item.meters === "" ? null : Number(item.meters);
-        const lat = Number(item.lat ?? item.latitude);
-        const lon = Number(item.lon ?? item.lng ?? item.longitude);
+        const nestedPosition = item.position ?? item.gps ?? item.location ??
+          nestedVehicle.position ?? nestedVehicle.gps ?? nestedVehicle.location ?? {};
+        const lat = Number(item.lat ?? item.latitude ?? nestedPosition.lat ?? nestedPosition.latitude ??
+          nestedVehicle.lat ?? nestedVehicle.latitude);
+        const lon = Number(item.lon ?? item.lng ?? item.longitude ?? nestedPosition.lon ??
+          nestedPosition.lng ?? nestedPosition.longitude ??
+          nestedVehicle.lon ?? nestedVehicle.lng ?? nestedVehicle.longitude);
         observations.push({
           vehicleId,
           line: reportedLine || line,
@@ -589,8 +628,7 @@ function extractLineEstimations(line, nodes, payload) {
             routeGroup.destinationName ?? routeGroup.destinationText ?? routeGroup.destino ??
             routeGroup.destinoNombre ?? routeGroup.nombreDestino ?? ""),
           destinationId: destinationId(item) || destinationId(routeGroup),
-          direction: String(item.direction ?? item.sentido ?? item.direccion ??
-            routeGroup.direction ?? routeGroup.sentido ?? routeGroup.direccion ?? "").trim(),
+          direction: directionText(item, routeGroup, nestedVehicle),
           seconds: Number.isFinite(seconds) ? seconds : null,
           meters: Number.isFinite(meters) ? meters : null,
           desfaseSeconds: readTimeDesfase(item) ?? readTimeDesfase(routeGroup) ?? readTimeDesfase(result),
@@ -623,7 +661,7 @@ async function fetchVehicleListForLine(line) {
   let vehicleResult = null;
   let primaryError = "";
   try {
-    vehicleResult = await requestIsaenext("resourceVehicles", lineParams, { timeoutMs: 6000, maxSources: 4 });
+    vehicleResult = await requestIsaenext("resourceVehicles", lineParams, { timeoutMs: 5000, maxSources: 2 });
   } catch (error) {
     primaryError = error?.message || String(error);
   }
@@ -668,7 +706,7 @@ async function fetchVehicleListForLine(line) {
   try {
     const routeResult = await requestIsaenext("resourceRoutes", lineParams, {
       timeoutMs: 3000,
-      maxSources: 4
+      maxSources: 2
     });
     const routePayload = routeResult.data;
     let nodeIds = extractRouteStopIds(routePayload);
@@ -683,7 +721,7 @@ async function fetchVehicleListForLine(line) {
       [PORTLET_PREFIX + "nodoIds"]: nodeIds.join(",")
     }, {
       timeoutMs: 4000,
-      maxSources: 4
+      maxSources: 2
     });
     if (!Array.isArray(estimationResult.data)) {
       throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
@@ -778,7 +816,7 @@ async function fetchVehiclesForLine(line) {
   // primero para que un fallo de trazado no haga perder el listado del SAE.
   let vehicleResult;
   try {
-    vehicleResult = await requestIsaenext("resourceVehicles", lineParams);
+    vehicleResult = await requestIsaenext("resourceVehicles", lineParams, { timeoutMs: 5000, maxSources: 2 });
   } catch (error) {
     throw new Error("resourceVehicles: " + (error?.message || String(error)));
   }
@@ -1042,7 +1080,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.16-2026-11-27",
+        buildId: "burgos-live-v6.17-2026-11-27",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },
