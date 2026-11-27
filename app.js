@@ -585,6 +585,8 @@
     let comparisons = 0;
 
     for (let i = 1; i < measures.length; i++) {
+      if (measures[i - 1] === null || measures[i - 1] === undefined ||
+          measures[i] === null || measures[i] === undefined) continue;
       const previous = Number(measures[i - 1]);
       const current = Number(measures[i]);
       if (!Number.isFinite(previous) || !Number.isFinite(current)) continue;
@@ -611,9 +613,9 @@
         let semanticMatch = false;
 
         const reportedDirection = normalize(bus.direction)
-          .replace(/^(?:sentido|direction|dir)\\s+/, "");
+          .replace(/^(?:sentido|direction|dir)\s+/, "");
         const directionId = normalize(direction.directionId)
-          .replace(/^(?:sentido|direction|dir)\\s+/, "");
+          .replace(/^(?:sentido|direction|dir)\s+/, "");
         const headsign = normalize(direction.headsign);
         if (reportedDirection && (
           (directionId && reportedDirection === directionId) ||
@@ -648,7 +650,9 @@
               // Si se conoce la próxima parada, comprueba que queda por delante
               // del autobús siguiendo el orden real de paradas de este sentido.
               const progression = directionProgressionSign(direction);
-              const nextStopMeasure = Number(direction.stopMeasures?.[stopIndex]);
+              const rawNextStopMeasure = direction.stopMeasures?.[stopIndex];
+              const nextStopMeasure = rawNextStopMeasure === null || rawNextStopMeasure === undefined
+                ? NaN : Number(rawNextStopMeasure);
               if (stopIndex >= 0 && progression !== 0 && Number.isFinite(nextStopMeasure)) {
                 const distanceToNextStop = (nextStopMeasure - projection.measure) * progression;
                 if (distanceToNextStop >= -180 && distanceToNextStop <= 5000) {
