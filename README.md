@@ -22,7 +22,7 @@ Para una línea se consulta:
 - /api/burgos/live?line=01&fresh=1: vehículos publicados, destino, sentido, próxima parada, estimación en segundos y distancia cuando ISAENEXT lo facilita.
 - /health: estado y versión del Worker.
 
-La numeración se consulta individualmente: líneas 01–23, 73, 87, 88, 89, C1 y C2. La portada muestra las 29 líneas a la vez. Consulta el tiempo real por línea con un máximo de tres peticiones simultáneas y renueva la red cada dos minutos. Los coches sin posición GPS siguen apareciendo en el inventario de su línea.
+La numeración se consulta individualmente: líneas 01–23, 73, 87, 88, 89, C1 y C2. La portada muestra las 29 líneas a la vez. Por línea combina en paralelo el endpoint ligero del Worker y una consulta directa a ISAENEXT mediante proxies CORS públicos; después añade las estimaciones sin eliminar coches. Renueva la red cada tres minutos. Los coches sin posición GPS siguen apareciendo en el inventario.
 
 La API municipal puede no publicar algún campo en una consulta concreta. La interfaz no inventa posiciones, destinos ni tiempos que falten. El esquema representa ambos sentidos como dos ramas entre las cabeceras compartidas cuando el GTFS confirma que los extremos coinciden. El autobús se proyecta sobre la geometría GTFS con su GPS si la fuente lo publica y utiliza el movimiento entre consultas sucesivas para intentar distinguir el sentido. Si no hay GPS, se aproxima a la próxima parada estimada. Todos los coches recibidos permanecen en el inventario de su línea aunque no se pueda confirmar su posición.
 

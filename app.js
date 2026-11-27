@@ -2,6 +2,12 @@
   "use strict";
 
   const WORKER_BASE = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev";
+  const MUNICIPAL_BASE_URL = "https://www.aytoburgos.es/web/movilidad/rutas-en-directo";
+  const MUNICIPAL_PROXIES = [
+    "https://api.allorigins.win/raw?url=",
+    "https://api.codetabs.com/v1/proxy?quest="
+  ];
+  const MUNICIPAL_REQUEST_TIMEOUT_MS = 9000;
   const GTFS_URL = "./burgos-data.json";
   const MODELS_URL = "./burgos-modelos.json";
   const REFRESH_MS = 180000;
@@ -1313,6 +1319,152 @@
     }
   }
 
+
+  function municipalResourceUrl(resource, line) {
+    const url = new URL(MUNICIPAL_BASE_URL);
+    const prefix = "_as_asac_isaenext_IsaenextWebPortlet_";
+    const timestamp = String(Date.now());
+    url.searchParams.set("p_p_id", "as_asac_isaenext_IsaenextWebPortlet");
+    url.searchParams.set("p_p_lifecycle", "2");
+    url.searchParams.set("p_p_state", "normal");
+    url.searchParams.set("p_p_mode", "view");
+    url.searchParams.set("p_p_cacheability", "cacheLevelPage");
+    url.searchParams.set("p_p_resource_id", resource);
+    url.searchParams.set(prefix + "formDate", timestamp);
+    url.searchParams.set(prefix + "line", line);
+    url.searchParams.set(prefix + "label", line);
+    url.searchParams.set("_t", timestamp);
+    return url.toString();
+  }
+
+  function rowsFromMunicipalPayload(payload) {
+    if (Array.isArray(payload)) return payload;
+    if (!payload || typeof payload !== "object") return null;
+    const keys = ["vehicles", "vehicleList", "resourceVehicles", "data", "result", "rows", "items", "list"];
+    for (const key of keys) {
+      if (Array.isArray(payload[key])) return payload[key];
+    }
+    const arrays = Object.values(payload).filter(Array.isArray);
+    return arrays.length === 1 ? arrays[0] : null;
+  }
+
+  function numericSourceValue(...values) {
+    for (const value of values) {
+      if (value === null || value === undefined || value === "") continue;
+      const number = Number(value);
+      if (Number.isFinite(number)) return number;
+    }
+    return null;
+  }
+
+  function directVehicleFromMunicipalRow(raw, line, index) {
+    const row = Array.isArray(raw)
+      ? { vehicle: raw[0], rowValues: raw }
+      : raw && typeof raw === "object" ? raw : { vehicle: raw };
+    const nested = row.vehicle && typeof row.vehicle === "object" ? row.vehicle :
+      row.vehiculo && typeof row.vehiculo === "object" ? row.vehiculo : {};
+    const idValue = row.id ?? row.vehicleId ?? row.vehicle_id ?? row.vehicleNumber ??
+      row.vehicle_number ?? row.busId ?? row.bus_id ?? row.idVehicle ??
+      row.numeroCoche ?? row.numVehiculo ?? row.fleetNumber ?? row.fleet_number ??
+      row.numeroVehiculo ?? row.numero ?? row.codigoCoche ??
+      nested.vehicleId ?? nested.vehicle_id ?? nested.busId ?? nested.id ??
+      nested.number ?? nested.numero ??
+      (typeof row.vehicle === "string" || typeof row.vehicle === "number" ? row.vehicle :
+        typeof row.vehiculo === "string" || typeof row.vehiculo === "number" ? row.vehiculo : "");
+    const id = String(idValue ?? "").trim();
+    const lat = numericSourceValue(row.lat, row.latitude, row.position?.lat, nested.lat, nested.latitude);
+    const lon = numericSourceValue(row.lng, row.lon, row.longitude, row.position?.lon,
+      nested.lng, nested.lon, nested.longitude);
+    const position = validPosition({ lat, lon }) ? {
+      lat, lon,
+      source: row.position?.source || "GPS publicado directamente por ISAENEXT"
+    } : null;
+    const destinationValue = row.destination ?? row.destino ?? row.destinationName ??
+      row.destinationText ?? row.headsign ?? row.destiny ?? row.destinoNombre ??
+      row.nombreDestino ?? nested.destination ?? nested.destino ?? "";
+    const destination = typeof destinationValue === "object"
+      ? String(destinationValue.name ?? destinationValue.nombre ?? destinationValue.description ??
+        destinationValue.destinationName ?? destinationValue.destinationText ?? "")
+      : String(destinationValue ?? "").trim();
+    const seconds = numericSourceValue(row.seconds, row.estimatedSeconds, row.segundos);
+    const meters = numericSourceValue(row.meters, row.distance, row.distancia);
+    const desfaseSeconds = readBusDesfase(row) ?? readBusDesfase(nested);
+
+    return {
+      ...row,
+      id: id || ("SIN-ID-" + line + "-" + (index + 1)),
+      idMissing: !id,
+      line,
+      lineId: line,
+      destination,
+      direction: String(row.direction ?? row.sentido ?? row.direccion ?? "").trim(),
+      seconds,
+      meters,
+      desfaseSeconds,
+      stopId: String(row.stopId ?? row.stop_id ?? row.nodeId ?? row.numNodo ??
+        row.paradaProxima ?? nested.stopId ?? "").trim(),
+      stopName: String(row.stopName ?? row.stop_name ?? row.nextStopName ??
+        nested.stopName ?? "").trim(),
+      stopLat: numericSourceValue(row.stopLat, row.stopLatitude, nested.stopLat),
+      stopLon: numericSourceValue(row.stopLon, row.stopLongitude, nested.stopLon),
+      position
+    };
+  }
+
+  async function fetchMunicipalVehicleListDirect(code) {
+    const line = apiLineCode(code);
+    const targetUrl = municipalResourceUrl("resourceVehicles", line);
+    const failures = [];
+
+    for (const proxy of MUNICIPAL_PROXIES) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), MUNICIPAL_REQUEST_TIMEOUT_MS);
+      try {
+        const response = await fetch(proxy + encodeURIComponent(targetUrl), {
+          method: "GET",
+          cache: "no-store",
+          referrerPolicy: "no-referrer",
+          headers: { "Accept": "application/json, text/plain, */*" },
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        let body = await response.text();
+        if (body.startsWith("URL_DECODED:")) {
+          try { body = decodeURIComponent(body.slice("URL_DECODED:".length)); } catch {}
+        }
+        const payload = JSON.parse(body);
+        const rows = rowsFromMunicipalPayload(payload);
+        if (!rows) throw new Error("resourceVehicles no devolvió una lista reconocible.");
+        const vehicles = rows
+          .filter(row => row !== null && row !== undefined)
+          .map((row, index) => directVehicleFromMunicipalRow(row, line, index));
+
+        return {
+          ok: true,
+          line,
+          fetchedAt: new Date().toISOString(),
+          source: MUNICIPAL_BASE_URL,
+          sourceType: "ISAENEXT · resourceVehicles desde navegador vía " + proxy,
+          vehicleRowCount: rows.length,
+          count: vehicles.length,
+          partial: false,
+          warnings: [],
+          vehicles,
+          observations: [],
+          directBrowserFallback: true
+        };
+      } catch (error) {
+        failures.push(error?.name === "AbortError"
+          ? "tiempo de espera agotado"
+          : String(error?.message || error));
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    throw new Error("No se pudo consultar resourceVehicles directamente: " + failures.join(" · "));
+  }
+
   async function fetchLiveLine(code) {
     const line = apiLineCode(code);
     const url = WORKER_BASE + "/api/burgos/live?line=" + encodeURIComponent(line) + "&fresh=1";
@@ -1340,26 +1492,47 @@
     updateLineCard(entry);
 
     let vehiclePayload = null;
+    let directVehiclePayload = null;
     let livePayload = null;
     let vehicleError = "";
+    let directError = "";
     let liveError = "";
 
-    // 1) La lista ligera es la fuente principal de coches. No depende de que
-    // resourceRoutes o resourceEstimations respondan.
-    try {
-      vehiclePayload = await fetchVehicleListLine(entry.code);
-    } catch (error) {
-      vehicleError = error?.message || String(error);
-      console.warn("No se pudo cargar resourceVehicles de la línea " + entry.code + ":", error);
+    // 1) Consultar en paralelo la lista del Worker y resourceVehicles municipal
+    // a través de proxies CORS. La unión evita depender de un único intermediario.
+    const rosterResults = await Promise.allSettled([
+      fetchVehicleListLine(entry.code),
+      fetchMunicipalVehicleListDirect(entry.code)
+    ]);
+
+    if (rosterResults[0].status === "fulfilled") {
+      vehiclePayload = rosterResults[0].value;
+    } else {
+      vehicleError = rosterResults[0].reason?.message || String(rosterResults[0].reason);
+    }
+
+    if (rosterResults[1].status === "fulfilled") {
+      directVehiclePayload = rosterResults[1].value;
+    } else {
+      directError = rosterResults[1].reason?.message || String(rosterResults[1].reason);
+    }
+
+    if (vehiclePayload && directVehiclePayload) {
+      vehiclePayload = mergeVehicleSources(vehiclePayload, directVehiclePayload, apiLineCode(entry.code));
+      vehiclePayload.vehicleRowCount = Math.max(
+        Number(rosterResults[0].value?.vehicleRowCount ?? rosterResults[0].value?.count ?? 0),
+        Number(directVehiclePayload.vehicleRowCount ?? directVehiclePayload.count ?? 0),
+        vehiclePayload.vehicles.length
+      );
+      vehiclePayload.directBrowserFallback = true;
+    } else if (directVehiclePayload) {
+      vehiclePayload = directVehiclePayload;
     }
 
     const listedVehicles = Array.isArray(vehiclePayload?.vehicles)
       ? vehiclePayload.vehicles : [];
 
-    // 2) El endpoint live se consulta para añadir próxima parada, metros, GPS
-    // y tiempo desfase. Nunca puede borrar la flota del endpoint ligero.
-    // También se intenta cuando la lista está vacía: las estimaciones pueden
-    // aportar vehículos que no aparecen en resourceVehicles.
+    // 2) El endpoint live solo enriquece la lista. Su fallo nunca elimina coches.
     try {
       livePayload = await fetchLiveLine(entry.code);
     } catch (error) {
@@ -1394,23 +1567,25 @@
         vehiclePayload?.count ?? listedVehicles.length);
       const observationCount = Number(livePayload?.estimationCount ??
         livePayload?.observations?.length ?? 0);
-      const hasAnyError = Boolean(vehicleError || liveError);
+      const hasAnyError = Boolean(vehicleError || directError || liveError);
       const partial = hasAnyError || livePayload?.partial === true ||
         vehiclePayload?.partial === true;
 
       state.lineLive.set(entry.code, {
         vehicles,
-        status: partial ? (vehiclePayload ? "partial" : "fallback") : "ok",
+        status: partial ? (directVehiclePayload ? "fallback" : (vehiclePayload ? "partial" : "fallback")) : "ok",
         partial,
         warnings: [
           ...(vehiclePayload?.warnings || []),
           ...(livePayload?.warnings || []),
-          vehicleError ? "Lista principal: " + vehicleError : "",
+          vehicleError ? "Worker: " + vehicleError : "",
+          directError ? "Respaldo directo: " + directError : "",
           liveError ? "Enriquecimiento: " + liveError : ""
         ].filter(Boolean),
         fetchedAt: livePayload?.fetchedAt || vehiclePayload?.fetchedAt || new Date().toISOString(),
         stale: vehiclePayload?.stale === true || livePayload?.stale === true,
         error: liveError && vehicles.length ? "Flota visible; sin enriquecimiento: " + liveError :
+          directVehiclePayload && vehicles.length ? "Flota combinada desde ISAENEXT y el acceso directo del navegador." :
           vehicleError && vehicles.length ? "Flota obtenida desde el endpoint alternativo." : "",
         vehicleRowCount: Math.max(vehicleRowCount, listedVehicles.length),
         observationCount,
