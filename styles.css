@@ -286,3 +286,38 @@ a { color: inherit; }
   .bus-marker { left: 40px; padding: 3px 5px; gap: 4px; }
   .bus-marker small { max-width: 60px; }
 }
+
+
+/* Los conectores superiores e inferiores aterrizan sobre el eje real de cada rama. */
+.branch-lane { overflow: visible; }
+.stop-list::before { left: 50%; transform: translateX(-50%); }
+.stop-item { padding: 4px 0 10px; }
+.stop-node { left: calc(50% - 5.5px); }
+.stop-item:first-child .stop-node, .stop-item:last-child .stop-node {
+  left: calc(50% - 7px);
+}
+.branch-lane-left .stop-name {
+  width: calc(50% - 36px);
+  margin-right: calc(50% + 14px);
+  padding-right: 10px;
+  text-align: right;
+}
+.branch-lane-right .stop-name {
+  width: calc(50% - 36px);
+  margin-left: calc(50% + 14px);
+  text-align: left;
+}
+.branch-lane-single .stop-name {
+  width: calc(50% - 36px);
+  margin-left: calc(50% + 14px);
+  text-align: left;
+}
+.bus-marker { left: auto; right: auto; max-width: calc(50% - 54px); }
+.branch-lane-left .bus-marker {
+  right: calc(50% + 12px);
+  left: auto;
+}
+.branch-lane-right .bus-marker, .branch-lane-single .bus-marker {
+  left: calc(50% + 12px);
+  right: auto;
+}

@@ -446,7 +446,7 @@
       '</div>';
   }
 
-  function renderBranch(branch, index, assignments, showOwnTerminals) {
+  function renderBranch(branch, index, assignments, showOwnTerminals, singleLane) {
     const direction = branch.direction;
     const buses = assignments.get(direction.id) || [];
     const displayStops = branch.reverse ? direction.stops.slice().reverse() : direction.stops;
@@ -494,7 +494,8 @@
       ? buses.length + (buses.length === 1 ? " autobús" : " autobuses")
       : "Sin autobuses detectados";
 
-    return '<article class="branch-lane" style="--direction-color:' + direction.color + '">' +
+    const laneSide = singleLane ? "single" : (index === 0 ? "left" : "right");
+    return '<article class="branch-lane branch-lane-' + laneSide + '" style="--direction-color:' + direction.color + '">' +
       '<header class="branch-head">' +
         '<div><span class="direction-label">SENTIDO ' + (index + 1) + '</span>' +
         '<h3>' + escapeHTML(directionTitle) + '</h3></div>' +
@@ -570,7 +571,7 @@
     if (layout.mode === "independent") {
       return '<div class="route-loop independent-loop"><div class="loop-branches">' +
         layout.branches.map((branch, index) =>
-          renderBranch(branch, index, assignments, true)
+          renderBranch(branch, index, assignments, true, false)
         ).join("") +
         '</div><p class="loop-note">El GTFS publica cabeceras distintas para estos recorridos; se muestran por separado sin unirlos artificialmente.</p></div>';
     }
@@ -580,7 +581,7 @@
     const single = layout.mode === "single";
     const branchesClass = single ? "loop-branches single-branch" : "loop-branches";
     const branchesHTML = layout.branches.map((branch, index) =>
-      renderBranch(branch, index, assignments, false)
+      renderBranch(branch, index, assignments, false, single)
     ).join("");
 
     return '<div class="route-loop">' +
@@ -616,7 +617,14 @@
         const slot = Number(marker.dataset.slot) || 0;
         const stagger = slot === 0 ? 0 : (slot % 2 ? 18 : -18) * Math.ceil(slot / 2);
         marker.style.top = (firstY + (secondY - firstY) * fraction + stagger) + "px";
-        marker.style.left = (43 + (slot % 3) * 13) + "px";
+        const lane = body.closest(".branch-lane");
+        if (lane?.classList.contains("branch-lane-left")) {
+          marker.style.left = "auto";
+          marker.style.right = "calc(50% + " + (12 + (slot % 3) * 13) + "px)";
+        } else {
+          marker.style.right = "auto";
+          marker.style.left = "calc(50% + " + (12 + (slot % 3) * 13) + "px)";
+        }
       });
     });
   }
