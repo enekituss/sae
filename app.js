@@ -6,7 +6,7 @@
   const MODELS_URL = "./burgos-modelos.json";
   const REFRESH_MS = 180000;
   const LIVE_CONCURRENCY = 3;
-  const REQUEST_TIMEOUT_MS = 50000;
+  const REQUEST_TIMEOUT_MS = 90000;
   const $ = id => document.getElementById(id);
   const state = {
     gtfs: null,
