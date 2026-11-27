@@ -180,3 +180,109 @@ a { color: inherit; }
   .route-heading, .line-picker, .refresh-button { grid-column: 1; grid-row: auto; }
   .direction-key { gap: 8px; font-size: 9px; }
 }
+
+
+/* Diagrama de recorrido en lazo: una cabecera, dos sentidos y cabecera final. */
+.direction-grid { display: block; }
+.route-loop { width: min(100%, 990px); margin: 0 auto; padding: 5px 0 9px; }
+.loop-terminal {
+  width: min(420px, 86%); min-height: 57px; margin: 0 auto;
+  padding: 10px 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  border: 1px solid #d5e0e6; border-radius: 12px; background: #f5f8fa; text-align: center;
+}
+.loop-terminal span { color: #788995; font-size: 9px; font-weight: 900; letter-spacing: .15em; }
+.loop-terminal strong { color: #1d3549; font-size: 14px; line-height: 1.25; }
+.loop-terminal-bottom { margin-top: 0; }
+.route-connector { height: 34px; width: 100%; }
+.route-connector svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.loop-branches { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: start; gap: 18px; }
+.loop-branches.single-branch { grid-template-columns: minmax(0,1fr); }
+.branch-lane {
+  min-width: 0; position: relative; overflow: visible;
+  border: 1px solid #dfe7ec; border-top: 4px solid var(--direction-color, #477a9c);
+  border-radius: 13px; background: #fbfcfd;
+}
+.branch-head {
+  min-height: 75px; padding: 13px 15px 11px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  border-bottom: 1px solid #e8edf0;
+}
+.branch-head h3 { margin: 4px 0 0; color: #20394c; font-size: 15px; line-height: 1.25; }
+.direction-label { color: var(--direction-color, #477a9c); font-size: 9px; font-weight: 900; letter-spacing: .15em; }
+.branch-direction { display: grid; grid-template-columns: 26px auto; align-items: center; column-gap: 6px; text-align: right; }
+.branch-direction strong { grid-row: span 2; color: var(--direction-color, #477a9c); font-size: 25px; line-height: 1; }
+.branch-direction small { color: #85949e; font-size: 9px; }
+.branch-direction em { color: #526b7a; font-size: 9px; font-style: normal; font-weight: 750; }
+.branch-terminals {
+  padding: 10px 13px; display: grid; grid-template-columns: minmax(0,1fr) 20px minmax(0,1fr);
+  align-items: center; gap: 5px; background: #f5f8fa; border-bottom: 1px solid #e8edf0;
+}
+.branch-terminals span { min-width: 0; display: grid; gap: 3px; }
+.branch-terminals span:last-child { text-align: right; }
+.branch-terminals small { color: #8797a2; font-size: 8px; font-weight: 850; letter-spacing: .1em; }
+.branch-terminals strong { overflow: hidden; color: #40596a; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.branch-terminals i { color: #c47a28; font-size: 15px; font-style: normal; text-align: center; }
+.branch-body { min-width: 0; position: relative; }
+.stop-list {
+  position: relative; margin: 0; padding: 17px 13px 18px 19px;
+  display: grid; gap: 0; list-style: none;
+}
+.stop-list::before {
+  content: ""; position: absolute; top: 24px; bottom: 25px; left: 30px; width: 2px;
+  background: linear-gradient(var(--direction-color, #477a9c), #cbd7de 90%);
+}
+.stop-item {
+  min-height: 64px; position: relative; padding: 4px 5px 10px 34px;
+  display: block; overflow: visible;
+}
+.stop-node {
+  width: 11px; height: 11px; position: absolute; z-index: 2; top: 8px; left: 6px;
+  border: 2px solid var(--direction-color, #477a9c); border-radius: 50%; background: #fff;
+}
+.stop-item:first-child .stop-node, .stop-item:last-child .stop-node {
+  width: 14px; height: 14px; top: 6px; left: 4px; border-width: 3px;
+  background: var(--direction-color, #477a9c); box-shadow: 0 0 0 3px #fbfcfd;
+}
+.stop-name { position: relative; z-index: 1; color: #344d5e; font-size: 10px; line-height: 1.35; font-weight: 650; }
+.stop-sequence { margin-right: 7px; color: #9aa8b1; font-size: 8px; font-variant-numeric: tabular-nums; }
+.bus-layer { position: absolute; z-index: 5; inset: 0; overflow: visible; pointer-events: none; }
+.bus-marker {
+  min-height: 23px; max-width: calc(100% - 55px); width: fit-content;
+  position: absolute; left: 43px; top: 0; transform: translateY(-50%);
+  margin: 0; padding: 4px 7px; display: flex; align-items: center; flex-wrap: nowrap; gap: 5px;
+  border: 1px solid #efcc9a; border-left: 3px solid #e68a24; border-radius: 7px;
+  background: #fff8ef; box-shadow: 0 2px 6px #9b5b1718; white-space: nowrap;
+}
+.bus-marker-icon { font-size: 12px; flex: 0 0 auto; }
+.bus-marker strong { color: #6d481e; font-size: 9px; }
+.bus-marker small { max-width: 78px; overflow: hidden; color: #92724c; font-size: 8px; text-overflow: ellipsis; }
+.bus-marker .delay-pill { padding: 2px 4px; font-size: 8px; }
+.unlocated-buses, .unassigned-fleet {
+  margin: 0 13px 13px 15px; padding: 9px 10px; border: 1px dashed #d7e0e5; border-radius: 9px;
+}
+.unlocated-buses strong, .unassigned-fleet strong {
+  display: block; margin-bottom: 5px; color: #788995; font-size: 8px; text-transform: uppercase; letter-spacing: .08em;
+}
+.unlocated-buses .unlocated-bus, .unassigned-fleet .unlocated-bus {
+  display: inline-block; margin: 3px 6px 0 0; color: #6b5436; font-size: 9px;
+}
+.unassigned-fleet { margin: 14px 0 0; }
+.loop-note { margin: 12px 0 0; color: #81919b; font-size: 10px; line-height: 1.5; text-align: center; }
+.independent-loop .loop-branches { align-items: stretch; }
+.independent-loop .branch-lane { height: 100%; }
+@media (max-width: 760px) {
+  .loop-branches { grid-template-columns: minmax(0,1fr); gap: 13px; }
+  .loop-branches.single-branch { grid-template-columns: minmax(0,1fr); }
+  .route-connector { display: none; }
+  .loop-terminal { margin-bottom: 12px; }
+  .loop-terminal-bottom { margin: 12px auto 0; }
+  .branch-lane { max-width: 560px; width: 100%; margin: 0 auto; }
+  .stop-item { min-height: 59px; }
+}
+@media (max-width: 420px) {
+  .branch-head { padding: 12px 10px 10px; }
+  .branch-head h3 { font-size: 13px; }
+  .branch-direction { grid-template-columns: 20px auto; column-gap: 4px; }
+  .branch-direction strong { font-size: 21px; }
+  .bus-marker { left: 40px; padding: 3px 5px; gap: 4px; }
+  .bus-marker small { max-width: 60px; }
+}

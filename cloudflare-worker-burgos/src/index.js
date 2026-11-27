@@ -744,7 +744,13 @@ async function fetchVehiclesForLine(line) {
         meters: observation.meters,
         stopId: observation.stopId,
         stopName: observation.stopName,
-        position: old?.position || {
+        position: (
+          old?.position &&
+          old.position.lat !== null && old.position.lat !== undefined &&
+          old.position.lon !== null && old.position.lon !== undefined &&
+          Number.isFinite(Number(old.position.lat)) &&
+          Number.isFinite(Number(old.position.lon))
+        ) ? old.position : {
           lat: validLat ? observation.vehicleLat : null,
           lon: validLon ? observation.vehicleLon : null,
           source: validLat && validLon ? "GPS publicado por resourceEstimations" : ""
@@ -871,7 +877,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.12-2026-10-20",
+        buildId: "burgos-live-v6.13-2026-11-27",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },

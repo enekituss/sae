@@ -5,7 +5,7 @@ Web estática para consultar las líneas de autobús urbano de Burgos mediante u
 ## Interfaz
 
 - index.html es la entrada de GitHub Pages.
-- app.js construye los sentidos a partir de los viajes GTFS y consulta únicamente la línea seleccionada.
+- app.js construye un lazo con dos ramas y cabeceras compartidas cuando el GTFS confirma los extremos opuestos. El selector permite elegir cualquiera de las rutas publicadas y se consulta únicamente la línea seleccionada.
 - styles.css contiene el diseño adaptable para ordenador y móvil.
 - manifest.webmanifest y service-worker.js permiten instalar la web como aplicación.
 
@@ -22,9 +22,9 @@ Para una línea se consulta:
 - /api/burgos/live?line=01&fresh=1: vehículos publicados, destino, sentido, próxima parada, estimación en segundos y distancia cuando ISAENEXT lo facilita.
 - /health: estado y versión del Worker.
 
-La numeración se consulta individualmente: líneas 01–23, 73, 87, 88, 89, C1 y C2. La web no lanza las 29 consultas a la vez: solicita la línea seleccionada y la renueva cada 45 segundos.
+La numeración se consulta individualmente: líneas 01–23, 73, 87, 88, 89, C1 y C2. La web no lanza las 29 consultas a la vez: solicita la línea seleccionada y la renueva cada 45 segundos. De este modo se pueden recorrer todos los itinerarios sin saturar el Worker.
 
-La API municipal puede no publicar algún campo en una consulta concreta. La interfaz no inventa posiciones, destinos ni tiempos que falten. El esquema coloca el autobús junto a la próxima parada estimada cuando el identificador o el nombre de esa parada coincide con el itinerario GTFS. Esto es una posición esquemática, no una coordenada exacta sobre el mapa.
+La API municipal puede no publicar algún campo en una consulta concreta. La interfaz no inventa posiciones, destinos ni tiempos que falten. El esquema representa ambos sentidos como dos ramas entre las cabeceras compartidas cuando el GTFS confirma que los extremos coinciden. El autobús se proyecta sobre la geometría GTFS con su GPS si la fuente lo publica; si no, se aproxima a la próxima parada estimada. La posición esquemática no es un mapa de calles.
 
 ### Recorridos y horarios · GTFS
 
@@ -38,7 +38,7 @@ burgos-modelos.json relaciona los identificadores conocidos con el modelo de veh
 
 ## Retrasos y turnos
 
-El Worker publica estimaciones de llegada, no un campo universal de retraso oficial. Cuando la aplicación puede identificar el viaje y una parada del GTFS, compara la hora estimada de llegada con el horario de referencia y muestra un retraso calculado. El rótulo se identifica como estimación; no es una incidencia oficial del Ayuntamiento.
+El Worker publica estimaciones de llegada, no un campo universal de retraso oficial. Cuando la aplicación puede identificar el viaje y una parada del GTFS, compara la hora estimada de llegada con el horario de referencia y muestra un retraso calculado. El rótulo se identifica como estimación; no es una incidencia oficial del Ayuntamiento. Si la fuente no publica GPS o una próxima parada asociable, el vehículo se conserva en la lista de flota sin inventar su posición sobre el dibujo.
 
 El campo GTFS block_id identifica un bloque de viajes asociado a un vehículo. No debe confundirse automáticamente con el turno interno de conductor o con el número de servicio operativo.
 
