@@ -611,8 +611,8 @@ async function fetchVehicleListForLine(line) {
 
   if (vehicleResult) {
     const vehicles = extractVehicleRows(vehicleResult.data, line).map(row => {
-      const lat = Number(row.lat ?? row.latitude);
-      const lon = Number(row.lng ?? row.lon ?? row.longitude);
+      const lat = Number(row.lat ?? row.latitude ?? row.position?.lat);
+      const lon = Number(row.lng ?? row.lon ?? row.longitude ?? row.position?.lon);
       const validPosition = Number.isFinite(lat) && lat >= 42 && lat <= 43 &&
         Number.isFinite(lon) && lon >= -4 && lon <= -3;
       return {
@@ -625,7 +625,7 @@ async function fetchVehicleListForLine(line) {
         position: {
           lat: validPosition ? lat : null,
           lon: validPosition ? lon : null,
-          source: validPosition ? "GPS publicado por resourceVehicles" : ""
+          source: validPosition ? (row.position?.source || "GPS publicado por resourceVehicles") : ""
         }
       };
     });
@@ -675,17 +675,28 @@ async function fetchVehicleListForLine(line) {
     const observations = extractLineEstimations(line, routeNodes, estimationResult.data);
     const byId = new Map();
     const etaById = new Map();
+    const qualityById = new Map();
 
     for (const observation of observations) {
       const id = String(observation.vehicleId || "").trim();
       if (!id || id === "0") continue;
       const seconds = Number.isFinite(observation.seconds) && observation.seconds >= 0
         ? observation.seconds : Infinity;
-      if (byId.has(id) && seconds >= (etaById.get(id) ?? Infinity)) continue;
       const lat = Number(observation.vehicleLat);
       const lon = Number(observation.vehicleLon);
       const validPosition = Number.isFinite(lat) && lat >= 42 && lat <= 43 &&
         Number.isFinite(lon) && lon >= -4 && lon <= -3;
+      const quality = (validPosition ? 100 : 0) +
+        (Number.isFinite(seconds) ? 40 : 0) +
+        (Number.isFinite(observation.meters) ? 20 : 0) +
+        (observation.stopId ? 12 : 0) +
+        (observation.stopName ? 8 : 0) +
+        (Number.isFinite(observation.desfaseSeconds) ? 15 : 0);
+      const hasPrevious = byId.has(id);
+      const previousEta = etaById.get(id) ?? Infinity;
+      const previousQuality = qualityById.get(id) ?? -1;
+      if (hasPrevious && !(seconds < previousEta || (seconds === previousEta && quality > previousQuality))) continue;
+
       byId.set(id, {
         id,
         lineId: line,
@@ -695,8 +706,11 @@ async function fetchVehicleListForLine(line) {
         direction: observation.direction || "",
         seconds: observation.seconds,
         meters: observation.meters,
+        desfaseSeconds: observation.desfaseSeconds ?? null,
         stopId: observation.stopId || "",
         stopName: observation.stopName || "",
+        stopLat: Number.isFinite(observation.stopLat) ? observation.stopLat : null,
+        stopLon: Number.isFinite(observation.stopLon) ? observation.stopLon : null,
         position: {
           lat: validPosition ? lat : null,
           lon: validPosition ? lon : null,
@@ -704,6 +718,7 @@ async function fetchVehicleListForLine(line) {
         }
       });
       etaById.set(id, seconds);
+      qualityById.set(id, quality);
     }
 
     if (!byId.size) {
