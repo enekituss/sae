@@ -5,7 +5,7 @@ Web estática para consultar las líneas de autobús urbano de Burgos mediante u
 ## Interfaz
 
 - index.html es la entrada de GitHub Pages.
-- app.js construye un lazo con dos ramas y cabeceras compartidas cuando el GTFS confirma los extremos opuestos. El selector permite elegir cualquiera de las rutas publicadas y se consulta únicamente la línea seleccionada.
+- app.js muestra una ficha permanente por línea, con los dos sentidos, las paradas y el inventario completo de coches. La red se consulta por línea con concurrencia limitada.
 - styles.css contiene el diseño adaptable para ordenador y móvil.
 - manifest.webmanifest y service-worker.js permiten instalar la web como aplicación.
 
@@ -22,9 +22,9 @@ Para una línea se consulta:
 - /api/burgos/live?line=01&fresh=1: vehículos publicados, destino, sentido, próxima parada, estimación en segundos y distancia cuando ISAENEXT lo facilita.
 - /health: estado y versión del Worker.
 
-La numeración se consulta individualmente: líneas 01–23, 73, 87, 88, 89, C1 y C2. La web no lanza las 29 consultas a la vez: solicita la línea seleccionada y la renueva cada 45 segundos. De este modo se pueden recorrer todos los itinerarios sin saturar el Worker.
+La numeración se consulta individualmente: líneas 01–23, 73, 87, 88, 89, C1 y C2. La portada muestra las 29 líneas a la vez. Consulta el tiempo real por línea con un máximo de tres peticiones simultáneas y renueva la red cada dos minutos. Los coches sin posición GPS siguen apareciendo en el inventario de su línea.
 
-La API municipal puede no publicar algún campo en una consulta concreta. La interfaz no inventa posiciones, destinos ni tiempos que falten. El esquema representa ambos sentidos como dos ramas entre las cabeceras compartidas cuando el GTFS confirma que los extremos coinciden. El autobús se proyecta sobre la geometría GTFS con su GPS si la fuente lo publica; si no, se aproxima a la próxima parada estimada. La posición esquemática no es un mapa de calles.
+La API municipal puede no publicar algún campo en una consulta concreta. La interfaz no inventa posiciones, destinos ni tiempos que falten. El esquema representa ambos sentidos como dos ramas entre las cabeceras compartidas cuando el GTFS confirma que los extremos coinciden. El autobús se proyecta sobre la geometría GTFS con su GPS si la fuente lo publica y utiliza el movimiento entre consultas sucesivas para intentar distinguir el sentido. Si no hay GPS, se aproxima a la próxima parada estimada. Todos los coches recibidos permanecen en el inventario de su línea aunque no se pueda confirmar su posición.
 
 ### Recorridos y horarios · GTFS
 

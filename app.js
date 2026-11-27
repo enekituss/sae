@@ -4,17 +4,20 @@
   const WORKER_BASE = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev";
   const GTFS_URL = "./burgos-data.json";
   const MODELS_URL = "./burgos-modelos.json";
-  const REFRESH_MS = 45000;
+  const REFRESH_MS = 120000;
+  const LIVE_CONCURRENCY = 3;
+  const REQUEST_TIMEOUT_MS = 40000;
   const $ = id => document.getElementById(id);
   const state = {
     gtfs: null,
     models: {},
-    selectedCode: "",
-    route: null,
-    directions: [],
-    live: null,
+    catalog: [],
+    lineLive: new Map(),
+    lastPositions: new Map(),
+    refreshing: false,
+    refreshProgress: 0,
     lastUpdated: null,
-    loading: false,
+    lastRefreshStarted: 0,
     timer: null
   };
 
@@ -239,8 +242,9 @@
     let actualFraction = 0.8;
     let source = "estimación";
 
-    if (validPosition(bus.position) && direction.shapePoints?.length > 1) {
-      const vehicleMeasure = projectPointToPolyline(bus.position, direction.shapePoints);
+    const currentPosition = vehiclePosition(bus);
+    if (currentPosition && direction.shapePoints?.length > 1) {
+      const vehicleMeasure = projectPointToPolyline(currentPosition, direction.shapePoints);
       if (vehicleMeasure && vehicleMeasure.distance <= 220) {
         let bestGap = Infinity;
         const measures = direction.stopMeasures || [];
@@ -284,6 +288,56 @@
     };
   }
 
+
+  function bearingBetweenPositions(from, to) {
+    if (!validPosition(from) || !validPosition(to)) return null;
+    const lat1 = Number(from.lat) * Math.PI / 180;
+    const lat2 = Number(to.lat) * Math.PI / 180;
+    const deltaLon = (Number(to.lon) - Number(from.lon)) * Math.PI / 180;
+    const y = Math.sin(deltaLon) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) -
+      Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLon);
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  }
+
+  function bearingForShapeSegment(points, index) {
+    if (!Array.isArray(points) || index < 0 || index >= points.length - 1) return null;
+    const first = points[index];
+    const second = points[index + 1];
+    return bearingBetweenPositions(
+      { lat: first[0], lon: first[1] },
+      { lat: second[0], lon: second[1] }
+    );
+  }
+
+  function angularDifference(first, second) {
+    return Math.abs(((first - second + 540) % 360) - 180);
+  }
+
+  function attachVehicleMotion(code, vehicles) {
+    const now = Date.now();
+    return vehicles.map(bus => {
+      const position = vehiclePosition(bus);
+      if (!position) return bus;
+      const key = String(code) + "|" + String(bus.id);
+      const previous = state.lastPositions.get(key);
+      let motionBearing = null;
+      if (previous) {
+        const elapsed = (now - previous.at) / 1000;
+        const distance = distanceBetweenPositions(previous, position);
+        if (elapsed >= 10 && elapsed <= 1200 && distance >= 8 && distance / elapsed <= 35) {
+          motionBearing = bearingBetweenPositions(previous, position);
+        }
+      }
+      state.lastPositions.set(key, {
+        lat: Number(position.lat),
+        lon: Number(position.lon),
+        at: now
+      });
+      return motionBearing === null ? bus : { ...bus, motionBearing };
+    });
+  }
+
   function dateKey(date) {
     return String(date.getFullYear()) +
       String(date.getMonth() + 1).padStart(2, "0") +
@@ -322,17 +376,81 @@
     return candidate;
   }
 
+  function vehiclePosition(bus) {
+    if (validPosition(bus?.position)) return bus.position;
+    const fallback = {
+      lat: bus?.lat ?? bus?.latitude,
+      lon: bus?.lon ?? bus?.lng ?? bus?.longitude
+    };
+    return validPosition(fallback) ? fallback : null;
+  }
+
+  function distanceBetweenPositions(a, b) {
+    if (!validPosition(a) || !validPosition(b)) return Infinity;
+    const lat = (Number(a.lat) + Number(b.lat)) / 2;
+    const metresLat = 111132;
+    const metresLon = 111320 * Math.cos(lat * Math.PI / 180);
+    return Math.hypot(
+      (Number(a.lon) - Number(b.lon)) * metresLon,
+      (Number(a.lat) - Number(b.lat)) * metresLat
+    );
+  }
+
   function findStopIndex(direction, bus) {
-    const stopId = String(bus.stopId ?? "").trim();
-    if (stopId) {
-      const direct = direction.stops.findIndex(stop => stop.id === stopId || stop.code === stopId);
+    const identifiers = [
+      bus.stopId, bus.stopCode, bus.nodeId, bus.node_id,
+      bus.stop_id, bus.paradaId, bus.numNodo
+    ].map(value => String(value ?? "").trim()).filter(Boolean);
+
+    for (const identifier of identifiers) {
+      const direct = direction.stops.findIndex(stop =>
+        stop.id === identifier || stop.code === identifier
+      );
       if (direct >= 0) return direct;
     }
 
-    const stopName = normalize(bus.stopName);
+    const stopName = normalize(bus.stopName || bus.nextStopName || bus.nextStop);
     if (stopName) {
       const exact = direction.stops.findIndex(stop => normalize(stop.name) === stopName);
       if (exact >= 0) return exact;
+
+      const wantedWords = stopName.split(" ").filter(word => word.length > 2);
+      let bestIndex = -1;
+      let bestScore = 0;
+      let tied = false;
+      direction.stops.forEach((stop, index) => {
+        const words = normalize(stop.name).split(" ").filter(word => word.length > 2);
+        if (!words.length || !wantedWords.length) return;
+        const common = wantedWords.filter(word => words.includes(word)).length;
+        const score = common / Math.max(wantedWords.length, words.length);
+        if (score > bestScore) {
+          bestScore = score;
+          bestIndex = index;
+          tied = false;
+        } else if (score === bestScore && score > 0) {
+          tied = true;
+        }
+      });
+      if (!tied && bestScore >= 0.8) return bestIndex;
+    }
+
+    const stopPosition = {
+      lat: bus.stopLat ?? bus.stopLatitude,
+      lon: bus.stopLon ?? bus.stopLng ?? bus.stopLongitude
+    };
+    if (validPosition(stopPosition)) {
+      let best = { index: -1, distance: Infinity };
+      let second = Infinity;
+      direction.stops.forEach((stop, index) => {
+        const distance = distanceBetweenPositions(stopPosition, stop);
+        if (distance < best.distance) {
+          second = best.distance;
+          best = { index, distance };
+        } else if (distance < second) {
+          second = distance;
+        }
+      });
+      if (best.distance <= 180 && second - best.distance >= 5) return best.index;
     }
 
     return -1;
@@ -355,35 +473,63 @@
     for (const bus of vehicles) {
       const scored = directions.map(direction => {
         let score = 0;
+        let semanticMatch = false;
+
         const reportedDirection = String(bus.direction ?? "").trim();
         if (reportedDirection && direction.directionId &&
-            reportedDirection === direction.directionId) score += 100;
+            reportedDirection === direction.directionId) {
+          score += 1000;
+          semanticMatch = true;
+        }
 
         const destination = destinationScore(bus.destination, direction.headsign);
-        if (destination > 0) score += 30 + destination * 3;
+        if (destination > 0) {
+          score += 120 + destination * 8;
+          semanticMatch = true;
+        }
 
         const stopIndex = findStopIndex(direction, bus);
         if (stopIndex >= 0) {
           const matchingDirections = directions.filter(item => findStopIndex(item, bus) >= 0).length;
-          score += matchingDirections === 1 ? 45 : 3;
+          score += matchingDirections === 1 ? 160 : 15;
+          if (matchingDirections === 1) semanticMatch = true;
         }
 
-        if (validPosition(bus.position) && direction.shapePoints?.length > 1) {
-          const projection = projectPointToPolyline(bus.position, direction.shapePoints);
-          if (projection && projection.distance <= 300) {
-            score += Math.max(0, 38 - projection.distance / 10);
+        const currentPosition = vehiclePosition(bus);
+        let projectionDistance = Infinity;
+        if (currentPosition && direction.shapePoints?.length > 1) {
+          const projection = projectPointToPolyline(currentPosition, direction.shapePoints);
+          if (projection) {
+            projectionDistance = projection.distance;
+            if (projection.distance <= 400) {
+              score += Math.max(0, 100 - projection.distance / 4);
+            }
+            if (Number.isFinite(Number(bus.motionBearing))) {
+              const routeBearing = bearingForShapeSegment(direction.shapePoints, projection.segmentIndex);
+              if (routeBearing !== null) {
+                const difference = angularDifference(Number(bus.motionBearing), routeBearing);
+                if (difference <= 45) score += 130;
+                else if (difference >= 135) score -= 60;
+              }
+            }
           }
         }
-        return { direction, score };
+        return { direction, score, semanticMatch, projectionDistance };
       }).sort((a, b) => b.score - a.score);
 
       const best = scored[0];
       const second = scored[1];
-      const uniquelyMatched = best && best.score > 0 &&
-        (!second || best.score > second.score + 1);
-      if (uniquelyMatched) assignments.get(best.direction.id).push(bus);
-      else if (directions.length === 1) assignments.get(directions[0].id).push(bus);
-      else unassigned.push(bus);
+      const hasDistinctWinner = best && best.score > 0 &&
+        (!second || best.score - second.score >= 4);
+      if (hasDistinctWinner) {
+        assignments.get(best.direction.id).push(bus);
+      } else if (directions.length === 1) {
+        assignments.get(directions[0].id).push(bus);
+      } else {
+        // No se descarta el coche: si los dos sentidos son indistinguibles,
+        // queda en el inventario de la línea como sentido no confirmado.
+        unassigned.push(bus);
+      }
     }
 
     return { assignments, unassigned };
@@ -629,111 +775,176 @@
     });
   }
 
-  function renderFleet(vehicles, directions, assignments) {
-    $("fleetCaption").textContent = vehicles.length
-      ? vehicles.length + (vehicles.length === 1 ? " autobús detectado" : " autobuses detectados")
-      : "No se han detectado autobuses";
+  function lineKey(code) {
+    return "line-card-" + String(code).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  }
 
+  function renderVehicleInventory(entry, vehicles, directions, assignments) {
     if (!vehicles.length) {
-      $("fleetList").innerHTML = '<div class="empty-state">No aparecen autobuses en la respuesta actual de esta línea.</div>';
-      return;
+      return '<div class="vehicle-inventory vehicle-inventory-empty">' +
+        '<strong>Autobuses detectados: 0</strong><span>La consulta no ha publicado coches para esta línea.</span></div>';
     }
 
     const directionForBus = new Map();
-    for (const direction of directions) {
-      for (const bus of assignments.get(direction.id) || []) directionForBus.set(String(bus.id), direction);
+    const positionForBus = new Map();
+    const layout = resolveRouteLayout(directions);
+
+    for (const branch of layout.branches) {
+      const branchBuses = assignments.get(branch.direction.id) || [];
+      for (const bus of branchBuses) {
+        directionForBus.set(String(bus.id), branch.direction);
+        const position = busDiagramPosition(branch.direction, bus, branch.reverse);
+        if (position) positionForBus.set(String(bus.id), position);
+      }
     }
 
-    const html = vehicles.slice().sort((a, b) =>
+    const chips = vehicles.slice().sort((a, b) =>
       String(a.id).localeCompare(String(b.id), "es", { numeric: true })
     ).map(bus => {
-      const direction = directionForBus.get(String(bus.id));
-      const delay = direction ? busStatus(bus, direction) : formatDelay(null);
-      const model = state.models[String(bus.id)] || "";
+      const id = String(bus.id);
+      const direction = directionForBus.get(id);
+      const position = positionForBus.get(id);
+      const model = state.models[id] || "";
       const eta = formatETA(bus.seconds);
       const distance = formatDistance(bus.meters);
       const detail = [eta, distance].filter(Boolean).join(" · ");
-      const nextStop = String(bus.stopName || "Próxima parada no publicada");
-      const destination = String(bus.destination || "Destino no publicado");
-      const block = direction ? estimatedDelay(bus, direction) : null;
-      const blockText = block && block.trip && block.trip.blockId
-        ? "Bloque GTFS " + block.trip.blockId
-        : "";
-      const position = bus.position && Number.isFinite(Number(bus.position.lat)) &&
-        Number.isFinite(Number(bus.position.lon)) ? "GPS publicado" : "";
-      return '<article class="fleet-card">' +
-        '<span class="fleet-bus-icon" aria-hidden="true">🚌</span>' +
-        '<div class="fleet-main"><strong>Coche ' + escapeHTML(bus.id) + ' · ' + escapeHTML(destination) + '</strong>' +
-        '<small>' + escapeHTML(nextStop) + (detail ? " · " + escapeHTML(detail) : "") + '</small>' +
-        (model ? '<span class="fleet-model">' + escapeHTML(model) + '</span>' : '') +
-        '</div><div class="fleet-meta"><span class="delay-pill ' + delay.className + '">' +
-        escapeHTML(delay.text) + '</span><small>' + escapeHTML(blockText || position || "Tiempo real") + '</small></div>' +
-        '</article>';
+      const delay = direction ? busStatus(bus, direction) : formatDelay(null);
+      const placement = position
+        ? (position.source === "GPS" ? "GPS en recorrido" : "Próxima parada")
+        : (direction ? "Posición sin confirmar" : "Sentido sin confirmar");
+
+      return '<div class="vehicle-chip" title="' + escapeHTML([
+        "Coche " + id,
+        model,
+        bus.destination || "Destino no publicado",
+        bus.stopName || "Próxima parada no publicada",
+        detail,
+        placement
+      ].filter(Boolean).join(" · ")) + '">' +
+        '<span class="vehicle-chip-bus">🚌</span>' +
+        '<span class="vehicle-chip-info"><strong>' + escapeHTML(id) + '</strong>' +
+        '<small>' + escapeHTML(detail || placement) + '</small></span>' +
+        '<span class="delay-pill ' + delay.className + '">' + escapeHTML(delay.text) + '</span>' +
+        '</div>';
     }).join("");
 
-    $("fleetList").innerHTML = html;
+    const placed = positionForBus.size;
+    return '<div class="vehicle-inventory">' +
+      '<div class="vehicle-inventory-heading"><strong>COCHES DETECTADOS · ' + vehicles.length + '</strong>' +
+      '<span>' + placed + ' situados en el esquema · ' + (vehicles.length - placed) + ' sin posición exacta</span></div>' +
+      '<div class="vehicle-chip-list">' + chips + '</div>' +
+      '</div>';
   }
 
-  function render() {
-    const vehicles = Array.isArray(state.live?.vehicles) ? state.live.vehicles : [];
-    const directions = state.directions;
+  function renderLineCardContent(entry) {
+    const lineState = state.lineLive.get(entry.code) || {
+      status: "loading",
+      vehicles: [],
+      partial: false,
+      warnings: []
+    };
+    const vehicles = Array.isArray(lineState.vehicles) ? lineState.vehicles : [];
+    const directions = entry.directions;
     const assignments = assignVehicles(directions, vehicles);
+    const statusText = {
+      loading: "Consultando…",
+      updating: "Actualizando…",
+      ok: vehicles.length + (vehicles.length === 1 ? " coche" : " coches"),
+      partial: "Datos parciales · " + vehicles.length + " coches",
+      fallback: "Listado de respaldo · " + vehicles.length + " coches",
+      stale: "Últimos datos conservados · " + vehicles.length + " coches",
+      error: "Sin respuesta del SAE"
+    }[lineState.status] || "Esperando consulta";
 
-    $("busCount").textContent = String(vehicles.length);
-    const uniqueStops = new Set(directions.flatMap(direction => direction.stops.map(stop => stop.id)));
-    $("stopCount").textContent = String(uniqueStops.size);
-    $("updatedAt").textContent = state.lastUpdated ? formatTime(state.lastUpdated) : "—";
+    const statusClass = lineState.status === "ok" ? "line-status-ok" :
+      lineState.status === "partial" || lineState.status === "fallback" ? "line-status-warning" :
+      lineState.status === "error" ? "line-status-error" :
+      lineState.status === "stale" ? "line-status-stale" : "line-status-loading";
 
-    const partial = Boolean(state.live?.partial);
-    $("updateDetail").textContent = partial
-      ? "Respuesta parcial del servicio municipal"
-      : state.live ? "Datos recibidos de ISAENEXT" : "Esperando respuesta del SAE";
+    const description = String(entry.route.longName || entry.route.description || "").trim();
+    const busesUnknown = assignments.unassigned.length
+      ? '<div class="unassigned-fleet"><strong>Vehículos sin sentido identificable</strong>' +
+        assignments.unassigned.map(bus =>
+          '<span class="unlocated-bus">🚌 ' + escapeHTML(bus.id) + '</span>'
+        ).join("") + '</div>'
+      : "";
 
-    $("directionGrid").innerHTML = renderLoopDiagram(directions, assignments.assignments);
-    positionBusMarkers($("directionGrid"));
+    const warning = lineState.error
+      ? '<p class="line-error-note">' + escapeHTML(lineState.error) + '</p>'
+      : lineState.stale
+        ? '<p class="line-error-note">Mostrando la última lectura guardada; la consulta nueva ha fallado.</p>'
+        : "";
 
-    if (assignments.unassigned.length) {
-      const unassigned = assignments.unassigned.map(bus =>
-        '<span class="unlocated-bus">🚌 ' + escapeHTML(bus.id) + '</span>'
-      ).join("");
-      $("directionGrid").insertAdjacentHTML("beforeend",
-        '<div class="unassigned-fleet"><strong>Sentido no identificado con seguridad</strong>' + unassigned + '</div>');
+    const diagram = renderLoopDiagram(directions, assignments.assignments);
+    const inventory = renderVehicleInventory(entry, vehicles, directions, assignments.assignments);
+
+    return '<header class="network-line-header">' +
+      '<div class="network-line-number">' + escapeHTML(entry.code) + '</div>' +
+      '<div class="network-line-name"><span class="eyebrow">LÍNEA ' + escapeHTML(entry.code) + '</span>' +
+      '<h3>' + escapeHTML(description || "Recorrido no descrito") + '</h3></div>' +
+      '<div class="network-line-live"><span class="line-status ' + statusClass + '">' +
+      escapeHTML(statusText) + '</span><small>' +
+      (lineState.fetchedAt ? formatTime(lineState.fetchedAt) : "Pendiente") +
+      '</small></div>' +
+      '</header>' +
+      '<div class="network-line-diagram">' + diagram + busesUnknown + '</div>' +
+      inventory + warning;
+  }
+
+  function updateLineCard(entry) {
+    const card = $(lineKey(entry.code));
+    if (!card) return;
+    card.innerHTML = renderLineCardContent(entry);
+    positionBusMarkers(card);
+  }
+
+  function updateNetworkStats() {
+    const vehicles = new Set();
+    let loadedLines = 0;
+    let failedLines = 0;
+    let newest = null;
+
+    for (const entry of state.catalog) {
+      const lineState = state.lineLive.get(entry.code);
+      if (!lineState) continue;
+      if (["ok", "partial", "fallback", "stale"].includes(lineState.status)) loadedLines++;
+      if (lineState.status === "error") failedLines++;
+      for (const bus of lineState.vehicles || []) {
+        vehicles.add(entry.code + "|" + String(bus.id));
+      }
+      const date = lineState.fetchedAt ? new Date(lineState.fetchedAt) : null;
+      if (date && Number.isFinite(date.getTime()) && (!newest || date > newest)) newest = date;
     }
 
-    renderFleet(vehicles, directions, assignments.assignments);
+    $("lineCount").textContent = String(state.catalog.length);
+    $("busCount").textContent = String(vehicles.size);
+    $("updatedAt").textContent = newest ? formatTime(newest) : "—";
+    $("updateDetail").textContent = state.refreshing
+      ? "Consultadas " + state.refreshProgress + " de " + state.catalog.length + " líneas"
+      : loadedLines + " líneas con respuesta" + (failedLines ? " · " + failedLines + " sin respuesta" : "");
+
+    if (state.refreshing) {
+      setConnection("Actualizando red · " + state.refreshProgress + "/" + state.catalog.length, "");
+    } else if (failedLines > 0) {
+      setConnection("Red parcialmente disponible · " + failedLines + " líneas con error", "error");
+    } else if (loadedLines === state.catalog.length && loadedLines > 0) {
+      setConnection("Red consultada · " + vehicles.size + " autobuses", "ok");
+    } else {
+      setConnection("Cargando datos de todas las líneas…", "");
+    }
   }
 
-  function findRoute(code) {
-    const key = normalizeLine(code);
-    return state.gtfs.routes.find(route => normalizeLine(route.shortName || route.id) === key) || null;
-  }
-
-  function populateRoutes() {
-    const routes = state.gtfs.routes.slice().sort((a, b) =>
-      String(a.shortName || a.id).localeCompare(String(b.shortName || b.id), "es", {
-        numeric: true, sensitivity: "base"
-      })
-    );
-    const options = routes.map(route => {
-      const code = String(route.shortName || route.id);
-      const label = "Línea " + code + (route.longName ? " · " + route.longName : "");
-      return '<option value="' + escapeHTML(code) + '">' + escapeHTML(label) + '</option>';
-    }).join("");
-
-    $("routeSelect").innerHTML = options;
-    $("routeSelect").disabled = false;
-    $("refreshButton").disabled = false;
-
-    const requested = new URLSearchParams(location.search).get("line");
-    const initialRoute = requested && findRoute(requested) ? findRoute(requested) : findRoute("1");
-    const selected = initialRoute ? String(initialRoute.shortName || initialRoute.id) :
-      String(routes[0]?.shortName || routes[0]?.id || "");
-    $("routeSelect").value = selected;
-    state.selectedCode = selected;
+  function renderNetworkCatalog() {
+    const container = $("directionGrid");
+    container.innerHTML = state.catalog.map(entry =>
+      '<article class="network-line-card" id="' + lineKey(entry.code) + '">' +
+      renderLineCardContent(entry) + '</article>'
+    ).join("");
+    for (const entry of state.catalog) positionBusMarkers($(lineKey(entry.code)));
   }
 
   async function loadStaticData() {
-    const response = await fetch(GTFS_URL, { cache: "force-cache" });
+    const response = await fetch(GTFS_URL, { cache: "no-cache" });
     if (!response.ok) throw new Error("No se pudo descargar la base GTFS (HTTP " + response.status + ").");
     const data = await response.json();
     if (!Array.isArray(data.routes) || !Array.isArray(data.stops) || !Array.isArray(data.trips)) {
@@ -747,7 +958,7 @@
     state.gtfs = data;
 
     try {
-      const modelResponse = await fetch(MODELS_URL, { cache: "force-cache" });
+      const modelResponse = await fetch(MODELS_URL, { cache: "no-cache" });
       if (modelResponse.ok) {
         const modelData = await modelResponse.json();
         state.models = modelData.models || {};
@@ -755,131 +966,264 @@
     } catch (error) {
       console.warn("No se pudo cargar el catálogo de modelos:", error);
     }
+
+    const routes = state.gtfs.routes.slice().sort((a, b) =>
+      String(a.shortName || a.id).localeCompare(String(b.shortName || b.id), "es", {
+        numeric: true, sensitivity: "base"
+      })
+    );
+    state.catalog = routes.map(route => ({
+      route,
+      code: String(route.shortName || route.id),
+      directions: buildDirections(route)
+    }));
   }
 
-
-  function enrichLivePayload(payload) {
+  function enrichLivePayload(payload, code) {
     const bestObservation = new Map();
     for (const observation of Array.isArray(payload?.observations) ? payload.observations : []) {
-      const id = String(observation.vehicleId ?? "").trim();
-      if (!id) continue;
-      const seconds = observation.seconds === null || observation.seconds === undefined
-        ? Infinity : Number(observation.seconds);
+      const id = String(observation.vehicleId ?? observation.vehicle ?? "").trim();
+      if (!id || id === "0") continue;
+      const secondsValue = observation.seconds === null || observation.seconds === undefined ||
+        observation.seconds === "" ? Infinity : Number(observation.seconds);
+      const seconds = Number.isFinite(secondsValue) ? secondsValue : Infinity;
       const previous = bestObservation.get(id);
-      if (!previous || seconds < previous.seconds) bestObservation.set(id, { observation, seconds });
+      const hasGps = observation.vehicleLat !== null && observation.vehicleLat !== undefined &&
+        observation.vehicleLon !== null && observation.vehicleLon !== undefined &&
+        Number.isFinite(Number(observation.vehicleLat)) && Number(observation.vehicleLat) >= 42 &&
+        Number(observation.vehicleLat) <= 43 && Number.isFinite(Number(observation.vehicleLon)) &&
+        Number(observation.vehicleLon) >= -4 && Number(observation.vehicleLon) <= -3;
+      const previousHasGps = previous && Number.isFinite(Number(previous.observation.vehicleLat)) &&
+        Number.isFinite(Number(previous.observation.vehicleLon));
+      if (!previous || seconds < previous.seconds || (seconds === previous.seconds && hasGps && !previousHasGps)) {
+        bestObservation.set(id, { observation, seconds });
+      }
     }
 
-    const vehicles = (Array.isArray(payload?.vehicles) ? payload.vehicles : []).map(bus => {
-      const id = String(bus.id ?? "").trim();
-      const entry = bestObservation.get(id);
-      const observation = entry?.observation;
-      let position = bus.position;
-      if (!validPosition(position) && observation &&
-          observation.vehicleLat !== null && observation.vehicleLon !== null) {
-        const fallback = { lat: observation.vehicleLat, lon: observation.vehicleLon };
-        if (validPosition(fallback)) {
-          position = { ...fallback, source: "GPS publicado por resourceEstimations" };
-        }
-      }
-      return {
-        ...bus,
-        position,
-        destination: bus.destination || observation?.destination || "",
-        direction: bus.direction || observation?.direction || "",
-        seconds: bus.seconds === null || bus.seconds === undefined
-          ? observation?.seconds ?? null : bus.seconds,
-        meters: bus.meters === null || bus.meters === undefined
-          ? observation?.meters ?? null : bus.meters,
-        stopId: bus.stopId || observation?.stopId || "",
-        stopName: bus.stopName || observation?.stopName || ""
+    const vehiclesById = new Map();
+    for (const bus of Array.isArray(payload?.vehicles) ? payload.vehicles : []) {
+      const id = String(bus.id ?? bus.vehicleId ?? bus.vehicle ?? bus.vehicle_id ?? "").trim();
+      if (!id || id === "0") continue;
+      vehiclesById.set(id, { ...bus, id, line: code, lineId: code });
+    }
+
+    // resourceEstimations puede mencionar un coche que no haya llegado en la
+    // lista base. Se incorpora para no perder ningún vehículo visible en SAE.
+    for (const [id, entry] of bestObservation.entries()) {
+      const observation = entry.observation;
+      const old = vehiclesById.get(id) || {};
+      const gps = {
+        lat: observation.vehicleLat,
+        lon: observation.vehicleLon
       };
-    });
-    return { ...payload, vehicles };
+      const position = validPosition(old.position) ? old.position :
+        (validPosition(gps) ? { ...gps, source: "GPS publicado por resourceEstimations" } :
+          (vehiclePosition(old) || null));
+      const oldSeconds = old.seconds === null || old.seconds === undefined ? Infinity : Number(old.seconds);
+      const useObservation = !Number.isFinite(oldSeconds) ||
+        (Number.isFinite(entry.seconds) && entry.seconds < oldSeconds);
+      vehiclesById.set(id, {
+        ...old,
+        id,
+        line: code,
+        lineId: code,
+        destination: old.destination || observation.destination || "",
+        direction: old.direction || observation.direction || "",
+        seconds: useObservation ? observation.seconds : old.seconds ?? observation.seconds ?? null,
+        meters: useObservation ? observation.meters : old.meters ?? observation.meters ?? null,
+        stopId: old.stopId || observation.stopId || "",
+        stopName: old.stopName || observation.stopName || "",
+        stopLat: old.stopLat ?? observation.stopLat ?? null,
+        stopLon: old.stopLon ?? observation.stopLon ?? null,
+        position
+      });
+    }
+
+    return {
+      ...payload,
+      vehicles: [...vehiclesById.values()],
+      observations: Array.isArray(payload?.observations) ? payload.observations : []
+    };
+  }
+
+  async function fetchJson(url, timeoutMs) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
+        signal: controller.signal,
+        headers: { "Accept": "application/json" }
+      });
+      let payload;
+      try {
+        payload = await response.json();
+      } catch {
+        throw new Error("El Worker no ha devuelto JSON válido.");
+      }
+      if (!response.ok || payload?.ok !== true) {
+        throw new Error(payload?.error || "Error HTTP " + response.status);
+      }
+      return payload;
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        throw new Error("Tiempo de espera agotado al consultar la línea.");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   async function fetchLiveLine(code) {
     const line = apiLineCode(code);
     const url = WORKER_BASE + "/api/burgos/live?line=" + encodeURIComponent(line) + "&fresh=1";
-    const response = await fetch(url, {
-      method: "GET",
-      cache: "no-store",
-      headers: { "Accept": "application/json" }
-    });
-    let payload;
-    try {
-      payload = await response.json();
-    } catch (error) {
-      throw new Error("El Worker municipal no ha devuelto una respuesta JSON válida.");
-    }
-    if (!response.ok || payload?.ok !== true) {
-      throw new Error(payload?.error || "El SAE no ha respondido correctamente (HTTP " + response.status + ").");
-    }
-    return enrichLivePayload(payload);
+    return enrichLivePayload(await fetchJson(url, REQUEST_TIMEOUT_MS), line);
   }
 
-  async function loadLine(code, showLoading) {
-    if (state.loading) return;
-    const route = findRoute(code);
-    if (!route) {
-      setNotice("No se ha encontrado esa línea en el GTFS municipal.", "error", false);
-      return;
-    }
+  async function fetchVehicleListLine(code) {
+    const line = apiLineCode(code);
+    const url = WORKER_BASE + "/api/burgos/vehicles?line=" + encodeURIComponent(line);
+    return enrichLivePayload(await fetchJson(url, REQUEST_TIMEOUT_MS), line);
+  }
 
-    state.loading = true;
-    state.selectedCode = String(route.shortName || route.id);
-    state.route = route;
-    state.directions = buildDirections(route);
-    $("routeTitle").textContent = "Línea " + state.selectedCode;
-    $("routeDescription").textContent = String(route.longName || route.description || "Recorrido y servicio en directo");
-    $("refreshButton").disabled = true;
-    $("routeSelect").disabled = true;
-    if (showLoading || !state.live) {
-      setNotice("Consultando autobuses y estimaciones de la línea " + state.selectedCode + "…", "info", true);
-    }
-    setConnection("Consultando línea " + state.selectedCode + "…", "");
+  async function refreshOneLine(entry) {
+    const previous = state.lineLive.get(entry.code) || {
+      vehicles: [],
+      status: "loading",
+      partial: false,
+      warnings: []
+    };
+    state.lineLive.set(entry.code, {
+      ...previous,
+      status: previous.vehicles.length ? "updating" : "loading",
+      error: ""
+    });
+    updateLineCard(entry);
 
     try {
-      const payload = await fetchLiveLine(state.selectedCode);
-      state.live = payload;
-      state.lastUpdated = payload.fetchedAt ? new Date(payload.fetchedAt) : new Date();
-      const vehicles = Array.isArray(payload.vehicles) ? payload.vehicles.length : 0;
-
-      if (payload.partial) {
-        setConnection("Datos parciales · línea " + state.selectedCode, "error");
-        setNotice("La lista de vehículos está disponible, pero alguna parte del trazado o de las estimaciones no ha respondido. Se muestran únicamente los datos recibidos.", "warning", false);
-      } else {
-        setConnection("En directo · línea " + state.selectedCode, "ok");
-        setNotice(vehicles
-          ? "Consulta completada. Los coches se colocan junto a su próxima parada estimada cuando coincide con el itinerario publicado."
-          : "Consulta completada. En este momento la fuente no publica autobuses para esta línea.",
-          "success", false);
+      let payload;
+      let fallback = false;
+      try {
+        payload = await fetchLiveLine(entry.code);
+      } catch (liveError) {
+        console.warn("La consulta completa de la línea " + entry.code + " ha fallado:", liveError);
+        payload = await fetchVehicleListLine(entry.code);
+        fallback = true;
       }
-      render();
+
+      const rawVehicles = Array.isArray(payload.vehicles) ? payload.vehicles : [];
+      const vehicles = attachVehicleMotion(entry.code, rawVehicles);
+      const nextState = {
+        vehicles,
+        status: fallback ? "fallback" : (payload.partial ? "partial" : "ok"),
+        partial: payload.partial === true,
+        warnings: payload.warnings || [],
+        fetchedAt: payload.fetchedAt || new Date().toISOString(),
+        stale: payload.stale === true,
+        error: ""
+      };
+      state.lineLive.set(entry.code, nextState);
+      state.lastUpdated = new Date(nextState.fetchedAt);
     } catch (error) {
-      console.error("Error consultando SAE de Burgos:", error);
-      state.live = null;
-      state.lastUpdated = null;
-      setConnection("Sin conexión con ISAENEXT", "error");
-      setNotice(error?.message || "No se ha podido consultar el servicio municipal.", "error", false);
-      render();
-    } finally {
-      state.loading = false;
-      $("refreshButton").disabled = false;
-      $("routeSelect").disabled = false;
+      console.error("No se pudo consultar la línea " + entry.code + ":", error);
+      if (previous.vehicles.length) {
+        state.lineLive.set(entry.code, {
+          ...previous,
+          status: "stale",
+          stale: true,
+          error: error?.message || "No se pudo actualizar"
+        });
+      } else {
+        state.lineLive.set(entry.code, {
+          vehicles: [],
+          status: "error",
+          partial: true,
+          warnings: [],
+          fetchedAt: "",
+          error: error?.message || "No se pudo consultar esta línea"
+        });
+      }
     }
+
+    state.refreshProgress += 1;
+    updateLineCard(entry);
+    updateNetworkStats();
+    setNotice(
+      "Actualizando flota: " + state.refreshProgress + " de " + state.catalog.length + " líneas consultadas.",
+      "info",
+      true
+    );
+  }
+
+  async function refreshAll(manual) {
+    if (state.refreshing || !state.catalog.length) return;
+    state.refreshing = true;
+    state.refreshProgress = 0;
+    state.lastRefreshStarted = Date.now();
+    $("refreshButton").disabled = true;
+    $("refreshButton").classList.add("is-loading");
+
+    for (const entry of state.catalog) {
+      const previous = state.lineLive.get(entry.code);
+      if (!previous) {
+        state.lineLive.set(entry.code, {
+          vehicles: [],
+          status: "loading",
+          partial: false,
+          warnings: []
+        });
+      }
+    }
+
+    updateNetworkStats();
+    setNotice(
+      (manual ? "Actualización manual" : "Consulta inicial") +
+      ": consultando los autobuses de todas las líneas…",
+      "info",
+      true
+    );
+
+    let nextIndex = 0;
+    const workers = Array.from({ length: Math.min(LIVE_CONCURRENCY, state.catalog.length) }, async () => {
+      while (nextIndex < state.catalog.length) {
+        const index = nextIndex++;
+        await refreshOneLine(state.catalog[index]);
+      }
+    });
+
+    await Promise.all(workers);
+    state.refreshing = false;
+    $("refreshButton").disabled = false;
+    $("refreshButton").classList.remove("is-loading");
+    updateNetworkStats();
+
+    const errors = state.catalog.filter(entry =>
+      state.lineLive.get(entry.code)?.status === "error"
+    ).length;
+    setNotice(
+      errors
+        ? "Consulta terminada. " + (state.catalog.length - errors) + " líneas respondieron; " +
+          errors + " no han podido consultarse. Los itinerarios GTFS siguen visibles."
+        : "Consulta terminada. Se muestran todos los recorridos y los vehículos publicados por ISAENEXT.",
+      errors ? "warning" : "success",
+      false
+    );
   }
 
   async function boot() {
     try {
-      setConnection("Cargando rutas oficiales…", "");
+      setConnection("Cargando recorridos y paradas oficiales…", "");
       await loadStaticData();
-      populateRoutes();
-      await loadLine(state.selectedCode, true);
+      $("lineCount").textContent = String(state.catalog.length);
+      renderNetworkCatalog();
+      updateNetworkStats();
+      await refreshAll(false);
+
       if (state.timer) clearInterval(state.timer);
       state.timer = setInterval(() => {
-        if (!document.hidden && !state.loading && state.selectedCode) {
-          loadLine(state.selectedCode, false);
-        }
+        if (!document.hidden) refreshAll(false);
       }, REFRESH_MS);
     } catch (error) {
       console.error(error);
@@ -889,22 +1233,18 @@
     }
   }
 
-  $("routeSelect").addEventListener("change", event => {
-    const code = event.target.value;
-    const url = new URL(location.href);
-    url.searchParams.set("line", apiLineCode(code));
-    history.replaceState(null, "", url);
-    state.live = null;
-    loadLine(code, true);
-  });
-
-  $("refreshButton").addEventListener("click", () => {
-    if (state.selectedCode) loadLine(state.selectedCode, true);
-  });
+  $("refreshButton").addEventListener("click", () => refreshAll(true));
 
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && state.selectedCode && !state.loading) {
-      loadLine(state.selectedCode, false);
+    if (!document.hidden && Date.now() - state.lastRefreshStarted > 90000) {
+      refreshAll(false);
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    for (const entry of state.catalog) {
+      const card = $(lineKey(entry.code));
+      if (card) positionBusMarkers(card);
     }
   });
 

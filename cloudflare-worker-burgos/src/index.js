@@ -729,8 +729,9 @@ async function fetchVehiclesForLine(line) {
     const seconds = Number.isFinite(observation.seconds) && observation.seconds >= 0
       ? observation.seconds : Infinity;
     const old = byId.get(observation.vehicleId);
+    const hasPreviousObservation = bestEta.has(observation.vehicleId);
     const oldEta = bestEta.get(observation.vehicleId) ?? Infinity;
-    if (!old || seconds < oldEta) {
+    if (!old || !hasPreviousObservation || seconds < oldEta) {
       const validLat = observation.vehicleLat !== null && observation.vehicleLat >= 42 && observation.vehicleLat <= 43;
       const validLon = observation.vehicleLon !== null && observation.vehicleLon >= -4 && observation.vehicleLon <= -3;
       byId.set(observation.vehicleId, {
@@ -742,8 +743,10 @@ async function fetchVehiclesForLine(line) {
         direction: observation.direction || old?.direction || "",
         seconds: observation.seconds,
         meters: observation.meters,
-        stopId: observation.stopId,
-        stopName: observation.stopName,
+        stopId: observation.stopId || old?.stopId || "",
+        stopName: observation.stopName || old?.stopName || "",
+        stopLat: Number.isFinite(observation.stopLat) ? observation.stopLat : old?.stopLat ?? null,
+        stopLon: Number.isFinite(observation.stopLon) ? observation.stopLon : old?.stopLon ?? null,
         position: (
           old?.position &&
           old.position.lat !== null && old.position.lat !== undefined &&
@@ -877,7 +880,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.13-2026-11-27",
+        buildId: "burgos-live-v6.14-2026-11-27",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },

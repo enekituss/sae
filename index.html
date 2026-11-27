@@ -8,8 +8,8 @@
   <title>SAE Burgos · Autobuses urbanos</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=20261127b">
-  <script src="./app.js?v=20261127b" defer></script>
+  <link rel="stylesheet" href="./styles.css?v=20261127c">
+  <script src="./app.js?v=20261127c" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -31,7 +31,7 @@
       <div>
         <p class="eyebrow intro-eyebrow">SEGUIMIENTO EN DIRECTO</p>
         <h1>Autobuses urbanos<br><span>de Burgos</span></h1>
-        <p class="intro-copy">Selecciona cualquiera de las 29 líneas y consulta sus dos sentidos, paradas y autobuses en directo.</p>
+        <p class="intro-copy">Toda la red urbana en una sola pantalla: recorridos, paradas y autobuses de todas las líneas.</p>
       </div>
       <div class="source-stamp">
         <span class="source-icon" aria-hidden="true">●</span>
@@ -39,33 +39,27 @@
       </div>
     </section>
 
-    <section class="control-panel" aria-label="Seleccionar línea">
-      <div class="line-picker">
-        <label for="routeSelect">Línea</label>
-        <select id="routeSelect" disabled>
-          <option value="">Cargando líneas…</option>
-        </select>
-      </div>
-      <div class="route-heading">
-        <span class="route-kicker">LÍNEA SELECCIONADA</span>
-        <h2 id="routeTitle">—</h2>
-        <p id="routeDescription">Preparando el recorrido…</p>
+    <section class="network-toolbar" aria-label="Actualización de la red">
+      <div>
+        <p class="eyebrow">RED COMPLETA · BURGOS</p>
+        <strong>Todos los itinerarios a la vista</strong>
+        <span>Los autobuses se actualizan línea por línea, sin ocultar los que no tengan GPS.</span>
       </div>
       <button id="refreshButton" class="refresh-button" type="button" disabled>
-        <span aria-hidden="true">↻</span><span>Actualizar</span>
+        <span aria-hidden="true">↻</span><span>Actualizar red</span>
       </button>
     </section>
 
-    <section class="stats-row" aria-label="Resumen de la línea">
+    <section class="stats-row" aria-label="Resumen de toda la red">
+      <article class="stat-card">
+        <span class="stat-label">LÍNEAS PUBLICADAS</span>
+        <strong id="lineCount">—</strong>
+        <small>Rutas del GTFS municipal</small>
+      </article>
       <article class="stat-card">
         <span class="stat-label">AUTOBUSES DETECTADOS</span>
         <strong id="busCount">—</strong>
-        <small>En la consulta de esta línea</small>
-      </article>
-      <article class="stat-card">
-        <span class="stat-label">PARADAS DEL RECORRIDO</span>
-        <strong id="stopCount">—</strong>
-        <small>Según el itinerario GTFS</small>
+        <small>Suma de las consultas por línea</small>
       </article>
       <article class="stat-card stat-card-wide">
         <span class="stat-label">ÚLTIMA ACTUALIZACIÓN</span>
@@ -89,28 +83,15 @@
         <span class="notice-spinner" aria-hidden="true"></span>
         <span>Cargando recorridos y paradas oficiales…</span>
       </div>
-      <div id="directionGrid" class="direction-grid" aria-live="polite"></div>
+      <div id="directionGrid" class="network-list" aria-live="polite"></div>
       <p class="diagram-footnote">
-        La posición esquemática del autobús se sitúa junto a la próxima parada estimada que publica el SAE. No representa una coordenada exacta sobre la calle.
+        Cada línea conserva su inventario completo de coches. La posición sobre el esquema utiliza GPS cuando está disponible y, en su defecto, la próxima parada estimada; los vehículos sin ubicación fiable siguen apareciendo en su lista.
       </p>
-    </section>
-
-    <section class="fleet-section">
-      <div class="section-title fleet-title">
-        <div>
-          <p class="eyebrow">SERVICIO EN CURSO</p>
-          <h2>Autobuses de la línea</h2>
-        </div>
-        <span id="fleetCaption" class="fleet-caption">Sin datos todavía</span>
-      </div>
-      <div id="fleetList" class="fleet-list">
-        <div class="empty-state">Los autobuses aparecerán aquí cuando responda el servicio municipal.</div>
-      </div>
     </section>
 
     <footer class="footer">
       <div class="footer-brand"><span class="brand-mark brand-mark-small">B</span><strong>SAE BURGOS</strong></div>
-      <p>Datos de recorridos y horarios: GTFS municipal. Datos en directo: ISAENEXT del Ayuntamiento de Burgos.</p>
+      <p>Recorridos y horarios: GTFS municipal. Vehículos y estimaciones: ISAENEXT del Ayuntamiento de Burgos.</p>
       <p>Los retrasos mostrados son estimaciones calculadas comparando la llegada prevista con el horario de referencia cuando se puede identificar el viaje. No son una incidencia oficial publicada por el Ayuntamiento.</p>
       <div class="footer-links">
         <a href="https://www.aytoburgos.es/web/movilidad/rutas-en-directo" target="_blank" rel="noopener noreferrer">SAE municipal ↗</a>

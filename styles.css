@@ -321,3 +321,163 @@ a { color: inherit; }
   left: calc(50% + 12px);
   right: auto;
 }
+
+
+/* Vista completa de la red: una ficha por línea, sin selector. */
+.network-toolbar {
+  margin: 0 0 13px;
+  padding: 17px 19px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 5px 20px #1c34440a;
+}
+.network-toolbar > div { display: grid; gap: 4px; }
+.network-toolbar .eyebrow { color: #b66c20; }
+.network-toolbar strong { color: var(--navy); font-size: 15px; }
+.network-toolbar span { color: var(--muted); font-size: 11px; }
+.network-list { display: grid; grid-template-columns: minmax(0,1fr); gap: 15px; }
+.network-line-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dce5ea;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 4px 15px #1c344408;
+}
+.network-line-header {
+  min-height: 76px;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: 48px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 13px;
+  border-bottom: 1px solid #e8edf0;
+  background: linear-gradient(90deg, #f8fafb, #fff 60%);
+}
+.network-line-number {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: #fff;
+  background: var(--navy-2);
+  font-size: 15px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.network-line-name { min-width: 0; }
+.network-line-name .eyebrow { color: #b66c20; font-size: 8px; }
+.network-line-name h3 {
+  margin: 3px 0 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.25;
+}
+.network-line-live { display: grid; justify-items: end; gap: 5px; }
+.network-line-live small { color: #91a0a9; font-size: 9px; font-variant-numeric: tabular-nums; }
+.line-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.line-status-loading { color: #637783; background: #edf2f5; }
+.line-status-ok { color: #286d50; background: #e2f4e9; }
+.line-status-warning { color: #85521b; background: #fff1dc; }
+.line-status-error { color: #933c37; background: #fff0ef; }
+.line-status-stale { color: #785b28; background: #f7f0dc; }
+.network-line-diagram { padding: 14px 18px 4px; }
+.network-line-diagram .route-loop { width: min(100%, 990px); }
+.network-line-diagram .empty-state { margin: 8px 0; }
+.network-line-diagram .route-loop { padding-top: 0; }
+.network-line-diagram .loop-terminal { min-height: 49px; }
+.vehicle-inventory {
+  margin: 8px 17px 16px;
+  padding: 11px 12px 12px;
+  border: 1px solid #e5ebef;
+  border-radius: 11px;
+  background: #fbfcfd;
+}
+.vehicle-inventory-empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.vehicle-inventory-empty strong { color: #6f818c; font-size: 9px; letter-spacing: .06em; }
+.vehicle-inventory-empty span { color: #8998a1; font-size: 10px; }
+.vehicle-inventory-heading {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.vehicle-inventory-heading strong {
+  color: #657b89;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+.vehicle-inventory-heading span { color: #8998a1; font-size: 9px; }
+.vehicle-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.vehicle-chip {
+  min-width: 125px;
+  max-width: 100%;
+  padding: 6px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e7edf0;
+  border-radius: 8px;
+  background: #fff;
+}
+.vehicle-chip-bus { font-size: 12px; }
+.vehicle-chip-info { min-width: 0; display: grid; gap: 2px; }
+.vehicle-chip-info strong { color: #314b5d; font-size: 10px; }
+.vehicle-chip-info small {
+  max-width: 100px;
+  overflow: hidden;
+  color: #85949e;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vehicle-chip .delay-pill { margin-left: auto; font-size: 8px; }
+.line-error-note {
+  margin: -6px 17px 14px;
+  color: #9a514a;
+  font-size: 9px;
+  line-height: 1.4;
+}
+.network-line-card .unassigned-fleet { margin: 0 18px 14px; }
+.network-line-card .unlocated-buses { margin-left: 52px; }
+.network-line-card .route-loop { width: min(100%, 1040px); }
+.diagram-section { padding: 19px; }
+@media (max-width: 760px) {
+  .network-toolbar { align-items: stretch; flex-direction: column; padding: 14px; }
+  .network-toolbar .refresh-button { width: 100%; }
+  .network-line-header { grid-template-columns: 39px minmax(0,1fr); gap: 10px; padding: 12px; }
+  .network-line-number { width: 37px; height: 37px; font-size: 13px; }
+  .network-line-name h3 { font-size: 13px; }
+  .network-line-live { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+  .network-line-diagram { padding: 12px 9px 3px; }
+  .vehicle-inventory { margin: 7px 10px 12px; padding: 9px; }
+  .vehicle-chip { min-width: 0; flex: 1 1 135px; }
+  .diagram-section { padding: 14px 10px; }
+}

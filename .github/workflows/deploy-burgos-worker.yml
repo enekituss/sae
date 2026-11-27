@@ -49,7 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           health_url="https://burgos-sae-spotter.ecanteroalvarez.workers.dev/health"
-          expected='burgos-live-v6.13-2026-11-27'
+          expected='burgos-live-v6.14-2026-11-27'
           for attempt in 1 2 3 4 5; do
             body="$(curl --silent --show-error --fail "$health_url" || true)"
             if printf '%s' "$body" | node -e '
@@ -58,7 +58,7 @@ jobs:
               process.stdin.on("end", () => {
                 try {
                   const data = JSON.parse(input);
-                  if (data.ok === true && data.buildId === "burgos-live-v6.13-2026-11-27") {
+                  if (data.ok === true && data.buildId === "burgos-live-v6.14-2026-11-27") {
                     console.log("OK: Worker de Burgos desplegado y verificado:", data.buildId);
                     process.exit(0);
                   }
