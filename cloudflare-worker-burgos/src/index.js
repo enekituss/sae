@@ -495,10 +495,9 @@ function extractVehicleRows(payload, line) {
       (typeof row.vehicle === "string" || typeof row.vehicle === "number" ? row.vehicle :
         typeof row.vehiculo === "string" || typeof row.vehiculo === "number" ? row.vehiculo : "");
     const id = String(idValue ?? "").trim();
-    const nestedVehicle = row.vehicle && typeof row.vehicle === "object" ? row.vehicle :
-      row.vehiculo && typeof row.vehiculo === "object" ? row.vehiculo : {};
     const lat = Number(row.lat ?? row.latitude ?? row.position?.lat ?? nestedVehicle.lat ?? nestedVehicle.latitude);
-    const lon = Number(row.lng ?? row.lon ?? row.longitude ?? row.position?.lon ?? nestedVehicle.lng ?? nestedVehicle.lon ?? nestedVehicle.longitude);
+    const lon = Number(row.lng ?? row.lon ?? row.longitude ?? row.position?.lon ??
+      nestedVehicle.lng ?? nestedVehicle.lon ?? nestedVehicle.longitude);
     const validPosition = Number.isFinite(lat) && lat >= 42 && lat <= 43 &&
       Number.isFinite(lon) && lon >= -4 && lon <= -3;
 
@@ -765,10 +764,11 @@ async function fetchVehiclesForLine(line) {
       line,
       destination: row.destination || "Destino no publicado",
       direction: row.direction || "",
-      seconds: null,
-      meters: null,
-      stopId: "",
-      stopName: "",
+      seconds: row.seconds ?? null,
+      meters: row.meters ?? null,
+      desfaseSeconds: row.desfaseSeconds ?? null,
+      stopId: row.stopId || row.stop_id || "",
+      stopName: row.stopName || row.stop_name || "",
       position: {
         lat: validLat ? lat : null,
         lon: validLon ? lon : null,
