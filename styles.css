@@ -645,3 +645,35 @@ a { color: inherit; }
   .network-line-diagram .branch-head h3 { font-size: 7px; }
   .network-line-diagram .stop-name { font-size: 6px; }
 }
+
+
+/* Lectura visible de flota y desfase: no ocultar el valor en el diseño compacto. */
+.vehicle-chip {
+  flex: 1 1 145px;
+  min-height: 27px;
+  padding: 3px 5px;
+  gap: 4px;
+}
+.vehicle-chip-info strong { font-size: 8px; }
+.vehicle-chip-info small { max-width: 90px; font-size: 6px; }
+.vehicle-chip .delay-pill {
+  flex: 0 0 auto;
+  padding: 2px 4px;
+  font-size: 7px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.vehicle-inventory-heading strong { font-size: 7px; }
+.vehicle-inventory-heading span { font-size: 7px; }
+.line-source-note {
+  margin: 0 7px 7px;
+  color: #788995;
+  font-size: 7px;
+  line-height: 1.35;
+}
+.line-error-note { font-size: 7px; }
+@media (max-width: 760px) {
+  .vehicle-chip { flex: 1 1 150px; }
+  .vehicle-chip .delay-pill { font-size: 8px; }
+  .line-source-note { font-size: 8px; }
+}

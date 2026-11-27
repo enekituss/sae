@@ -400,7 +400,7 @@ function arrayFromResource(payload, resourceName) {
 function parseTimeDesfaseValue(value, fieldName = "", unitHint = "") {
   if (value === null || value === undefined || value === "") return null;
   if (typeof value === "object") {
-    const unit = String(value.unit ?? value.units ?? value.unidad ?? unitHint ?? "");
+    const unit = String(value.unit ?? value.units ?? value.unidad ?? unitHint ?? fieldName);
     const inner = value.seconds ?? value.segundos ?? value.minutes ?? value.minutos ??
       value.value ?? value.valor ?? value.time ?? value.tiempo ?? value.offset ?? null;
     if (inner === null || inner === undefined) return null;
@@ -420,47 +420,64 @@ function parseTimeDesfaseValue(value, fieldName = "", unitHint = "") {
       ? first * 3600 + second * 60 + third
       : first * 60 + second);
   } else {
-    const number = Number(raw.replace(",", ".").replace(/\s*(s|sec|secs|seg|segundos?)\s*$/i, ""));
-    if (!Number.isFinite(number)) return null;
-    seconds = number;
+    const match = raw.match(/^([+-]?\d+(?:[.,]\d+)?)\s*(ms|msec|milliseconds?|milisegundos?|s|sec|secs|seconds?|seg|segundos?|min|mins|minutes?|minutos?)?$/i);
+    if (!match) return null;
+    seconds = Number(match[1].replace(",", "."));
+    const suffixUnit = String(match[2] || unitHint || fieldName).toLowerCase();
+    if (/^(ms|msec|milliseconds?|milisegundos?)$/.test(suffixUnit)) seconds /= 1000;
+    else if (/^(min|mins|minutes?|minutos?)$/.test(suffixUnit)) seconds *= 60;
+    else if (!match[2]) {
+      const fieldUnit = String(unitHint || fieldName).toLowerCase();
+      if (/millisecond|milli|(^|[^a-z])ms([^a-z]|$)|miliseg/.test(fieldUnit)) seconds /= 1000;
+      else if (/minute|minuto|(^|[^a-z])min([^a-z]|$)/.test(fieldUnit)) seconds *= 60;
+    }
   }
-
-  const unit = String(unitHint || fieldName).toLowerCase();
-  if (/millisecond|milli|(^|[^a-z])ms([^a-z]|$)|miliseg/.test(unit)) seconds /= 1000;
-  else if (/minute|minuto|(^|[^a-z])min([^a-z]|$)/.test(unit)) seconds *= 60;
   return Number.isFinite(seconds) ? seconds : null;
 }
 
-function readTimeDesfase(source) {
-  if (!source || typeof source !== "object") return null;
+function readTimeDesfase(source, depth = 0, visited = new Set()) {
+  if (!source || typeof source !== "object" || depth > 4 || visited.has(source)) return null;
+  visited.add(source);
   const aliases = [
-    "tiempoDesfase", "tiempo_desfase", "desfaseTiempo", "desfase_tiempo",
-    "timeDesfase", "time_desfase", "timeOffset", "time_offset", "offsetTime",
-    "offset_time", "timeDifference", "time_difference", "differenceTime",
-    "difference_time", "timeDiff", "time_diff", "delaySeconds", "delay_seconds",
+    "tiempoDesfase", "tiempo_desfase", "tiempoDesfaseSegundos", "tiempoDesfaseMinutos",
+    "desfaseTiempo", "desfase_tiempo", "timeDesfase", "time_desfase",
+    "timeOffset", "time_offset", "offsetTime", "offset_time",
+    "timeDifference", "time_difference", "differenceTime", "difference_time",
+    "timeDiff", "time_diff", "delaySeconds", "delay_seconds",
     "delayMinutes", "delay_minutes", "desfaseSeconds", "desfase_seconds",
     "desfaseMinutes", "desfase_minutes", "retrasoSegundos", "retraso_segundos",
     "retrasoMinutos", "retraso_minutos", "retraso", "desfase", "delay",
     "lateness", "timeDeviation", "time_deviation", "timeLag", "time_lag",
     "timeDisplacement", "time_displacement", "deviationSeconds", "deviation_seconds"
   ];
+
   for (const key of aliases) {
-    if (Object.prototype.hasOwnProperty.call(source, key)) {
-      const parsed = parseTimeDesfaseValue(source[key], key, source.timeUnit ?? source.unit ?? source.unidad ?? "");
+    if (!Object.prototype.hasOwnProperty.call(source, key)) continue;
+    const parsed = parseTimeDesfaseValue(
+      source[key], key, source.timeUnit ?? source.desfaseUnit ?? source.unit ?? source.unidad ?? ""
+    );
+    if (parsed !== null) return parsed;
+  }
+
+  // Variantes de nombre y propiedades anidadas de ISAENEXT.
+  for (const [key, value] of Object.entries(source)) {
+    const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (/(desfase|timeoffset|timedifference|timediff|timeshift|timelag|timedeviation|retraso|lateness|scheduledeviation|scheduleoffset)/.test(normalized)) {
+      const parsed = parseTimeDesfaseValue(
+        value, normalized, source.timeUnit ?? source.desfaseUnit ?? source.unit ?? source.unidad ?? ""
+      );
       if (parsed !== null) return parsed;
     }
   }
 
-  // También acepta variaciones de nombre del mismo campo publicadas por ISAENEXT.
-  for (const [key, value] of Object.entries(source)) {
-    const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (!/(desfase|timeoffset|timedifference|timediff|timeshift|timelag|timedeviation|retraso|lateness)/.test(normalized)) continue;
-    const parsed = parseTimeDesfaseValue(value, normalized, source.timeUnit ?? source.unit ?? source.unidad ?? "");
-    if (parsed !== null) return parsed;
+  for (const value of Object.values(source)) {
+    if (value && typeof value === "object") {
+      const nested = readTimeDesfase(value, depth + 1, visited);
+      if (nested !== null) return nested;
+    }
   }
   return null;
 }
-
 function extractVehicleRows(payload, line) {
   const rows = arrayFromResource(payload, "resourceVehicles");
   const knownLines = new Set(BURGOS_LINES.map(normalizeLineCode));
@@ -1025,7 +1042,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.15-2026-11-27",
+        buildId: "burgos-live-v6.16-2026-11-27",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },

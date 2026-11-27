@@ -4,9 +4,9 @@
   const WORKER_BASE = "https://burgos-sae-spotter.ecanteroalvarez.workers.dev";
   const GTFS_URL = "./burgos-data.json";
   const MODELS_URL = "./burgos-modelos.json";
-  const REFRESH_MS = 120000;
+  const REFRESH_MS = 180000;
   const LIVE_CONCURRENCY = 3;
-  const REQUEST_TIMEOUT_MS = 40000;
+  const REQUEST_TIMEOUT_MS = 25000;
   const $ = id => document.getElementById(id);
   const state = {
     gtfs: null,
@@ -562,33 +562,98 @@
   }
 
 
-  function readBusDesfase(bus) {
-    const direct = bus?.desfaseSeconds ?? bus?.tiempoDesfaseSeconds ??
-      bus?.timeDesfaseSeconds ?? bus?.desfase ?? bus?.tiempoDesfase ??
-      bus?.timeDesfase ?? bus?.timeOffset ?? bus?.timeDifference ??
-      bus?.timeDiff ?? bus?.delaySeconds ?? bus?.delay ?? bus?.lateness ??
-      bus?.retrasoSegundos ?? bus?.retraso;
-    if (direct === null || direct === undefined || direct === "") return null;
-    if (typeof direct === "string") {
-      const match = direct.trim().match(/^([+-])?(\d{1,3}):([0-5]\d)(?::([0-5]\d))?$/);
-      if (match) {
-        const sign = match[1] === "-" ? -1 : 1;
-        const first = Number(match[2]);
-        const second = Number(match[3]);
-        const third = Number(match[4] || 0);
-        return sign * (match[4] !== undefined
-          ? first * 3600 + second * 60 + third
-          : first * 60 + second);
-      }
+  function parseDesfaseClient(value, fieldName = "", unitHint = "") {
+    if (value === null || value === undefined || value === "") return null;
+    if (typeof value === "object") {
+      const unit = String(value.unit ?? value.units ?? value.unidad ?? unitHint ?? fieldName);
+      const inner = value.seconds ?? value.segundos ?? value.minutes ?? value.minutos ??
+        value.value ?? value.valor ?? value.time ?? value.tiempo ?? value.offset ?? null;
+      return inner === null || inner === undefined
+        ? null : parseDesfaseClient(inner, fieldName, unit);
     }
-    const number = Number(direct);
-    if (!Number.isFinite(number)) return null;
-    const unit = String(bus?.desfaseUnit ?? bus?.timeUnit ?? bus?.unit ?? "").toLowerCase();
-    if (/minute|minuto|(^|[^a-z])min([^a-z]|$)/.test(unit)) return number * 60;
-    if (/millisecond|milli|(^|[^a-z])ms([^a-z]|$)/.test(unit)) return number / 1000;
-    return number;
+
+    const raw = String(value).trim();
+    if (!raw) return null;
+    const clock = raw.match(/^([+-])?(\d{1,3}):([0-5]\d)(?::([0-5]\d))?$/);
+    let seconds;
+    if (clock) {
+      const sign = clock[1] === "-" ? -1 : 1;
+      const first = Number(clock[2]);
+      const second = Number(clock[3]);
+      const third = Number(clock[4] || 0);
+      seconds = sign * (clock[4] !== undefined
+        ? first * 3600 + second * 60 + third
+        : first * 60 + second);
+    } else {
+      const suffix = raw.match(/^([+-]?\d+(?:[.,]\d+)?)\s*(ms|msec|milliseconds?|milisegundos?|s|sec|secs|seconds?|seg|segundos?|min|mins|minutes?|minutos?)?$/i);
+      if (!suffix) return null;
+      seconds = Number(suffix[1].replace(",", "."));
+      const suffixUnit = String(suffix[2] || unitHint || fieldName).toLowerCase();
+      if (/^(ms|msec|milliseconds?|milisegundos?)$/.test(suffixUnit)) seconds /= 1000;
+      else if (/^(min|mins|minutes?|minutos?)$/.test(suffixUnit)) seconds *= 60;
+    }
+
+    const unit = String(unitHint || fieldName).toLowerCase();
+    if (/millisecond|milli|(^|[^a-z])ms([^a-z]|$)|miliseg/.test(unit)) seconds /= 1000;
+    else if (/minute|minuto|(^|[^a-z])min([^a-z]|$)/.test(unit) &&
+      !/^(min|mins|minutes?|minutos?)$/.test(String(value).trim().split(/\s+/).at(-1).toLowerCase())) seconds *= 60;
+    return Number.isFinite(seconds) ? seconds : null;
   }
 
+  function readBusDesfase(bus) {
+    if (!bus || typeof bus !== "object") return null;
+    const visited = new Set();
+    const aliases = [
+      "desfaseSeconds", "tiempoDesfaseSeconds", "timeDesfaseSeconds",
+      "tiempoDesfase", "tiempo_desfase", "desfaseTiempo", "desfase_tiempo",
+      "timeDesfase", "time_desfase", "timeOffset", "time_offset",
+      "offsetTime", "offset_time", "timeDifference", "time_difference",
+      "differenceTime", "difference_time", "timeDiff", "time_diff",
+      "delaySeconds", "delay_seconds", "delayMinutes", "delay_minutes",
+      "desfaseSeconds", "desfase_seconds", "desfaseMinutes", "desfase_minutes",
+      "retrasoSegundos", "retraso_segundos", "retrasoMinutos", "retraso_minutos",
+      "retraso", "desfase", "delay", "lateness", "timeDeviation",
+      "time_deviation", "timeLag", "time_lag", "timeDisplacement",
+      "time_displacement", "deviationSeconds", "deviation_seconds"
+    ];
+
+    function visit(source, depth = 0) {
+      if (!source || typeof source !== "object" || depth > 3 || visited.has(source)) return null;
+      visited.add(source);
+
+      for (const key of aliases) {
+        if (!Object.prototype.hasOwnProperty.call(source, key)) continue;
+        const parsed = parseDesfaseClient(
+          source[key],
+          key,
+          source.timeUnit ?? source.desfaseUnit ?? source.unit ?? source.unidad ?? ""
+        );
+        if (parsed !== null) return parsed;
+      }
+
+      for (const [key, value] of Object.entries(source)) {
+        const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (/(desfase|timeoffset|timedifference|timediff|timeshift|timelag|timedeviation|retraso|lateness)/.test(normalized)) {
+          const parsed = parseDesfaseClient(
+            value,
+            normalized,
+            source.timeUnit ?? source.desfaseUnit ?? source.unit ?? source.unidad ?? ""
+          );
+          if (parsed !== null) return parsed;
+        }
+      }
+
+      for (const value of Object.values(source)) {
+        if (value && typeof value === "object") {
+          const nested = visit(value, depth + 1);
+          if (nested !== null) return nested;
+        }
+      }
+      return null;
+    }
+
+    return visit(bus);
+  }
   function busDesfase(bus, direction) {
     const sourceValue = readBusDesfase(bus);
     if (sourceValue !== null) {
@@ -809,6 +874,127 @@
     return "line-card-" + String(code).toLowerCase().replace(/[^a-z0-9]+/g, "-");
   }
 
+
+  function findBestDelayDirection(bus, directions) {
+    const candidates = directions.map(direction => {
+      const stopIndex = findStopIndex(direction, bus);
+      const destination = destinationScore(bus.destination, direction.headsign);
+      const delay = estimatedDelay(bus, direction);
+      return {
+        direction,
+        stopIndex,
+        destination,
+        delay,
+        score: (stopIndex >= 0 ? 100 : 0) + destination * 10
+      };
+    }).filter(item => item.delay && Number.isFinite(item.delay.seconds));
+
+    candidates.sort((a, b) =>
+      b.score - a.score ||
+      Math.abs(a.delay.seconds) - Math.abs(b.delay.seconds)
+    );
+    return candidates[0]?.direction || null;
+  }
+
+  function mergeVehicleSources(vehiclePayload, livePayload, code) {
+    const merged = new Map();
+    const addVehicle = raw => {
+      if (!raw || typeof raw !== "object") return;
+      const idValue = raw.id ?? raw.vehicleId ?? raw.vehicle_id ??
+        raw.vehicle ?? raw.busId ?? raw.bus_id ?? "";
+      const id = String(idValue).trim();
+      if (!id || id === "0") return;
+      const previous = merged.get(id) || {};
+      const next = { ...previous, ...raw, id, line: code, lineId: code };
+
+      const keepOldUnlessNew = [
+        "destination", "direction", "stopId", "stopName",
+        "seconds", "meters", "desfaseSeconds", "stopLat", "stopLon"
+      ];
+      for (const field of keepOldUnlessNew) {
+        const value = raw[field];
+        if ((value === null || value === undefined || value === "" ||
+            value === "Destino no publicado") &&
+            previous[field] !== null && previous[field] !== undefined && previous[field] !== "") {
+          next[field] = previous[field];
+        }
+      }
+
+      const newDesfase = readBusDesfase(raw);
+      const oldDesfase = readBusDesfase(previous);
+      if (newDesfase === null && oldDesfase !== null) next.desfaseSeconds = oldDesfase;
+      else if (newDesfase !== null) next.desfaseSeconds = newDesfase;
+
+      const oldPosition = vehiclePosition(previous);
+      const newPosition = vehiclePosition(raw);
+      if (oldPosition && !newPosition) next.position = previous.position;
+      else if (newPosition) next.position = raw.position || newPosition;
+
+      next.idMissing = Boolean(raw.idMissing || previous.idMissing || id.startsWith("SIN-ID-"));
+      merged.set(id, next);
+    };
+
+    for (const bus of Array.isArray(vehiclePayload?.vehicles) ? vehiclePayload.vehicles : []) addVehicle(bus);
+    for (const bus of Array.isArray(livePayload?.vehicles) ? livePayload.vehicles : []) addVehicle(bus);
+
+    const bestObservation = new Map();
+    for (const observation of Array.isArray(livePayload?.observations) ? livePayload.observations : []) {
+      const id = String(observation?.vehicleId ?? observation?.vehicle_id ??
+        observation?.vehicle ?? observation?.busId ?? "").trim();
+      if (!id || id === "0") continue;
+      const secondsValue = observation.seconds;
+      const seconds = secondsValue === null || secondsValue === undefined || secondsValue === ""
+        ? Infinity : Number(secondsValue);
+      const meters = observation.meters === null || observation.meters === undefined ||
+        observation.meters === "" ? Infinity : Number(observation.meters);
+      const quality = (Number.isFinite(seconds) ? 100 : 0) +
+        (Number.isFinite(meters) ? 40 : 0) +
+        (readBusDesfase(observation) !== null ? 25 : 0) +
+        (observation.stopId || observation.stop_id ? 15 : 0) +
+        (observation.stopName || observation.stop_name ? 10 : 0);
+      const previous = bestObservation.get(id);
+      if (!previous || seconds < previous.seconds ||
+          (seconds === previous.seconds && quality > previous.quality)) {
+        bestObservation.set(id, { observation, seconds, quality });
+      }
+    }
+
+    for (const [id, entry] of bestObservation) {
+      const observation = entry.observation;
+      const previous = merged.get(id) || {};
+      const observationDesfase = readBusDesfase(observation);
+      merged.set(id, {
+        ...previous,
+        id,
+        line: code,
+        lineId: code,
+        destination: observation.destination || previous.destination || "Destino no publicado",
+        direction: observation.direction || observation.sentido || previous.direction || "",
+        seconds: observation.seconds ?? previous.seconds ?? null,
+        meters: observation.meters ?? previous.meters ?? null,
+        desfaseSeconds: observationDesfase ?? readBusDesfase(previous),
+        stopId: observation.stopId || observation.stop_id || previous.stopId || "",
+        stopName: observation.stopName || observation.stop_name || previous.stopName || "",
+        stopLat: observation.stopLat ?? previous.stopLat ?? null,
+        stopLon: observation.stopLon ?? previous.stopLon ?? null
+      });
+    }
+
+    return {
+      ...(vehiclePayload || {}),
+      ...(livePayload || {}),
+      line: code,
+      vehicles: [...merged.values()],
+      observations: Array.isArray(livePayload?.observations) ? livePayload.observations : [],
+      vehicleRowCount: Number(vehiclePayload?.vehicleRowCount ?? livePayload?.vehicleRowCount ??
+        vehiclePayload?.count ?? livePayload?.count ?? vehiclePayload?.vehicles?.length ??
+        livePayload?.vehicles?.length ?? 0),
+      estimationCount: Number(livePayload?.estimationCount ??
+        livePayload?.observations?.length ?? 0),
+      livePartial: livePayload?.partial === true
+    };
+  }
+
   function renderVehicleInventory(entry, vehicles, directions, assignments) {
     if (!vehicles.length) {
       return '<div class="vehicle-inventory vehicle-inventory-empty">' +
@@ -839,7 +1025,8 @@
       const eta = formatETA(bus.seconds);
       const distance = formatDistance(bus.meters);
       const detail = [eta, distance].filter(Boolean).join(" · ");
-      const delay = busStatus(bus, direction);
+      const delayDirection = direction || findBestDelayDirection(bus, directions);
+      const delay = busStatus(bus, delayDirection);
       const placement = position
         ? (position.source === "GPS" ? "GPS en recorrido" : "Próxima parada")
         : (direction ? "Posición sin confirmar" : "Sentido sin confirmar");
@@ -881,7 +1068,8 @@
     const statusText = {
       loading: "Consultando…",
       updating: "Actualizando…",
-      ok: vehicles.length + (vehicles.length === 1 ? " coche" : " coches"),
+      ok: vehicles.length + (vehicles.length === 1 ? " coche" : " coches") +
+        (lineState.desfaseCount ? " · " + lineState.desfaseCount + " desfases" : ""),
       partial: "Datos parciales · " + vehicles.length + " coches",
       fallback: "Listado de respaldo · " + vehicles.length + " coches",
       stale: "Últimos datos conservados · " + vehicles.length + " coches",
@@ -901,11 +1089,17 @@
         ).join("") + '</div>'
       : "";
 
+    const sourceDetails = lineState.vehicleRowCount !== undefined
+      ? '<p class="line-source-note">Coches recibidos: ' + Number(lineState.vehicleRowCount) +
+        ' · estimaciones: ' + Number(lineState.observationCount || 0) +
+        ' · desfases disponibles: ' + Number(lineState.desfaseCount || 0) + '</p>'
+      : "";
     const warning = lineState.error
       ? '<p class="line-error-note">' + escapeHTML(lineState.error) + '</p>'
       : lineState.stale
-        ? '<p class="line-error-note">Mostrando la última lectura guardada; la consulta nueva ha fallado.</p>'
+        ? '<p class="line-error-note">Mostrando la última lectura conservada; la consulta nueva ha fallado.</p>'
         : "";
+
 
     const diagram = renderLoopDiagram(directions, assignments.assignments);
     const inventory = renderVehicleInventory(entry, vehicles, directions, assignments.assignments);
@@ -920,7 +1114,7 @@
       '</small></div>' +
       '</header>' +
       '<div class="network-line-diagram">' + diagram + busesUnknown + '</div>' +
-      inventory + warning;
+      inventory + sourceDetails + warning;
   }
 
   function updateLineCard(entry) {
@@ -1127,7 +1321,7 @@
 
   async function fetchVehicleListLine(code) {
     const line = apiLineCode(code);
-    const url = WORKER_BASE + "/api/burgos/vehicles?line=" + encodeURIComponent(line);
+    const url = WORKER_BASE + "/api/burgos/vehicles?line=" + encodeURIComponent(line) + "&fresh=1";
     return enrichLivePayload(await fetchJson(url, REQUEST_TIMEOUT_MS), line);
   }
 
@@ -1145,61 +1339,96 @@
     });
     updateLineCard(entry);
 
-    try {
-      let payload;
-      let fallback = false;
-      try {
-        payload = await fetchLiveLine(entry.code);
-      } catch (liveError) {
-        console.warn("La consulta completa de la línea " + entry.code + " ha fallado:", liveError);
-        payload = await fetchVehicleListLine(entry.code);
-        fallback = true;
-      }
+    let vehiclePayload = null;
+    let livePayload = null;
+    let vehicleError = "";
+    let liveError = "";
 
-      const rawVehicles = Array.isArray(payload.vehicles) ? payload.vehicles : [];
-      const vehicles = attachVehicleMotion(entry.code, rawVehicles);
-      const nextState = {
-        vehicles,
-        status: fallback ? "fallback" : (payload.partial ? "partial" : "ok"),
-        partial: payload.partial === true,
-        warnings: payload.warnings || [],
-        fetchedAt: payload.fetchedAt || new Date().toISOString(),
-        stale: payload.stale === true,
-        error: ""
-      };
-      state.lineLive.set(entry.code, nextState);
-      state.lastUpdated = new Date(nextState.fetchedAt);
+    // 1) La lista ligera es la fuente principal de coches. No depende de que
+    // resourceRoutes o resourceEstimations respondan.
+    try {
+      vehiclePayload = await fetchVehicleListLine(entry.code);
     } catch (error) {
-      console.error("No se pudo consultar la línea " + entry.code + ":", error);
+      vehicleError = error?.message || String(error);
+      console.warn("No se pudo cargar resourceVehicles de la línea " + entry.code + ":", error);
+    }
+
+    const listedVehicles = Array.isArray(vehiclePayload?.vehicles)
+      ? vehiclePayload.vehicles : [];
+
+    // 2) El endpoint live se consulta para añadir próxima parada, metros, GPS
+    // y tiempo desfase. Nunca puede borrar la flota del endpoint ligero.
+    // También se intenta cuando la lista está vacía: las estimaciones pueden
+    // aportar vehículos que no aparecen en resourceVehicles.
+    try {
+      livePayload = await fetchLiveLine(entry.code);
+    } catch (error) {
+      liveError = error?.message || String(error);
+      console.warn("No se pudieron enriquecer los coches de la línea " + entry.code + ":", error);
+    }
+
+    if (!vehiclePayload && !livePayload) {
+      console.error("No se pudo consultar la línea " + entry.code + ":", vehicleError, liveError);
       if (previous.vehicles.length) {
         state.lineLive.set(entry.code, {
           ...previous,
           status: "stale",
           stale: true,
-          error: error?.message || "No se pudo actualizar"
+          error: [vehicleError, liveError].filter(Boolean).join(" · ")
         });
       } else {
         state.lineLive.set(entry.code, {
           vehicles: [],
           status: "error",
           partial: true,
-          warnings: [],
+          warnings: [vehicleError, liveError].filter(Boolean),
           fetchedAt: "",
-          error: error?.message || "No se pudo consultar esta línea"
+          error: [vehicleError, liveError].filter(Boolean).join(" · ") || "No se pudo consultar esta línea"
         });
       }
+    } else {
+      const payload = mergeVehicleSources(vehiclePayload, livePayload, apiLineCode(entry.code));
+      const rawVehicles = Array.isArray(payload.vehicles) ? payload.vehicles : [];
+      const vehicles = attachVehicleMotion(entry.code, rawVehicles);
+      const vehicleRowCount = Number(vehiclePayload?.vehicleRowCount ??
+        vehiclePayload?.count ?? listedVehicles.length);
+      const observationCount = Number(livePayload?.estimationCount ??
+        livePayload?.observations?.length ?? 0);
+      const hasAnyError = Boolean(vehicleError || liveError);
+      const partial = hasAnyError || livePayload?.partial === true ||
+        vehiclePayload?.partial === true;
+
+      state.lineLive.set(entry.code, {
+        vehicles,
+        status: partial ? (vehiclePayload ? "partial" : "fallback") : "ok",
+        partial,
+        warnings: [
+          ...(vehiclePayload?.warnings || []),
+          ...(livePayload?.warnings || []),
+          vehicleError ? "Lista principal: " + vehicleError : "",
+          liveError ? "Enriquecimiento: " + liveError : ""
+        ].filter(Boolean),
+        fetchedAt: livePayload?.fetchedAt || vehiclePayload?.fetchedAt || new Date().toISOString(),
+        stale: vehiclePayload?.stale === true || livePayload?.stale === true,
+        error: liveError && vehicles.length ? "Flota visible; sin enriquecimiento: " + liveError :
+          vehicleError && vehicles.length ? "Flota obtenida desde el endpoint alternativo." : "",
+        vehicleRowCount: Math.max(vehicleRowCount, listedVehicles.length),
+        observationCount,
+        desfaseCount: vehicles.filter(bus => readBusDesfase(bus) !== null).length
+      });
+      state.lastUpdated = new Date();
     }
 
     state.refreshProgress += 1;
     updateLineCard(entry);
     updateNetworkStats();
     setNotice(
-      "Actualizando flota: " + state.refreshProgress + " de " + state.catalog.length + " líneas consultadas.",
+      "Consultadas " + state.refreshProgress + " de " + state.catalog.length +
+      " líneas; flota y estimaciones se procesan por separado.",
       "info",
       true
     );
   }
-
   async function refreshAll(manual) {
     if (state.refreshing || !state.catalog.length) return;
     state.refreshing = true;
