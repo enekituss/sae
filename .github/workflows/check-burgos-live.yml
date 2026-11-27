@@ -1,55 +1,43 @@
-name: Comprobar panel de autobuses en directo de Burgos
+name: Validar web SAE de Burgos
+
 on:
   push:
     paths:
-      - "burgos.html"
-      - "burgos.css"
-      - "burgos.js"
-      - "burgos-vehicles.js"
+      - "index.html"
+      - "app.js"
+      - "styles.css"
+      - "burgos-data.json"
       - "burgos-modelos.json"
       - "scripts/update_burgos_gtfs.py"
-      - "cloudflare-worker/src/index.js"
       - "cloudflare-worker-burgos/src/index.js"
-      - ".github/workflows/telegram-burgos.yml"
-      - ".github/workflows/telegram-burgos-smoke.yml"
       - ".github/workflows/check-burgos-live.yml"
+  workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
-  syntax-check:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Comprobar JavaScript de la web heredada
-        run: node --check burgos.js
-      - name: Comprobar JavaScript de la vista activa de Burgos
-        run: node --check burgos-vehicles.js
-      - name: Validar base de modelos de autobuses de Burgos
-        run: |
-          node -e 'const d=require("./burgos-modelos.json"); const m=d.models; if (!m || !Object.keys(m).length || Object.values(m).some(v => typeof v !== "string" || !v.trim())) throw new Error("Base de modelos inválida"); console.log("Base de modelos válida:", Object.keys(m).length, "coches");'
-      - name: Comprobar JavaScript del proxy Cloudflare
-        run: node --check cloudflare-worker/src/index.js
-      - name: Comprobar JavaScript del Worker independiente de Burgos
+      - name: Comprobar JavaScript de la web
+        run: node --check app.js
+      - name: Comprobar JavaScript del Worker de Burgos
         run: node --check cloudflare-worker-burgos/src/index.js
+      - name: Validar base de modelos
+        run: |
+          node -e 'const d=require("./burgos-modelos.json"); const m=d.models; if (!m || !Object.keys(m).length || Object.values(m).some(v => typeof v !== "string" || !v.trim())) throw new Error("Base de modelos inválida"); console.log("Modelos válidos:", Object.keys(m).length);'
+      - name: Validar estructura GTFS generada
+        run: |
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const d = JSON.parse(fs.readFileSync("burgos-data.json", "utf8"));
+          for (const key of ["routes", "stops", "trips", "calendar", "exceptions"]) {
+            if (!Array.isArray(d[key])) throw new Error("Falta el array " + key);
+          }
+          if (!d.routes.length || !d.stops.length || !d.trips.length) throw new Error("GTFS vacío");
+          console.log("GTFS válido:", d.routes.length, "líneas,", d.stops.length, "paradas,", d.trips.length, "viajes");
+          NODE
       - name: Comprobar sintaxis del importador GTFS
         run: python -m py_compile scripts/update_burgos_gtfs.py
-      - name: Comprobar sintaxis Python del monitor Telegram de Burgos
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          workflow_path = Path(".github/workflows/telegram-burgos.yml")
-          source = workflow_path.read_text(encoding="utf-8")
-          marker = "        run: |\n          python - <<'PY'\n"
-          if source.count(marker) != 1:
-              raise SystemExit("No se pudo aislar el script Python del monitor de Burgos.")
-          start = source.index(marker) + len(marker)
-          end = source.index("\n          PY", start)
-          raw_script = source[start:end]
-          lines = raw_script.splitlines()
-          if not lines or any(line and not line.startswith("          ") for line in lines):
-              raise SystemExit("La sangría del script embebido no coincide con el bloque YAML.")
-          script = "\n".join(line[10:] if line else "" for line in lines) + "\n"
-          compile(script, str(workflow_path), "exec")
-          print("Sintaxis Python del monitor de Burgos correcta.")
-          PY

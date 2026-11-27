@@ -1,57 +1,124 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#17212b">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="SAE Spotter">
-  <title>Elegir ciudad · SAE Spotter</title>
-  <meta name="description" content="Elige qué red de autobuses quieres consultar: Burgos o Bizkaibus.">
-  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#142638">
+  <meta name="description" content="Seguimiento esquemático en directo de los autobuses urbanos de Burgos.">
+  <title>SAE Burgos · Autobuses urbanos</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./hub.css?v=20261018a">
-  <script>document.documentElement.classList.add('auth-check');</script>
-  <style>html.auth-check body { visibility: hidden; }</style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./supabase-config.js"></script>
-  <script src="./auth-guard.js?v=20261019a"></script>
-  <script src="./navigation.js?v=20261018a" defer></script>
-  <script src="./pwa.js?v=20261018a" defer></script>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css?v=20261127a">
+  <script src="./app.js?v=20261127a" defer></script>
 </head>
 <body>
   <header class="topbar">
-    <div>
-      <p class="eyebrow">PANEL DE TRANSPORTE · SAE</p>
-      <h1>SAE <span style="color:#b96500">Spotter</span></h1>
-      <p>Elige la red de autobuses que quieres consultar.</p>
+    <a class="brand" href="./" aria-label="SAE Burgos, inicio">
+      <span class="brand-mark" aria-hidden="true">B</span>
+      <span class="brand-copy">
+        <span class="eyebrow">TRANSPORTE URBANO · BURGOS</span>
+        <strong>SAE <span>BURGOS</span></strong>
+      </span>
+    </a>
+    <div class="connection" aria-live="polite">
+      <span id="connectionDot" class="connection-dot"></span>
+      <span id="connectionText">Cargando datos del servicio…</span>
     </div>
-    <div class="status">Sesión iniciada · Selección de red</div>
   </header>
+
   <main class="page">
     <section class="intro">
-      <h2>¿Dónde consultamos hoy?</h2>
-      <p>El acceso y el inicio de sesión son comunes. La información de cada operador se mantiene separada para que puedas volver de una pantalla a otra sin perder el contexto.</p>
+      <div>
+        <p class="eyebrow intro-eyebrow">SEGUIMIENTO EN DIRECTO</p>
+        <h1>Autobuses urbanos<br><span>de Burgos</span></h1>
+        <p class="intro-copy">Recorridos, paradas y vehículos de cada línea sobre un esquema de sus dos sentidos.</p>
+      </div>
+      <div class="source-stamp">
+        <span class="source-icon" aria-hidden="true">●</span>
+        <span><strong>Fuente municipal</strong><small>ISAENEXT · Ayuntamiento de Burgos</small></span>
+      </div>
     </section>
-    <section class="choice-grid" aria-label="Redes de autobuses">
-      <a class="choice-card burgos" href="./burgos.html">
-        <div class="choice-icon" aria-hidden="true">🚌</div>
-        <h3>Autobuses urbanos de Burgos</h3>
-        <p>Consulta las líneas y los autobuses activos detectados por el servicio municipal, agrupados por línea y con búsqueda por número de coche.</p>
-        <div class="choice-meta"><span class="pill">Autobuses activos</span><span class="pill">Líneas urbanas</span></div>
-        <div class="choice-go">Entrar en Burgos →</div>
-      </a>
-      <a class="choice-card bilbao" href="./bizkaibus.html">
-        <div class="choice-icon" aria-hidden="true">🚍</div>
-        <h3>Bilbao · Bizkaibus</h3>
-        <p>Abre el panel que ya teníamos, con los vehículos detectados por SIRI, línea, destino, posición publicada y próximas paradas.</p>
-        <div class="choice-meta"><span class="pill">Posiciones SIRI</span><span class="pill">Próximas paradas</span><span class="pill">Avisos configurados</span></div>
-        <div class="choice-go">Entrar en Bizkaibus →</div>
-      </a>
+
+    <section class="control-panel" aria-label="Seleccionar línea">
+      <div class="line-picker">
+        <label for="routeSelect">Línea</label>
+        <select id="routeSelect" disabled>
+          <option value="">Cargando líneas…</option>
+        </select>
+      </div>
+      <div class="route-heading">
+        <span class="route-kicker">LÍNEA SELECCIONADA</span>
+        <h2 id="routeTitle">—</h2>
+        <p id="routeDescription">Preparando el recorrido…</p>
+      </div>
+      <button id="refreshButton" class="refresh-button" type="button" disabled>
+        <span aria-hidden="true">↻</span><span>Actualizar</span>
+      </button>
     </section>
-    <div class="notice"><strong>Importante:</strong> en Burgos no se mostrarán como autobuses en circulación los viajes que solo estén definidos en un horario. Los datos programados y los datos reales se distinguirán claramente.</div>
-    <footer>SAE Spotter · Aplicación de consulta para uso personal. Las horas de paso programadas no garantizan la llegada real del vehículo.</footer>
+
+    <section class="stats-row" aria-label="Resumen de la línea">
+      <article class="stat-card">
+        <span class="stat-label">AUTOBUSES DETECTADOS</span>
+        <strong id="busCount">—</strong>
+        <small>En la consulta de esta línea</small>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">PARADAS DEL RECORRIDO</span>
+        <strong id="stopCount">—</strong>
+        <small>Según el itinerario GTFS</small>
+      </article>
+      <article class="stat-card stat-card-wide">
+        <span class="stat-label">ÚLTIMA ACTUALIZACIÓN</span>
+        <strong id="updatedAt">—</strong>
+        <small id="updateDetail">Esperando respuesta del SAE</small>
+      </article>
+    </section>
+
+    <section class="diagram-section">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">ESQUEMA DE LA LÍNEA</p>
+          <h2>Recorrido y autobuses</h2>
+        </div>
+        <div class="direction-key">
+          <span><i class="key-dot key-stop"></i>Parada</span>
+          <span><i class="key-dot key-bus"></i>Autobús</span>
+        </div>
+      </div>
+      <div id="diagramNotice" class="notice notice-info">
+        <span class="notice-spinner" aria-hidden="true"></span>
+        <span>Cargando recorridos y paradas oficiales…</span>
+      </div>
+      <div id="directionGrid" class="direction-grid" aria-live="polite"></div>
+      <p class="diagram-footnote">
+        La posición esquemática del autobús se sitúa junto a la próxima parada estimada que publica el SAE. No representa una coordenada exacta sobre la calle.
+      </p>
+    </section>
+
+    <section class="fleet-section">
+      <div class="section-title fleet-title">
+        <div>
+          <p class="eyebrow">SERVICIO EN CURSO</p>
+          <h2>Autobuses de la línea</h2>
+        </div>
+        <span id="fleetCaption" class="fleet-caption">Sin datos todavía</span>
+      </div>
+      <div id="fleetList" class="fleet-list">
+        <div class="empty-state">Los autobuses aparecerán aquí cuando responda el servicio municipal.</div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-brand"><span class="brand-mark brand-mark-small">B</span><strong>SAE BURGOS</strong></div>
+      <p>Datos de recorridos y horarios: GTFS municipal. Datos en directo: ISAENEXT del Ayuntamiento de Burgos.</p>
+      <p>Los retrasos mostrados son estimaciones calculadas comparando la llegada prevista con el horario de referencia cuando se puede identificar el viaje. No son una incidencia oficial publicada por el Ayuntamiento.</p>
+      <div class="footer-links">
+        <a href="https://www.aytoburgos.es/web/movilidad/rutas-en-directo" target="_blank" rel="noopener noreferrer">SAE municipal ↗</a>
+        <a href="https://github.com/enekituss/sae" target="_blank" rel="noopener noreferrer">Proyecto ↗</a>
+      </div>
+    </footer>
   </main>
+
+  <noscript><p class="noscript">Esta web necesita JavaScript para consultar las líneas y mostrar el tiempo real.</p></noscript>
 </body>
 </html>
