@@ -1,9 +1,9 @@
-const CACHE_NAME = "sae-burgos-shell-v3";
+const CACHE_NAME = "sae-burgos-shell-v4";
 const SHELL = [
   "./",
   "./index.html",
-  "./app.js?v=20261127c",
-  "./styles.css?v=20261127c",
+  "./app.js?v=20261127d",
+  "./styles.css?v=20261127d",
   "./manifest.webmanifest",
   "./icon.svg",
   "./icon-192.png",

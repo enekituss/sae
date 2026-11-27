@@ -481,3 +481,167 @@ a { color: inherit; }
   .vehicle-chip { min-width: 0; flex: 1 1 135px; }
   .diagram-section { padding: 14px 10px; }
 }
+
+
+/* Diseño compacto de red completa: itinerarios visibles en varias columnas. */
+.network-list {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr));
+  gap: 7px;
+}
+.network-line-card { border-radius: 10px; }
+.network-line-header {
+  min-height: 48px;
+  padding: 7px 10px;
+  grid-template-columns: 31px minmax(0,1fr) auto;
+  gap: 8px;
+}
+.network-line-number { width: 29px; height: 29px; border-radius: 8px; font-size: 11px; }
+.network-line-name .eyebrow { font-size: 7px; letter-spacing: .1em; }
+.network-line-name h3 { margin-top: 1px; font-size: 10px; line-height: 1.15; }
+.network-line-live { gap: 2px; }
+.network-line-live small { font-size: 7px; }
+.line-status { padding: 3px 5px; font-size: 7px; }
+.network-line-diagram { padding: 5px 8px 0; }
+.network-line-diagram .route-loop { padding: 0 0 3px; }
+.network-line-diagram .loop-terminal {
+  width: min(250px, 72%);
+  min-height: 28px;
+  padding: 3px 7px;
+  gap: 1px;
+  border-radius: 7px;
+}
+.network-line-diagram .loop-terminal span { font-size: 6px; letter-spacing: .1em; }
+.network-line-diagram .loop-terminal strong { font-size: 9px; line-height: 1.1; }
+.network-line-diagram .route-connector { height: 13px; }
+.network-line-diagram .loop-branches { gap: 7px; }
+.network-line-diagram .branch-lane {
+  border-top-width: 2px;
+  border-radius: 7px;
+}
+.network-line-diagram .branch-head {
+  min-height: 35px;
+  padding: 4px 6px;
+  gap: 3px;
+}
+.network-line-diagram .branch-head h3 { margin: 1px 0 0; font-size: 8px; line-height: 1.1; }
+.network-line-diagram .direction-label { font-size: 6px; letter-spacing: .08em; }
+.network-line-diagram .branch-direction {
+  grid-template-columns: 13px auto;
+  column-gap: 2px;
+}
+.network-line-diagram .branch-direction strong { font-size: 14px; }
+.network-line-diagram .branch-direction small,
+.network-line-diagram .branch-direction em { font-size: 6px; line-height: 1.1; }
+.network-line-diagram .stop-list { padding: 5px 4px 6px; }
+.network-line-diagram .stop-list::before {
+  top: 10px;
+  bottom: 11px;
+  width: 1px;
+}
+.network-line-diagram .stop-item {
+  min-height: 25px;
+  padding: 2px 3px;
+}
+.network-line-diagram .stop-node {
+  width: 7px;
+  height: 7px;
+  top: 5px;
+  border-width: 1.5px;
+}
+.network-line-diagram .stop-item:first-child .stop-node,
+.network-line-diagram .stop-item:last-child .stop-node {
+  width: 9px;
+  height: 9px;
+  top: 4px;
+  border-width: 2px;
+}
+.network-line-diagram .stop-name {
+  font-size: 7px;
+  line-height: 1.15;
+  font-weight: 600;
+}
+.network-line-diagram .stop-sequence { margin-right: 3px; font-size: 6px; }
+.network-line-diagram .bus-marker {
+  min-height: 16px;
+  max-width: calc(50% - 24px);
+  padding: 2px 3px;
+  gap: 2px;
+  border-radius: 5px;
+  border-left-width: 2px;
+}
+.network-line-diagram .bus-marker-icon { font-size: 8px; }
+.network-line-diagram .bus-marker strong { font-size: 6px; }
+.network-line-diagram .bus-marker small { max-width: 48px; font-size: 5px; }
+.network-line-diagram .bus-marker .delay-pill { padding: 1px 2px; font-size: 5px; }
+.network-line-diagram .branch-terminals {
+  padding: 4px 5px;
+  grid-template-columns: minmax(0,1fr) 10px minmax(0,1fr);
+  gap: 2px;
+}
+.network-line-diagram .branch-terminals small { font-size: 5px; }
+.network-line-diagram .branch-terminals strong { font-size: 6px; }
+.network-line-diagram .branch-terminals i { font-size: 9px; }
+.network-line-diagram .unlocated-buses,
+.network-line-card .unassigned-fleet {
+  margin: 3px 6px 6px;
+  padding: 4px 5px;
+}
+.network-line-diagram .unlocated-buses strong,
+.network-line-card .unassigned-fleet strong { margin-bottom: 2px; font-size: 6px; }
+.network-line-diagram .unlocated-buses .unlocated-bus,
+.network-line-card .unassigned-fleet .unlocated-bus { margin: 1px 3px 0 0; font-size: 6px; }
+.vehicle-inventory {
+  margin: 4px 7px 7px;
+  padding: 5px 6px;
+  border-radius: 7px;
+}
+.vehicle-inventory-heading { margin-bottom: 4px; gap: 3px 6px; }
+.vehicle-inventory-heading strong { font-size: 6px; letter-spacing: .06em; }
+.vehicle-inventory-heading span { font-size: 6px; }
+.vehicle-chip-list { gap: 3px; }
+.vehicle-chip {
+  min-width: 0;
+  padding: 2px 4px;
+  gap: 3px;
+  border-radius: 5px;
+}
+.vehicle-chip-bus { font-size: 8px; }
+.vehicle-chip-info { gap: 0; }
+.vehicle-chip-info strong { font-size: 7px; }
+.vehicle-chip-info small { max-width: 70px; font-size: 5px; }
+.vehicle-chip .delay-pill { padding: 1px 2px; font-size: 5px; }
+.network-line-card .line-error-note { margin: 0 7px 7px; font-size: 6px; }
+@media (min-width: 1600px) {
+  .network-list { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .network-line-diagram .loop-branches { gap: 4px; }
+  .network-line-diagram .stop-name { font-size: 6px; }
+}
+@media (max-width: 1100px) {
+  .network-list { grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+}
+@media (max-width: 760px) {
+  .network-list { grid-template-columns: minmax(0,1fr); gap: 7px; }
+  .network-line-diagram { padding: 5px 5px 0; }
+  .network-line-diagram .branch-head h3 { font-size: 9px; }
+  .network-line-diagram .stop-name { font-size: 8px; }
+  .network-line-diagram .stop-item { min-height: 24px; }
+  .vehicle-chip-info small { max-width: 110px; font-size: 6px; }
+}
+
+/* Ajuste final de densidad y legibilidad en la red completa. */
+.network-line-diagram .branch-lane-left .stop-name,
+.network-line-diagram .branch-lane-right .stop-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.network-line-diagram .stop-item { min-height: 23px; }
+.network-line-diagram .stop-list::before { top: 9px; bottom: 10px; }
+.network-line-diagram .stop-name { font-size: 7px; }
+.network-line-diagram .bus-marker { max-width: calc(50% - 22px); }
+.vehicle-chip-info small { max-width: 90px; }
+@media (min-width: 1600px) {
+  .network-list { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .network-line-diagram .branch-head h3 { font-size: 7px; }
+  .network-line-diagram .stop-name { font-size: 6px; }
+}

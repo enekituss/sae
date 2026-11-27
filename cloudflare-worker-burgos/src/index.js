@@ -394,30 +394,140 @@ function arrayFromResource(payload, resourceName) {
   throw new Error(resourceName + " devolvió un formato JSON no reconocido.");
 }
 
+
+function parseTimeDesfaseValue(value, fieldName = "", unitHint = "") {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "object") {
+    const unit = String(value.unit ?? value.units ?? value.unidad ?? unitHint ?? "");
+    const inner = value.seconds ?? value.segundos ?? value.minutes ?? value.minutos ??
+      value.value ?? value.valor ?? value.time ?? value.tiempo ?? value.offset ?? null;
+    if (inner === null || inner === undefined) return null;
+    return parseTimeDesfaseValue(inner, fieldName, unit || fieldName);
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const clock = raw.match(/^([+-])?(\d{1,3}):([0-5]\d)(?::([0-5]\d))?$/);
+  let seconds;
+  if (clock) {
+    const sign = clock[1] === "-" ? -1 : 1;
+    const first = Number(clock[2]);
+    const second = Number(clock[3]);
+    const third = Number(clock[4] || 0);
+    seconds = sign * (clock[4] !== undefined
+      ? first * 3600 + second * 60 + third
+      : first * 60 + second);
+  } else {
+    const number = Number(raw.replace(",", ".").replace(/\s*(s|sec|secs|seg|segundos?)\s*$/i, ""));
+    if (!Number.isFinite(number)) return null;
+    seconds = number;
+  }
+
+  const unit = String(unitHint || fieldName).toLowerCase();
+  if (/millisecond|milli|(^|[^a-z])ms([^a-z]|$)|miliseg/.test(unit)) seconds /= 1000;
+  else if (/minute|minuto|(^|[^a-z])min([^a-z]|$)/.test(unit)) seconds *= 60;
+  return Number.isFinite(seconds) ? seconds : null;
+}
+
+function readTimeDesfase(source) {
+  if (!source || typeof source !== "object") return null;
+  const aliases = [
+    "tiempoDesfase", "tiempo_desfase", "desfaseTiempo", "desfase_tiempo",
+    "timeDesfase", "time_desfase", "timeOffset", "time_offset", "offsetTime",
+    "offset_time", "timeDifference", "time_difference", "differenceTime",
+    "difference_time", "timeDiff", "time_diff", "delaySeconds", "delay_seconds",
+    "delayMinutes", "delay_minutes", "desfaseSeconds", "desfase_seconds",
+    "desfaseMinutes", "desfase_minutes", "retrasoSegundos", "retraso_segundos",
+    "retrasoMinutos", "retraso_minutos", "retraso", "desfase", "delay",
+    "lateness", "timeDeviation", "time_deviation", "timeLag", "time_lag",
+    "timeDisplacement", "time_displacement", "deviationSeconds", "deviation_seconds"
+  ];
+  for (const key of aliases) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      const parsed = parseTimeDesfaseValue(source[key], key, source.timeUnit ?? source.unit ?? source.unidad ?? "");
+      if (parsed !== null) return parsed;
+    }
+  }
+
+  // También acepta variaciones de nombre del mismo campo publicadas por ISAENEXT.
+  for (const [key, value] of Object.entries(source)) {
+    const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!/(desfase|timeoffset|timedifference|timediff|timeshift|timelag|timedeviation|retraso|lateness)/.test(normalized)) continue;
+    const parsed = parseTimeDesfaseValue(value, normalized, source.timeUnit ?? source.unit ?? source.unidad ?? "");
+    if (parsed !== null) return parsed;
+  }
+  return null;
+}
+
 function extractVehicleRows(payload, line) {
   const rows = arrayFromResource(payload, "resourceVehicles");
-  assertVehiclesMatchRequestedLine(rows, line, "resourceVehicles");
+  const knownLines = new Set(BURGOS_LINES.map(normalizeLineCode));
   const vehicles = [];
-  for (const row of rows) {
-    if (!row || typeof row !== "object") continue;
-    const id = String(row.vehicleId ?? row.vehicle_id ?? row.vehicle ?? row.idVehicle ??
-      row.numeroCoche ?? row.numVehiculo ?? row.id ?? "").trim();
-    if (!id || id === "0") continue;
+  let sourceIndex = 0;
+
+  for (const rawRow of rows) {
+    if (rawRow === null || rawRow === undefined) continue;
+    sourceIndex += 1;
+    const row = Array.isArray(rawRow)
+      ? { vehicle: rawRow[0], rowValues: rawRow }
+      : rawRow && typeof rawRow === "object"
+        ? rawRow : { vehicle: rawRow };
+
+    const reportedLine = String(
+      row.lineId ?? row.line ?? row.route ?? row.ruta ??
+      row.lineName ?? row.routeName ?? row.nombreLinea ?? row.numeroLinea ?? ""
+    ).trim();
+    if (reportedLine) {
+      const normalizedLine = normalizeLineCode(reportedLine);
+      // Solo se excluye una fila si el propio registro identifica otra línea
+      // municipal conocida. Un campo vacío o no normalizable nunca descarta un coche.
+      if (knownLines.has(normalizedLine) && normalizedLine !== normalizeLineCode(line)) continue;
+    }
+
+    const nestedVehicle = row.vehicle && typeof row.vehicle === "object" ? row.vehicle :
+      row.vehiculo && typeof row.vehiculo === "object" ? row.vehiculo : {};
+    const idValue = row.vehicleId ?? row.vehicle_id ?? row.vehicleNumber ?? row.vehicle_number ??
+      row.busId ?? row.bus_id ?? row.idBus ?? row.numBus ?? row.idVehicle ??
+      row.numeroCoche ?? row.numVehiculo ?? row.fleetNumber ?? row.fleet_number ??
+      row.numeroVehiculo ?? row.id ?? row.numero ?? row.codigoCoche ??
+      nestedVehicle.vehicleId ?? nestedVehicle.vehicle_id ?? nestedVehicle.busId ??
+      nestedVehicle.idVehicle ?? nestedVehicle.id ?? nestedVehicle.number ?? nestedVehicle.numero ??
+      (typeof row.vehicle === "string" || typeof row.vehicle === "number" ? row.vehicle :
+        typeof row.vehiculo === "string" || typeof row.vehiculo === "number" ? row.vehiculo : "");
+    const id = String(idValue ?? "").trim();
+    const nestedVehicle = row.vehicle && typeof row.vehicle === "object" ? row.vehicle :
+      row.vehiculo && typeof row.vehiculo === "object" ? row.vehiculo : {};
+    const lat = Number(row.lat ?? row.latitude ?? row.position?.lat ?? nestedVehicle.lat ?? nestedVehicle.latitude);
+    const lon = Number(row.lng ?? row.lon ?? row.longitude ?? row.position?.lon ?? nestedVehicle.lng ?? nestedVehicle.lon ?? nestedVehicle.longitude);
+    const validPosition = Number.isFinite(lat) && lat >= 42 && lat <= 43 &&
+      Number.isFinite(lon) && lon >= -4 && lon <= -3;
+
     vehicles.push({
       ...row,
-      id,
-      lineId: String(row.lineId ?? row.line ?? row.route ?? row.ruta ?? line).trim() || line,
-      line: String(row.line ?? row.lineId ?? row.route ?? line).trim() || line,
+      id: id || ("SIN-ID-" + line + "-" + sourceIndex),
+      idMissing: !id,
+      sourceIndex,
+      lineId: line,
+      line,
       destination: destinationText(row.destination ?? row.destino ?? row.destinationName ??
         row.destinationText ?? row.headsign ?? row.destiny ?? row.destinoNombre ??
         row.nombreDestino ?? row.destinationLabel ?? row.destinationDescription ?? ""),
       destinationId: destinationId(row),
-      direction: String(row.direction ?? row.sentido ?? row.direccion ?? "").trim()
+      direction: String(row.direction ?? row.sentido ?? row.direccion ?? "").trim(),
+      seconds: row.seconds === null || row.seconds === undefined || row.seconds === ""
+        ? null : Number.isFinite(Number(row.seconds)) ? Number(row.seconds) : null,
+      meters: row.meters === null || row.meters === undefined || row.meters === ""
+        ? null : Number.isFinite(Number(row.meters)) ? Number(row.meters) : null,
+      desfaseSeconds: readTimeDesfase(row) ?? readTimeDesfase(nestedVehicle),
+      position: {
+        lat: validPosition ? lat : null,
+        lon: validPosition ? lon : null,
+        source: validPosition ? "GPS publicado por resourceVehicles" : ""
+      }
     });
   }
   return vehicles;
 }
-
 function extractLineEstimations(line, nodes, payload) {
   if (!Array.isArray(payload)) {
     throw new Error("resourceEstimations no devolvió una lista para la línea " + line + ".");
@@ -465,6 +575,7 @@ function extractLineEstimations(line, nodes, payload) {
             routeGroup.direction ?? routeGroup.sentido ?? routeGroup.direccion ?? "").trim(),
           seconds: Number.isFinite(seconds) ? seconds : null,
           meters: Number.isFinite(meters) ? meters : null,
+          desfaseSeconds: readTimeDesfase(item) ?? readTimeDesfase(routeGroup) ?? readTimeDesfase(result),
           stopId: stopId || "",
           stopName: String(result.stopName ?? result.stop_name ?? result.nombre ?? result.nombreNodo ??
             result.nombreParada ?? result.paradaNombre ?? result.name ?? stop?.name ??
@@ -643,8 +754,8 @@ async function fetchVehiclesForLine(line) {
   const byId = new Map();
 
   for (const row of vehicleRows) {
-    const lat = Number(row.lat ?? row.latitude);
-    const lon = Number(row.lng ?? row.lon ?? row.longitude);
+    const lat = Number(row.lat ?? row.latitude ?? row.position?.lat);
+    const lon = Number(row.lng ?? row.lon ?? row.longitude ?? row.position?.lon);
     const validLat = Number.isFinite(lat) && lat >= 42 && lat <= 43;
     const validLon = Number.isFinite(lon) && lon >= -4 && lon <= -3;
     byId.set(row.id, {
@@ -722,45 +833,62 @@ async function fetchVehiclesForLine(line) {
     }
   }
 
-  // Las estimaciones completan destino/próxima parada; nunca eliminan los coches
-  // ya publicados en resourceVehicles si la parte adicional falla.
+  // Las observaciones completan los coches publicados. Si una observación llega
+  // sin ETA, no bloquea otra posterior con GPS, distancia, desfase o parada.
   const bestEta = new Map();
+  const bestQuality = new Map();
   for (const observation of observations) {
+    const id = String(observation.vehicleId || "").trim();
+    if (!id || id === "0") continue;
     const seconds = Number.isFinite(observation.seconds) && observation.seconds >= 0
       ? observation.seconds : Infinity;
-    const old = byId.get(observation.vehicleId);
-    const hasPreviousObservation = bestEta.has(observation.vehicleId);
-    const oldEta = bestEta.get(observation.vehicleId) ?? Infinity;
-    if (!old || !hasPreviousObservation || seconds < oldEta) {
-      const validLat = observation.vehicleLat !== null && observation.vehicleLat >= 42 && observation.vehicleLat <= 43;
-      const validLon = observation.vehicleLon !== null && observation.vehicleLon >= -4 && observation.vehicleLon <= -3;
-      byId.set(observation.vehicleId, {
-        ...(old || {}),
-        id: observation.vehicleId,
-        lineId: line,
-        line,
-        destination: observation.destination || old?.destination || "Destino no publicado",
-        direction: observation.direction || old?.direction || "",
-        seconds: observation.seconds,
-        meters: observation.meters,
-        stopId: observation.stopId || old?.stopId || "",
-        stopName: observation.stopName || old?.stopName || "",
-        stopLat: Number.isFinite(observation.stopLat) ? observation.stopLat : old?.stopLat ?? null,
-        stopLon: Number.isFinite(observation.stopLon) ? observation.stopLon : old?.stopLon ?? null,
-        position: (
-          old?.position &&
-          old.position.lat !== null && old.position.lat !== undefined &&
-          old.position.lon !== null && old.position.lon !== undefined &&
-          Number.isFinite(Number(old.position.lat)) &&
-          Number.isFinite(Number(old.position.lon))
-        ) ? old.position : {
-          lat: validLat ? observation.vehicleLat : null,
-          lon: validLon ? observation.vehicleLon : null,
-          source: validLat && validLon ? "GPS publicado por resourceEstimations" : ""
-        }
-      });
-      bestEta.set(observation.vehicleId, seconds);
-    }
+    const gpsValid = observation.vehicleLat !== null && observation.vehicleLon !== null &&
+      Number.isFinite(Number(observation.vehicleLat)) && Number.isFinite(Number(observation.vehicleLon));
+    const quality = (gpsValid ? 100 : 0) +
+      (Number.isFinite(seconds) ? 40 : 0) +
+      (Number.isFinite(observation.meters) ? 20 : 0) +
+      (observation.stopId ? 12 : 0) +
+      (observation.stopName ? 8 : 0) +
+      (observation.desfaseSeconds !== null && Number.isFinite(observation.desfaseSeconds) ? 15 : 0);
+    const old = byId.get(id);
+    const hasPreviousObservation = bestEta.has(id);
+    const oldEta = bestEta.get(id) ?? Infinity;
+    const oldQuality = bestQuality.get(id) ?? -1;
+    const isBetter = !old || !hasPreviousObservation || seconds < oldEta ||
+      (seconds === oldEta && quality > oldQuality);
+    if (!isBetter) continue;
+
+    const oldPosition = old?.position;
+    const oldPositionValid = oldPosition &&
+      oldPosition.lat !== null && oldPosition.lat !== undefined &&
+      oldPosition.lon !== null && oldPosition.lon !== undefined &&
+      Number.isFinite(Number(oldPosition.lat)) && Number.isFinite(Number(oldPosition.lon));
+    byId.set(id, {
+      ...(old || {}),
+      id,
+      lineId: line,
+      line,
+      destination: observation.destination || old?.destination || "Destino no publicado",
+      direction: observation.direction || old?.direction || "",
+      seconds: observation.seconds ?? old?.seconds ?? null,
+      meters: observation.meters ?? old?.meters ?? null,
+      desfaseSeconds: observation.desfaseSeconds ?? old?.desfaseSeconds ?? null,
+      stopId: observation.stopId || old?.stopId || "",
+      stopName: observation.stopName || old?.stopName || "",
+      stopLat: Number.isFinite(observation.stopLat) ? observation.stopLat : old?.stopLat ?? null,
+      stopLon: Number.isFinite(observation.stopLon) ? observation.stopLon : old?.stopLon ?? null,
+      position: oldPositionValid ? oldPosition : gpsValid ? {
+        lat: observation.vehicleLat,
+        lon: observation.vehicleLon,
+        source: "GPS publicado por resourceEstimations"
+      } : oldPosition || {
+        lat: null,
+        lon: null,
+        source: ""
+      }
+    });
+    bestEta.set(id, seconds);
+    bestQuality.set(id, quality);
   }
 
   return {
@@ -880,7 +1008,7 @@ export default {
         ok: true,
         service: "SAE Spotter · proxy independiente de Burgos",
         apiVersion: "sae-three-resources-per-line-v6",
-        buildId: "burgos-live-v6.14-2026-11-27",
+        buildId: "burgos-live-v6.15-2026-11-27",
         source: BURGOS_SOURCE,
         lines: BURGOS_LINES.length,
         telegramScheduler: { configured: Boolean(String(env?.BURGOS_GITHUB_TOKEN || env?.GITHUB_TOKEN || "").trim()), cadence: "*/2 * * * *" },

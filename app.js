@@ -77,16 +77,17 @@
   }
 
   function formatDelay(seconds) {
-    if (seconds === null || !Number.isFinite(seconds)) {
-      return { text: "Sin cálculo", className: "delay-unknown" };
+    if (seconds === null || seconds === undefined || !Number.isFinite(Number(seconds))) {
+      return { text: "Tiempo desfase —", className: "delay-unknown", source: "" };
     }
-    if (seconds > 90) {
-      return { text: "+" + Math.max(1, Math.round(seconds / 60)) + " min", className: "delay-late" };
+    const value = Number(seconds);
+    if (value > 30) {
+      return { text: "Tiempo desfase +" + Math.max(1, Math.round(value / 60)) + " min", className: "delay-late", source: "" };
     }
-    if (seconds < -90) {
-      return { text: "−" + Math.max(1, Math.round(Math.abs(seconds) / 60)) + " min", className: "delay-early" };
+    if (value < -30) {
+      return { text: "Tiempo desfase −" + Math.max(1, Math.round(Math.abs(value) / 60)) + " min", className: "delay-early", source: "" };
     }
-    return { text: "En hora", className: "delay-ok" };
+    return { text: "Tiempo desfase 0 min", className: "delay-ok", source: "" };
   }
 
   function stopForId(id) {
@@ -241,11 +242,12 @@
     let actualSegment = -1;
     let actualFraction = 0.8;
     let source = "estimación";
-
     const currentPosition = vehiclePosition(bus);
+
+    // Prioridad 1: GPS del vehículo proyectado sobre la geometría GTFS.
     if (currentPosition && direction.shapePoints?.length > 1) {
       const vehicleMeasure = projectPointToPolyline(currentPosition, direction.shapePoints);
-      if (vehicleMeasure && vehicleMeasure.distance <= 220) {
+      if (vehicleMeasure && vehicleMeasure.distance <= 450) {
         let bestGap = Infinity;
         const measures = direction.stopMeasures || [];
         for (let i = 0; i < measures.length - 1; i++) {
@@ -264,19 +266,58 @@
               (vehicleMeasure.measure - start) / (end - start)));
           }
         }
-        if (bestGap > 350) actualSegment = -1;
+        if (bestGap > 450) actualSegment = -1;
         else source = "GPS";
       }
     }
 
-    // Si no hay coordenadas fiables, sitúa el coche justo antes de su próxima
-    // parada publicada; nunca lo coloca en una parada de otro sentido.
+    // Prioridad 2: ISAENEXT publica metros hasta la próxima parada.
+    // Retrocedemos esa distancia sobre el shape desde la parada GTFS coincidente.
+    if (actualSegment < 0 && direction.shapePoints?.length > 1) {
+      const nextStopIndex = findStopIndex(direction, bus);
+      const meters = Number(bus.meters);
+      if (nextStopIndex >= 0 && Number.isFinite(meters) && meters >= 0 && meters <= 12000) {
+        let stopMeasure = direction.stopMeasures?.[nextStopIndex];
+        if (!Number.isFinite(stopMeasure)) {
+          const stopPosition = {
+            lat: bus.stopLat ?? bus.stopLatitude,
+            lon: bus.stopLon ?? bus.stopLng ?? bus.stopLongitude
+          };
+          const projectedStop = projectPointToPolyline(stopPosition, direction.shapePoints);
+          if (projectedStop && projectedStop.distance <= 350) stopMeasure = projectedStop.measure;
+        }
+        if (Number.isFinite(stopMeasure)) {
+          const vehicleMeasure = Math.max(0, stopMeasure - meters);
+          const measures = direction.stopMeasures || [];
+          let bestGap = Infinity;
+          for (let i = 0; i < measures.length - 1; i++) {
+            const start = measures[i];
+            const end = measures[i + 1];
+            if (!Number.isFinite(start) || !Number.isFinite(end) || Math.abs(end - start) < 1) continue;
+            const low = Math.min(start, end);
+            const high = Math.max(start, end);
+            const gap = vehicleMeasure < low ? low - vehicleMeasure :
+              vehicleMeasure > high ? vehicleMeasure - high : 0;
+            if (gap < bestGap) {
+              bestGap = gap;
+              actualSegment = i;
+              actualFraction = Math.max(0, Math.min(1,
+                (vehicleMeasure - start) / (end - start)));
+            }
+          }
+          if (bestGap <= 350) source = "estimación por metros a próxima parada";
+          else actualSegment = -1;
+        }
+      }
+    }
+
+    // Prioridad 3: coloca el coche antes de su próxima parada cuando solo hay ETA/ID.
     if (actualSegment < 0) {
       const nextStopIndex = findStopIndex(direction, bus);
       if (nextStopIndex < 0) return null;
       actualSegment = nextStopIndex === 0 ? 0 : nextStopIndex - 1;
       actualFraction = nextStopIndex === 0 ? 0.08 : 0.82;
-      source = "estimación";
+      source = "estimación por próxima parada";
     }
 
     const displaySegment = reverse ? count - 2 - actualSegment : actualSegment;
@@ -286,56 +327,6 @@
       fraction: Math.max(0, Math.min(1, displayFraction)),
       source
     };
-  }
-
-
-  function bearingBetweenPositions(from, to) {
-    if (!validPosition(from) || !validPosition(to)) return null;
-    const lat1 = Number(from.lat) * Math.PI / 180;
-    const lat2 = Number(to.lat) * Math.PI / 180;
-    const deltaLon = (Number(to.lon) - Number(from.lon)) * Math.PI / 180;
-    const y = Math.sin(deltaLon) * Math.cos(lat2);
-    const x = Math.cos(lat1) * Math.sin(lat2) -
-      Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLon);
-    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-  }
-
-  function bearingForShapeSegment(points, index) {
-    if (!Array.isArray(points) || index < 0 || index >= points.length - 1) return null;
-    const first = points[index];
-    const second = points[index + 1];
-    return bearingBetweenPositions(
-      { lat: first[0], lon: first[1] },
-      { lat: second[0], lon: second[1] }
-    );
-  }
-
-  function angularDifference(first, second) {
-    return Math.abs(((first - second + 540) % 360) - 180);
-  }
-
-  function attachVehicleMotion(code, vehicles) {
-    const now = Date.now();
-    return vehicles.map(bus => {
-      const position = vehiclePosition(bus);
-      if (!position) return bus;
-      const key = String(code) + "|" + String(bus.id);
-      const previous = state.lastPositions.get(key);
-      let motionBearing = null;
-      if (previous) {
-        const elapsed = (now - previous.at) / 1000;
-        const distance = distanceBetweenPositions(previous, position);
-        if (elapsed >= 10 && elapsed <= 1200 && distance >= 8 && distance / elapsed <= 35) {
-          motionBearing = bearingBetweenPositions(previous, position);
-        }
-      }
-      state.lastPositions.set(key, {
-        lat: Number(position.lat),
-        lon: Number(position.lon),
-        at: now
-      });
-      return motionBearing === null ? bus : { ...bus, motionBearing };
-    });
   }
 
   function dateKey(date) {
@@ -570,9 +561,48 @@
     return { seconds: best.difference, trip: best.trip };
   }
 
+
+  function readBusDesfase(bus) {
+    const direct = bus?.desfaseSeconds ?? bus?.tiempoDesfaseSeconds ??
+      bus?.timeDesfaseSeconds ?? bus?.desfase ?? bus?.tiempoDesfase ??
+      bus?.timeDesfase ?? bus?.timeOffset ?? bus?.timeDifference ??
+      bus?.timeDiff ?? bus?.delaySeconds ?? bus?.delay ?? bus?.lateness ??
+      bus?.retrasoSegundos ?? bus?.retraso;
+    if (direct === null || direct === undefined || direct === "") return null;
+    if (typeof direct === "string") {
+      const match = direct.trim().match(/^([+-])?(\d{1,3}):([0-5]\d)(?::([0-5]\d))?$/);
+      if (match) {
+        const sign = match[1] === "-" ? -1 : 1;
+        const first = Number(match[2]);
+        const second = Number(match[3]);
+        const third = Number(match[4] || 0);
+        return sign * (match[4] !== undefined
+          ? first * 3600 + second * 60 + third
+          : first * 60 + second);
+      }
+    }
+    const number = Number(direct);
+    if (!Number.isFinite(number)) return null;
+    const unit = String(bus?.desfaseUnit ?? bus?.timeUnit ?? bus?.unit ?? "").toLowerCase();
+    if (/minute|minuto|(^|[^a-z])min([^a-z]|$)/.test(unit)) return number * 60;
+    if (/millisecond|milli|(^|[^a-z])ms([^a-z]|$)/.test(unit)) return number / 1000;
+    return number;
+  }
+
+  function busDesfase(bus, direction) {
+    const sourceValue = readBusDesfase(bus);
+    if (sourceValue !== null) {
+      return { ...formatDelay(sourceValue), source: "SAE" };
+    }
+    const calculated = direction ? estimatedDelay(bus, direction) : null;
+    if (calculated && Number.isFinite(calculated.seconds)) {
+      return { ...formatDelay(calculated.seconds), source: "GTFS" };
+    }
+    return formatDelay(null);
+  }
+
   function busStatus(bus, direction) {
-    const delay = estimatedDelay(bus, direction);
-    return delay ? formatDelay(delay.seconds) : formatDelay(null);
+    return busDesfase(bus, direction);
   }
 
   function renderBusMarker(bus, direction, position, slot) {
@@ -588,7 +618,7 @@
       '<span class="bus-marker-icon" aria-hidden="true">🚌</span>' +
       '<strong>' + escapeHTML(bus.id) + '</strong>' +
       '<small>' + escapeHTML(detail) + '</small>' +
-      '<span class="delay-pill ' + delay.className + '">' + escapeHTML(delay.text) + '</span>' +
+      '<span class="delay-pill ' + delay.className + '" title="' + escapeHTML(delay.source || "Desfase no publicado") + '">' + escapeHTML(delay.text) + '</span>' +
       '</div>';
   }
 
@@ -802,29 +832,31 @@
       String(a.id).localeCompare(String(b.id), "es", { numeric: true })
     ).map(bus => {
       const id = String(bus.id);
+      const displayId = bus.idMissing || id.startsWith("SIN-ID-") ? "Sin ID" : id;
       const direction = directionForBus.get(id);
       const position = positionForBus.get(id);
       const model = state.models[id] || "";
       const eta = formatETA(bus.seconds);
       const distance = formatDistance(bus.meters);
       const detail = [eta, distance].filter(Boolean).join(" · ");
-      const delay = direction ? busStatus(bus, direction) : formatDelay(null);
+      const delay = busStatus(bus, direction);
       const placement = position
         ? (position.source === "GPS" ? "GPS en recorrido" : "Próxima parada")
         : (direction ? "Posición sin confirmar" : "Sentido sin confirmar");
 
       return '<div class="vehicle-chip" title="' + escapeHTML([
-        "Coche " + id,
+        displayId === "Sin ID" ? "Vehículo sin identificador publicado" : "Coche " + id,
         model,
         bus.destination || "Destino no publicado",
         bus.stopName || "Próxima parada no publicada",
         detail,
+        delay.source ? "Fuente desfase: " + delay.source : "Desfase sin dato",
         placement
       ].filter(Boolean).join(" · ")) + '">' +
         '<span class="vehicle-chip-bus">🚌</span>' +
-        '<span class="vehicle-chip-info"><strong>' + escapeHTML(id) + '</strong>' +
+        '<span class="vehicle-chip-info"><strong>' + escapeHTML(displayId) + '</strong>' +
         '<small>' + escapeHTML(detail || placement) + '</small></span>' +
-        '<span class="delay-pill ' + delay.className + '">' + escapeHTML(delay.text) + '</span>' +
+        '<span class="delay-pill ' + delay.className + '" title="' + escapeHTML(delay.source || "Desfase sin dato") + '">' + escapeHTML(delay.text) + '</span>' +
         '</div>';
     }).join("");
 
@@ -993,9 +1025,19 @@
         Number.isFinite(Number(observation.vehicleLat)) && Number(observation.vehicleLat) >= 42 &&
         Number(observation.vehicleLat) <= 43 && Number.isFinite(Number(observation.vehicleLon)) &&
         Number(observation.vehicleLon) >= -4 && Number(observation.vehicleLon) <= -3;
-      const previousHasGps = previous && Number.isFinite(Number(previous.observation.vehicleLat)) &&
+      const previousHasGps = previous && previous.observation.vehicleLat !== null &&
+        previous.observation.vehicleLat !== undefined &&
+        previous.observation.vehicleLon !== null &&
+        previous.observation.vehicleLon !== undefined &&
+        Number.isFinite(Number(previous.observation.vehicleLat)) &&
         Number.isFinite(Number(previous.observation.vehicleLon));
-      if (!previous || seconds < previous.seconds || (seconds === previous.seconds && hasGps && !previousHasGps)) {
+      const hasDesfase = readBusDesfase(observation) !== null;
+      const previousHasDesfase = previous && readBusDesfase(previous.observation) !== null;
+      if (!previous || seconds < previous.seconds ||
+          (seconds === previous.seconds && (
+            (hasGps && !previousHasGps) ||
+            (hasDesfase && !previousHasDesfase)
+          ))) {
         bestObservation.set(id, { observation, seconds });
       }
     }
@@ -1031,6 +1073,7 @@
         direction: old.direction || observation.direction || "",
         seconds: useObservation ? observation.seconds : old.seconds ?? observation.seconds ?? null,
         meters: useObservation ? observation.meters : old.meters ?? observation.meters ?? null,
+        desfaseSeconds: old.desfaseSeconds ?? observation.desfaseSeconds ?? null,
         stopId: old.stopId || observation.stopId || "",
         stopName: old.stopName || observation.stopName || "",
         stopLat: old.stopLat ?? observation.stopLat ?? null,

@@ -38,7 +38,7 @@ burgos-modelos.json relaciona los identificadores conocidos con el modelo de veh
 
 ## Retrasos y turnos
 
-El Worker publica estimaciones de llegada, no un campo universal de retraso oficial. Cuando la aplicación puede identificar el viaje y una parada del GTFS, compara la hora estimada de llegada con el horario de referencia y muestra un retraso calculado. El rótulo se identifica como estimación; no es una incidencia oficial del Ayuntamiento. Si la fuente no publica GPS o una próxima parada asociable, el vehículo se conserva en la lista de flota sin inventar su posición sobre el dibujo.
+El Worker extrae el campo tiempo desfase cuando ISAENEXT lo publica (incluidas las variantes de nombre habituales). Si no existe en la respuesta, la web calcula un desfase orientativo comparando la llegada estimada con la hora programada GTFS y marca su procedencia. El desfase calculado no es una incidencia oficial. Si la fuente no publica GPS o una próxima parada asociable, el vehículo se conserva en la lista de flota sin inventar su posición sobre el dibujo.
 
 El campo GTFS block_id identifica un bloque de viajes asociado a un vehículo. No debe confundirse automáticamente con el turno interno de conductor o con el número de servicio operativo.
 
